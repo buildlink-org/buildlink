@@ -71,11 +71,13 @@ export const profileService = {
   async getStats() {
     try {
       // Method 1: Use separate count queries (more reliable)
-      const { count: professionalsCount, error: professionalsError } = await supabase
+      const {data, count: professionalsCount, error: professionalsError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact' })
         .in('user_type', ['student', 'graduate', 'professional']);
 
+        console.log({data});
+        
       const { count: companiesCount, error: companiesError } = await supabase
         .from('profiles')
         .select('*', { count: 'exact' })
