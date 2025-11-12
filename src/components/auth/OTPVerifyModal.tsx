@@ -1,4 +1,3 @@
-// OtpVerificationModal.tsx
 import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -35,7 +34,7 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({ email, onCl
     } else {
         toast({
         title: 'Success!',
-        description: 'Email confirmed. Redirecting to dashboard...',
+        description: 'Email confirmed. Redirecting...',
       });
 
       onClose(); 
@@ -62,7 +61,7 @@ const OtpVerificationModal: React.FC<OtpVerificationModalProps> = ({ email, onCl
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50">
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Verify Your Email</CardTitle>

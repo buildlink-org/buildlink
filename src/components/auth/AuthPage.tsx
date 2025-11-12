@@ -10,12 +10,10 @@ import OtpVerificationModal from './OTPVerifyModal';
 const AuthPage = () => {
   const { user, loading } = useAuth();
 
-  // Open OTP verification modal
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
-  // const closeOtpModal = () => setIsOtpModalOpen(false);
 
-  // opening modal from child components
+  // open modal
   const showOtpModal = (email: string) => {
     setOtpEmail(email);
     setIsOtpModalOpen(true);
@@ -61,7 +59,6 @@ const AuthPage = () => {
         </div>
       </div>
 
-      // otp verification modal
       {isOtpModalOpen && (
         <OtpVerificationModal
         email={otpEmail}

@@ -30,12 +30,12 @@ const SignInForm: React.FC<SignInFormProps> = ({showOtpModal}) => {
     if (error) {
       if (error.message === 'Email not confirmed') {
 
-        // Alert user to verify email
         toast({
           title: 'Email not verified',
           description: 'Please verify your email. An OTP has been sent to you.',
           variant: 'destructive',
         })
+        
         // Resend OTP
         resendOtp(email);
 
