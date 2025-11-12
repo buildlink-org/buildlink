@@ -9,7 +9,11 @@ import { useToast } from '@/hooks/use-toast';
 import { signUpSchema } from '@/lib/validationSchemas';
 import { z } from 'zod';
 
-const SignUpForm = () => {
+interface SignUpFormProps {
+  showOtpModal: (email: string) => void
+}
+
+const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
@@ -30,6 +34,7 @@ const SignUpForm = () => {
 
       // Validate input data
       const validatedData = signUpSchema.parse(rawData);
+      const userEmail =  validatedData.email;
 
       const { error } = await signUp(validatedData.email, validatedData.password, {
         full_name: validatedData.fullName,
@@ -48,6 +53,8 @@ const SignUpForm = () => {
           title: 'Account created!',
           description: 'Please check your email to verify your account.',
         });
+
+        showOtpModal(userEmail);
       }
     } catch (error) {
       if (error instanceof z.ZodError) {

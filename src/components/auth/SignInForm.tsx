@@ -7,8 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 
-const SignInForm = () => {
-  const { signIn, resetPassword } = useAuth();
+interface SignInFormProps {
+  showOtpModal: (email: string) => void;
+}
+
+const SignInForm: React.FC<SignInFormProps> = ({showOtpModal}) => {
+  const { signIn, resetPassword, resendOtp } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
@@ -24,11 +28,27 @@ const SignInForm = () => {
     const { error } = await signIn(email, password);
 
     if (error) {
-      toast({
-        title: 'Sign in failed',
-        description: error.message,
-        variant: 'destructive',
-      });
+      if (error.message === 'Email not confirmed') {
+
+        // Alert user to verify email
+        toast({
+          title: 'Email not verified',
+          description: 'Please verify your email. An OTP has been sent to you.',
+          variant: 'destructive',
+        })
+        // Resend OTP
+        resendOtp(email);
+
+        // Open modal
+        showOtpModal(email);
+
+      } else {
+        toast({
+          title: 'Sign in failed',
+          description: error.message,
+          variant: 'destructive',
+        });
+      }
     } else {
       toast({
         title: 'Welcome back!',
