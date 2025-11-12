@@ -195,10 +195,10 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
   if (initialLoading) {
     return (
       <div className="space-y-6">
-        <div className="bg-gradient-to-r from-primary to-primary/80 rounded-lg p-6 text-white">
-          <div className="flex justify-between items-start mb-4">
+        <div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
+          <div className="mb-4 flex items-start justify-between">
             <div>
-              <h2 className="text-2xl font-bold mb-2">
+              <h2 className="mb-2 text-2xl font-bold">
                 Welcome to BuildLink Kenya
               </h2>
               <p className="text-primary-foreground/90">
@@ -211,7 +211,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
             <div className="text-center">
               <div className="text-2xl font-bold">
                 {isLoadingStats ? (
-                  <div className="h-8 w-24 mx-auto bg-white/20 rounded animate-pulse" />
+                  <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
                 ) : (
                   statsData?.data?.professionalsCount?.toLocaleString() ?? "0" // Fixed: added toLocaleString
                 )}
@@ -223,7 +223,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
             <div className="text-center">
               <div className="text-2xl font-bold">
                 {isLoadingStats ? (
-                  <div className="h-8 w-24 mx-auto bg-white/20 rounded animate-pulse" />
+                  <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
                 ) : (
                   statsData?.data?.companiesCount?.toLocaleString() ?? "0" // Fixed: added toLocaleString
                 )}
@@ -243,10 +243,10 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
   return (
     <div className="space-y-6">
       {/* Stats Banner */}
-      <div className="bg-gradient-to-r from-primary to-primary/80 rounded-lg p-6 text-white">
-        <div className="flex justify-between items-start mb-4">
+      <div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
+        <div className="mb-4 flex items-start justify-between">
           <div>
-            <h2 className="text-2xl font-bold mb-2">
+            <h2 className="mb-2 text-2xl font-bold">
               Welcome to BuildLink Kenya
             </h2>
             <p className="text-primary-foreground/90">
@@ -259,7 +259,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
           <div className="text-center">
             <div className="text-2xl font-bold">
               {isLoadingStats ? (
-                <div className="h-8 w-24 mx-auto bg-white/20 rounded animate-pulse" />
+                <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
               ) : (
                 statsData?.data?.professionalsCount?.toLocaleString() ?? "0"
               )}
@@ -271,7 +271,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
           <div className="text-center">
             <div className="text-2xl font-bold">
               {isLoadingStats ? (
-                <div className="h-8 w-24 mx-auto bg-white/20 rounded animate-pulse" />
+                <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
               ) : (
                 statsData?.data?.companiesCount?.toLocaleString() ?? "0"
               )}
@@ -283,21 +283,21 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 
       {/* Notifications Panel */}
       {showNotifications && user && (
-        <div className="bg-white rounded-lg border p-6">
+        <div className="rounded-lg border bg-white p-6">
           <NotificationsList />
         </div>
       )}
 
       {/* Create Post Section */}
       {user && (
-        <div className="bg-white rounded-lg border p-4">
+        <div className="rounded-lg border bg-white p-4">
           <CreatePostDialog onPostCreated={handleCreatePost} />
         </div>
       )}
 
       {/* Filter Results Info */}
       {activeFilter !== "latest" && (
-        <div className="bg-white rounded-lg p-4 border">
+        <div className="rounded-lg border bg-white p-4">
           <p className="text-sm text-gray-600">
             Showing {posts.length} {activeFilter} posts
           </p>
@@ -328,7 +328,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
                 {postsLoading ? (
                   <SkeletonPostCard />
                 ) : (
-                  <div className="text-muted-foreground text-sm">
+                  <div className="text-sm text-muted-foreground">
                     Loading more posts...
                   </div>
                 )}
@@ -336,9 +336,9 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
             )}
 
             {!hasMore && posts.length > 0 && (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="py-8 text-center text-muted-foreground">
                 <p className="text-sm">You've reached the end! 🎉</p>
-                <p className="text-xs mt-1">Check back later for new posts</p>
+                <p className="mt-1 text-xs">Check back later for new posts</p>
               </div>
             )}
           </>
