@@ -54,11 +54,13 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
     });
   };
 
+
+    
   return (
     <>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>{children}</DialogTrigger>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-hidden">
+        <DialogContent className="max-h-[90vh] overflow-hidden sm:max-w-[600px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -76,7 +78,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
-            <div className="mt-4 overflow-y-auto max-h-[60vh]">
+            <div className="mt-4 max-h-[60vh] overflow-y-auto">
               <TabsContent value="profile" className="space-y-4">
                 <Card>
                   <CardHeader>
@@ -226,7 +228,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
               </TabsContent>
             </div>
 
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex justify-end gap-2 border-t pt-4">
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Cancel
               </Button>

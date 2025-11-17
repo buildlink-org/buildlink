@@ -47,8 +47,8 @@ const AccountTypeFeatures = ({ userType, className = '' }: AccountTypeFeaturesPr
     switch (type.toLowerCase()) {
       case 'student':
         return '🎓 Student Account Features';
-      case 'graduate':
-        return '🧑‍🎓 Graduate Account Features';
+      // case 'graduate':
+      //   return '🧑‍🎓 Graduate Account Features';
       case 'professional':
         return '🏗️ Professional Account Features';
       case 'company':

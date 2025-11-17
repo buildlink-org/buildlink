@@ -16,13 +16,13 @@ const AccountTypeBadge = ({ userType, className = '' }: AccountTypeBadgeProps) =
           variant: 'default' as const,
           description: '🎓 Emerging talent, learning & seeking opportunities'
         };
-      case 'graduate':
-        return {
-          icon: User,
-          label: 'Graduate',
-          variant: 'secondary' as const,
-          description: '🧑‍🎓 Fresh graduate, early-career stage'
-        };
+      // case 'graduate':
+      //   return {
+      //     icon: User,
+      //     label: 'Graduate',
+      //     variant: 'secondary' as const,
+      //     description: '🧑‍🎓 Fresh graduate, early-career stage'
+      //   };
       case 'professional':
         return {
           icon: Users,

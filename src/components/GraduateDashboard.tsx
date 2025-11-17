@@ -1,13 +1,11 @@
+import { UserProfile } from "@/types"
+
 interface GraduateDashboardProps {
-  profile: any;
+	profile: UserProfile
 }
 
 const GraduateDashboard = ({ profile }: GraduateDashboardProps) => {
-  return (
-    <div className="space-y-6">
+	return <div className="space-y-6"></div>
+}
 
-    </div>
-  );
-};
-
-export default GraduateDashboard;
+export default GraduateDashboard

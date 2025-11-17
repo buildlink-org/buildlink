@@ -1,13 +1,11 @@
+import { UserProfile } from "@/types"
+
 interface ProfessionalDashboardProps {
-  profile: any;
+	profile: UserProfile
 }
 
 const ProfessionalDashboard = ({ profile }: ProfessionalDashboardProps) => {
-  return (
-    <div className="space-y-6">
-  
-    </div>
-  );
-};
+	return <div className="space-y-6"></div>
+}
 
-export default ProfessionalDashboard;
+export default ProfessionalDashboard
