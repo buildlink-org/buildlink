@@ -22,7 +22,7 @@ export const signUpSchema = z.object({
     .trim()
     .min(2, { message: "Name must be at least 2 characters" })
     .max(100, { message: "Name must be less than 100 characters" }),
-  userType: z.enum(['student', 'graduate', 'professional', 'company']),
+  userType: z.enum(['student', 'professional', 'company']),
   profession: z.string().min(1, { message: "Profession is required" }),
 });
 

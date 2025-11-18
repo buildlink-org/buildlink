@@ -22,16 +22,16 @@ const ProfileBoard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (!profile) {
     return (
-      <div className="text-center py-12">
-        <h3 className="text-lg font-semibold text-gray-600 mb-2">
+      <div className="py-12 text-center">
+        <h3 className="mb-2 text-lg font-semibold text-gray-600">
           Profile not found
         </h3>
         <p className="text-gray-500">Unable to load profile data</p>
@@ -39,8 +39,10 @@ const ProfileBoard = () => {
     );
   }
 
+  
+
   return (
-    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
+    <div className="space-y-4 p-6 md:space-y-6 md:px-0">
       <ProfileHeader
         profile={profile}
         uploading={uploading}
@@ -50,7 +52,7 @@ const ProfileBoard = () => {
         handleProfileUpdate={handleProfileUpdate}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
         <Card className="md:col-span-1">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -60,7 +62,7 @@ const ProfileBoard = () => {
                   {profile.portfolio?.length || 0}
                 </p>
               </div>
-              <BookOpen className="w-8 h-8 text-green-500" />
+              <BookOpen className="h-8 w-8 text-green-500" />
             </div>
           </CardContent>
         </Card>
@@ -72,7 +74,7 @@ const ProfileBoard = () => {
                 <p className="text-sm text-muted-foreground">Connections</p>
                 <p className="text-4xl font-bold">0</p>
               </div>
-              <Users className="w-8 h-8 text-purple-500" />
+              <Users className="h-8 w-8 text-purple-500" />
             </div>
           </CardContent>
         </Card>
@@ -91,7 +93,9 @@ const ProfileBoard = () => {
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         postsCount={userPosts.length}
+        profile={profile}
       />
+      
       <div className="px-2 md:px-0">
         {activeTab === "about" ? (
           <ProfileAbout

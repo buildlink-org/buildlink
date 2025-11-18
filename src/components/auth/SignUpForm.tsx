@@ -124,7 +124,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="student">Student</SelectItem>
-                <SelectItem value="graduate">Graduate</SelectItem>
+                {/* <SelectItem value="graduate">Graduate</SelectItem> */}
                 <SelectItem value="professional">Professional</SelectItem>
                 <SelectItem value="company">Company</SelectItem>
               </SelectContent>

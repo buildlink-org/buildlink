@@ -1,222 +1,336 @@
-import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  MessageCircle,
-  UserPlus,
-  MapPin,
-  Briefcase,
-  GraduationCap,
-  Eye,
-} from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
-import { publicProfileService } from "@/services/publicProfileService";
-import { useToast } from "@/hooks/use-toast";
-import ProfileCompletionIndicator from "./ProfileCompletionIndicator";
-import SocialMediaLinks from "./SocialMediaLinks";
-import VerificationBadges from "./VerificationBadges";
+import React, { useState, useEffect } from "react"
+import { useParams } from "react-router-dom"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { MessageCircle, UserPlus, Briefcase, GraduationCap } from "lucide-react"
+import { useAuth } from "@/contexts/AuthContext"
+import { publicProfileService } from "@/services/publicProfileService"
+import { useToast } from "@/hooks/use-toast"
+import SocialMediaLinks from "./SocialMediaLinks"
+import { profileService } from "@/services/profileService"
+import { Education, UserProfile } from "@/types"
 
 const PublicProfileView: React.FC = () => {
-  const { profileId } = useParams<{ profileId: string }>();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [viewRecorded, setViewRecorded] = useState(false);
+	const { profileId } = useParams<{ profileId: string }>()
+	const { user } = useAuth()
+	const { toast } = useToast()
+	const [profile, setProfile] = useState<UserProfile | null>()
+	const [loading, setLoading] = useState(true)
+	const [viewRecorded, setViewRecorded] = useState(false)
 
-  useEffect(() => {
-    if (profileId) {
-      loadProfile();
-    }
-  }, [profileId]);
+	const student = profile?.user_type === "student"
+	const professional = profile?.user_type === "professional"
+	const company = profile?.user_type === "company"
 
-  const loadProfile = async () => {
-    if (!profileId) return;
+	useEffect(() => {
+		if (profileId) {
+			if (user.id === profileId) loadCurrentUser()
+			else loadPublicProfile()
+		}
+	}, [profileId])
 
-    try {
-      const { data, error } = await publicProfileService.getPublicProfile(
-        profileId
-      );
+	const loadPublicProfile = async () => {
+		if (!profileId) return
 
-      if (error) {
-        toast({
-          title: "Error",
-          description: "Failed to load profile or profile is not public",
-          variant: "destructive",
-        });
-        return;
-      }
+		try {
+			const { data, error } = await publicProfileService.getPublicProfile(profileId)
 
-      setProfile(data);
+			if (error) {
+				toast({
+					title: "Error",
+					description: "Failed to load profile or profile is not public",
+					variant: "destructive",
+				})
+				return
+			}
 
-      // Record profile view if not own profile and not already recorded
-      if (user && user.id !== profileId && !viewRecorded) {
-        await publicProfileService.recordProfileView(profileId);
-        setViewRecorded(true);
-      }
-    } catch (error) {
-      console.error("Error loading public profile:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+			setProfile(data)
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+			// Record profile view if not own profile and not already recorded
+			if (user && user.id !== profileId && !viewRecorded) {
+				await publicProfileService.recordProfileView(profileId)
+				setViewRecorded(true)
+			}
+		} catch (error) {
+			console.error("Error loading public profile:", error)
+		} finally {
+			setLoading(false)
+		}
+	}
 
-  if (!profile) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <h3 className="text-lg font-semibold mb-2">Profile Not Found</h3>
-          <p className="text-muted-foreground">
-            This profile doesn't exist or is not public.
-          </p>
-        </CardContent>
-      </Card>
-    );
-  }
+	const loadCurrentUser = async () => {
+		if (!user.id) return
 
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      {/* Profile Header */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-6">
-            <div className="flex-shrink-0">
-              <Avatar className="h-24 w-24 md:h-24 md:w-24">
-                <AvatarImage src={profile.avatar} />
-                <AvatarFallback className="text-2xl">
-                  {profile.full_name?.charAt(0) || "U"}
-                </AvatarFallback>
-              </Avatar>
-            </div>
+		try {
+			const { data, error } = await profileService.getProfile(user.id)
 
-            <div className="flex-1 space-y-4">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <h1 className="text-2xl font-bold">{profile.full_name}</h1>
-                  <VerificationBadges
-                    badges={profile.verification_badges || []}
-                  />
-                </div>
+			if (error) {
+				toast({
+					title: "Error",
+					description: "Failed to load profile or user does not exist",
+					variant: "destructive",
+				})
+				return
+			}
 
-                {profile.profession && (
-                  <div className="flex items-center text-muted-foreground mb-1">
-                    <Briefcase className="h-4 w-4 mr-2" />
-                    <span>{profile.profession}</span>
-                    {profile.organization && (
-                      <span className="ml-2">at {profile.organization}</span>
-                    )}
-                  </div>
-                )}
+			setProfile(data)
+		} catch (error) {
+			console.error("Error loading public profile:", error)
+		} finally {
+			setLoading(false)
+		}
+	}
 
-                {profile.title && (
-                  <div className="flex items-center text-muted-foreground mb-1">
-                    <GraduationCap className="h-4 w-4 mr-2" />
-                    <span>{profile.title}</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
+	if (loading) {
+		return (
+			<div className="flex h-64 items-center justify-center">
+				<div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
+			</div>
+		)
+	}
+	console.log(profile)
 
-          {profile.bio && (
-            <p className="text-muted-foreground mt-4">{profile.bio}</p>
-          )}
+	if (!profile) {
+		return (
+			<Card>
+				<CardContent className="p-8 text-center">
+					<h3 className="mb-2 text-lg font-semibold">Profile Not Found</h3>
+					<p className="text-muted-foreground">This profile doesn't exist or is not public.</p>
+				</CardContent>
+			</Card>
+		)
+	}
 
-          <SocialMediaLinks links={profile.social_links || {}} />
+	return (
+		<div className="mx-auto max-w-4xl space-y-6">
+			{/* Profile Header */}
+			<Card>
+				<CardContent className="p-6">
+					<div className="flex flex-col gap-6 md:flex-row">
+						<div className="flex-shrink-0">
+							<Avatar className="h-24 w-24 md:h-24 md:w-24">
+								<AvatarImage src={profile.avatar} />
+								<AvatarFallback className="text-2xl">{profile.full_name?.charAt(0).toUpperCase() || "U"}</AvatarFallback>
+							</Avatar>
+						</div>
 
-          {user && user.id !== profile.id && (
-            <div className="flex gap-2 mt-4">
-              <Button>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Connect
-              </Button>
-              <Button variant="outline">
-                <MessageCircle className="h-4 w-4 mr-2" />
-                Message
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+						<div className="flex-1 space-y-4">
+							<div>
+								<div className="mb-2 flex items-center gap-2">
+									<h1 className="text-2xl font-bold">{profile.full_name}</h1>
+									{/* <VerificationBadges badges={verification_badges } /> */}
+								</div>
 
-      {/* Skills Section */}
-      {profile.skills && profile.skills.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Skills</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              {profile.skills.map((skill: string, index: number) => (
-                <Badge key={index} variant="secondary">
-                  {skill}
-                </Badge>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+								<div className="mb-1 flex items-center text-muted-foreground">
+									<Briefcase className="mr-2 h-4 w-4" />
+									<span>{profile.profession || "(profession: Not set)"}</span>
+									<span className="ml-2">at {profile.organization || "(Org : Not set)"}</span>
+								</div>
 
-      {/* Experience Section */}
-      {profile.experiences && profile.experiences.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Experience</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {profile.experiences.map((exp: any, index: number) => (
-              <div key={index} className="border-l-2 border-muted pl-4">
-                <h3 className="font-semibold">{exp.title}</h3>
-                <p className="text-sm text-muted-foreground">{exp.company}</p>
-                <p className="text-xs text-muted-foreground">
-                  {exp.startDate} - {exp.endDate || "Present"}
-                </p>
-                {exp.description && (
-                  <p className="text-sm mt-2">{exp.description}</p>
-                )}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
+								{/* {profile.title && ( */}
+								<div className="mb-1 flex items-center text-muted-foreground">
+									<GraduationCap className="mr-2 h-4 w-4" />
+									<span>{profile.title || "(title : Not set)"}</span>
+								</div>
+								{/* )} */}
+							</div>
+						</div>
+					</div>
 
-      {/* Education Section */}
-      {profile.education && profile.education.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Education</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {profile.education.map((edu: any, index: number) => (
-              <div key={index} className="border-l-2 border-muted pl-4">
-                <h3 className="font-semibold">{edu.degree}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {edu.institution}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {edu.startDate} - {edu.endDate || "Present"}
-                </p>
-                {edu.description && (
-                  <p className="text-sm mt-2">{edu.description}</p>
-                )}
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-    </div>
-  );
-};
+					<p className="mt-4 text-muted-foreground">{profile.bio || "No Bio Provided"}</p>
 
-export default PublicProfileView;
+					<SocialMediaLinks links={profile.social_links || {}} />
+
+					{user && user.id !== profile.id && (
+						<div className="mt-4 flex gap-2">
+							<Button>
+								<UserPlus className="mr-2 h-4 w-4" />
+								Connect
+							</Button>
+							<Button variant="outline">
+								<MessageCircle className="mr-2 h-4 w-4" />
+								Message
+							</Button>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Skills Section */}
+			{professional && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Skills</CardTitle>
+					</CardHeader>
+					{profile.skills && profile.skills.length > 0 && (
+						<CardContent>
+							<div className="flex flex-wrap gap-2">
+								{profile.skills.map((skill: string, index: number) => (
+									<Badge
+										key={index}
+										variant="secondary">
+										{skill}
+									</Badge>
+								))}
+							</div>
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Education Section */}
+			{(student || professional) && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Education & Training</CardTitle>
+					</CardHeader>
+					{profile.education && profile.education.length > 0 && (
+						<CardContent className="space-y-4">
+							{profile.education.map(({ degree, institution, description, endDate, startDate }: Education, index: number) => (
+								<div
+									key={index}
+									className="border-l-2 border-muted pl-4">
+									<h3 className="font-semibold">{degree}</h3>
+									<p className="text-sm text-muted-foreground">{institution}</p>
+									<p className="text-xs text-muted-foreground">
+										{startDate} - {endDate || "Present"}
+									</p>
+									{description && <p className="mt-2 text-sm">{description}</p>}
+								</div>
+							))}
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Experience Section */}
+			{(student || professional) && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Professional Experience</CardTitle>
+					</CardHeader>
+					{profile.experiences && profile.experiences.length > 0 && (
+						<CardContent className="space-y-4">
+							{profile.experiences.map((exp: any, index: number) => (
+								<div
+									key={index}
+									className="border-l-2 border-muted pl-4">
+									<h3 className="font-semibold">{exp.title}</h3>
+									<p className="text-sm text-muted-foreground">{exp.company}</p>
+									<p className="text-xs text-muted-foreground">
+										{exp.startDate} - {exp.endDate || "Present"}
+									</p>
+									{exp.description && <p className="mt-2 text-sm">{exp.description}</p>}
+								</div>
+							))}
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Certification Section */}
+			{professional && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Certifications</CardTitle>
+					</CardHeader>
+					{profile.Certification && profile.Certification.length > 0 && (
+						<CardContent className="space-y-4">
+							{profile.education.map((edu: any, index: number) => (
+								<div
+									key={index}
+									className="border-l-2 border-muted pl-4">
+									<h3 className="font-semibold">{edu.degree}</h3>
+									<p className="text-sm text-muted-foreground">{edu.institution}</p>
+									<p className="text-xs text-muted-foreground">
+										{edu.startDate} - {edu.endDate || "Present"}
+									</p>
+									{edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
+								</div>
+							))}
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Jobs/Roles Section */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Roles</CardTitle>
+					</CardHeader>
+					{profile.Certification && profile.Certification.length > 0 && (
+						<CardContent className="space-y-4">
+							{profile.education.map((edu: any, index: number) => (
+								<div
+									key={index}
+									className="border-l-2 border-muted pl-4">
+									<h3 className="font-semibold">{edu.degree}</h3>
+									<p className="text-sm text-muted-foreground">{edu.institution}</p>
+									<p className="text-xs text-muted-foreground">
+										{edu.startDate} - {edu.endDate || "Present"}
+									</p>
+									{edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
+								</div>
+							))}
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Connection Preview */}
+			{(student || professional) && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Connection Preview</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* People Preview */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>People</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* Products/Services */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Products/Services</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* Events */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Events</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* Life/Culture */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Life/Culture</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+		</div>
+	)
+}
+
+export default PublicProfileView
