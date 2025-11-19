@@ -16,7 +16,9 @@ export const secureProfileService = {
         return { data: null, error };
       }
 
-      return { data: data?.[0] || null, error: null };
+      const profile = Array.isArray(data) ? data[0] : null;
+
+      return { data: profile || null, error: null };
     } catch (err) {
       console.error('Exception in getPublicProfile:', err);
       return { data: null, error: err };

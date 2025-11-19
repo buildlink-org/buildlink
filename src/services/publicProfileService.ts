@@ -4,7 +4,12 @@ import { secureProfileService } from "./secureProfileService"
 export const publicProfileService = {
 	async getPublicProfile(profileId: string) {
 		// Use the secure profile service which respects connection-based access
-		return await secureProfileService.getProfileByRelationship(profileId)
+		// return await secureProfileService.getProfileByRelationship(profileId)
+		const { data, error } = await supabase.rpc("get_public_profile_info", {
+			user_id_param: profileId,
+		  })
+		  
+		  return { data: data?.[0] ?? null, error }
 	},
 
 	async recordProfileView(viewedProfileId: string) {
