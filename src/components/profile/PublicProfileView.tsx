@@ -11,6 +11,9 @@ import { useToast } from "@/hooks/use-toast"
 import SocialMediaLinks from "./SocialMediaLinks"
 import { profileService } from "@/services/profileService"
 import { Education, UserProfile } from "@/types"
+import { connectionsService } from "@/services/connectionsService"   // Added
+
+type ConnectionStatus = "not_connected" | "pending" | "connected" | "self" // Added type
 
 const PublicProfileView: React.FC = () => {
 	const { profileId } = useParams<{ profileId: string }>()
@@ -19,6 +22,8 @@ const PublicProfileView: React.FC = () => {
 	const [profile, setProfile] = useState<UserProfile | null>()
 	const [loading, setLoading] = useState(true)
 	const [viewRecorded, setViewRecorded] = useState(false)
+	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected") // Added state
+
 
 	const student = profile?.user_type === "student"
 	const professional = profile?.user_type === "professional"
@@ -35,7 +40,7 @@ const PublicProfileView: React.FC = () => {
 		if (!profileId) return
 
 		try {
-			const { data, error } = await publicProfileService.getPublicProfile(profileId)
+			const { data, error } = await publicProfileService.getPublicProfile(profileId, user?.id)
 
 			if (error) {
 				toast({
@@ -81,6 +86,75 @@ const PublicProfileView: React.FC = () => {
 		} finally {
 			setLoading(false)
 		}
+	}
+
+	useEffect(() => {
+		const fetchConnectionStatus = async () => {
+			if (!user?.id || !profileId || user.id === profileId) {
+				setConnectionStatus(user?.id === profileId ? "self" : "not_connected")
+				return
+			}
+
+			const { data, error } = await connectionsService.getConnectionStatus(user.id, profileId)
+
+			if (error) {
+				console.error("Error fetching connection status:", error)
+				setConnectionStatus("not_connected")
+				return
+			}
+
+			if (data) {
+				if (data.status === "pending" && data.user_id === user.id) {
+					setConnectionStatus("pending") // Current user sent request
+				} else if (data.status === "pending" && data.connected_user_id === user.id) {
+					setConnectionStatus("not_connected") // Other user sent request, current user can accept
+				} else if (data.status === "accepted") {
+					setConnectionStatus("connected")
+				}
+			} else {
+				setConnectionStatus("not_connected")
+			}
+		}
+
+		fetchConnectionStatus()
+	}, [user, profileId])
+
+	const handleConnect = async () => {
+		if (!user?.id || !profileId) {
+			toast({
+				title: "Error",
+				description: "You must be logged in to send connection requests.",
+				variant: "destructive",
+			})
+			return
+		}
+
+		if (connectionStatus === "pending" || connectionStatus === "connected") {
+			toast({
+				title: "Info",
+				description: "Connection request already sent or already connected.",
+				variant: "default",
+			})
+			return
+		}
+
+		const { error } = await connectionsService.connect(user.id, profileId)
+
+		if (error) {
+			toast({
+				title: "Error",
+				description: "Failed to send connection request.",
+				variant: "destructive",
+			})
+			console.error("Error sending connection request:", error)
+			return
+		}
+
+		setConnectionStatus("pending")
+		toast({
+			title: "Success",
+			description: "Connection request sent!",
+		})
 	}
 
 	if (loading) {
@@ -143,11 +217,17 @@ const PublicProfileView: React.FC = () => {
 
 					<SocialMediaLinks links={profile.social_links || {}} />
 
-					{user && user.id !== profile.id && (
+					{user && connectionStatus !== "self" && (
 						<div className="mt-4 flex gap-2">
-							<Button>
+							<Button
+								onClick={handleConnect}
+								disabled={connectionStatus === "pending" || connectionStatus === "connected"}>
 								<UserPlus className="mr-2 h-4 w-4" />
-								Connect
+								{connectionStatus === "pending"
+									? "Pending"
+									: connectionStatus === "connected"
+									? "Connected"
+									: "Connect"}
 							</Button>
 							<Button variant="outline">
 								<MessageCircle className="mr-2 h-4 w-4" />
