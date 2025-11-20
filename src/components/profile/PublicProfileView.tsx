@@ -211,11 +211,12 @@ const PublicProfileView: React.FC = () => {
 			  variant="outline"
 			  onClick={() => {
 				if (connectionStatus !== "connected") {
-				  toast({ title: "Error", description: "Connect first to send messages", variant: "destructive" });
+				  toast({ title: "Info", description: "Connect first to send messages", variant: "default" });
 				  return;
 				}
 			
-				// add here: open chat modal
+				// add here: open chat window/modal/function
+				toast({ title: "Info", description: "Messaging coming soon!", variant: "default" });
 			  }}
 			  className={connectionStatus !== "connected" && "opacity-50 cursor-not-allowed"}
 			  title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
