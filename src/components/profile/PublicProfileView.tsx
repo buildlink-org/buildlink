@@ -209,7 +209,17 @@ const PublicProfileView: React.FC = () => {
 		const messageButton = (
 			<Button 
 			  variant="outline"
-			  disabled={connectionStatus !== "connected"}
+			  onClick={() => {
+				if (connectionStatus !== "connected") {
+				  toast({ title: "Error", description: "Connect first to send messages", variant: "destructive" });
+				  return;
+				}
+			
+				// add here: open chat modal
+			  }}
+			  className={connectionStatus !== "connected" && "opacity-50 cursor-not-allowed"}
+			  title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
+			//   disabled={connectionStatus !== "connected"}
 			>
 			  <MessageCircle className="mr-2 h-4 w-4" />
 			  Message
