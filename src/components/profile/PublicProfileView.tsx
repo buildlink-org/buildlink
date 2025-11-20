@@ -205,20 +205,35 @@ const PublicProfileView: React.FC = () => {
 	  // Render buttons (simplified)
 	  const renderConnectButtons = () => {
 		if (!user || connectionStatus === "self") return null;
+
+		const messageButton = (
+			<Button 
+			  variant="outline"
+			  disabled={connectionStatus !== "connected"}
+			>
+			  <MessageCircle className="mr-2 h-4 w-4" />
+			  Message
+			</Button>
+		  );
+		
 	
 		if (connectionStatus === "connected") {
 		  return (
-			<Button variant="outline" disabled>
-			  Connected
-			</Button>
+			<>
+				<Button variant="outline" disabled>
+			  		Connected
+				</Button>
+		        {messageButton}
+			</>
 		  );
 		}
 	
 		if (connectionStatus === "pending_outgoing") {
 		  return (
-			<Button disabled>
-			  Pending
-			</Button>
+			<>
+			   <Button disabled>Pending</Button>
+			   {messageButton}
+		    </>
 		  );
 		}
 	
@@ -229,9 +244,7 @@ const PublicProfileView: React.FC = () => {
 			  <Button onClick={handleAccept}>
 				Accept
 			  </Button>
-			  <Button variant="outline">
-				Message
-			  </Button>
+			  {messageButton}
 			</>
 		  );
 		}
@@ -242,10 +255,7 @@ const PublicProfileView: React.FC = () => {
 			<UserPlus className="mr-2 h-4 w-4" />
 			Connect
 		  </Button>
-		  <Button variant="outline">
-			<MessageCircle className="mr-2 h-4 w-4" />
-			Message
-		  </Button>
+		  {messageButton}
 		</>
 	  );
 	};
