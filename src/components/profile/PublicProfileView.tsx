@@ -13,7 +13,12 @@ import { profileService } from "@/services/profileService"
 import { Education, UserProfile } from "@/types"
 import { connectionsService } from "@/services/connectionsService"   // Added
 
-type ConnectionStatus = "not_connected" | "pending" | "connected" | "self" // Added type
+type ConnectionStatus = 
+| "not_connected"
+| "pending_outgoing"   // current user sent request
+| "pending_incoming"   // other user sent request (you can accept)
+| "connected"
+| "self"; 
 
 const PublicProfileView: React.FC = () => {
 	const { profileId } = useParams<{ profileId: string }>()
@@ -22,8 +27,9 @@ const PublicProfileView: React.FC = () => {
 	const [profile, setProfile] = useState<UserProfile | null>()
 	const [loading, setLoading] = useState(true)
 	const [viewRecorded, setViewRecorded] = useState(false)
-	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected") // Added state
-
+	const [connectionRow, setConnectionRow] = useState<any | null>(null);
+	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected");
+  
 
 	const student = profile?.user_type === "student"
 	const professional = profile?.user_type === "professional"
@@ -90,30 +96,49 @@ const PublicProfileView: React.FC = () => {
 
 	useEffect(() => {
 		const fetchConnectionStatus = async () => {
-			if (!user?.id || !profileId || user.id === profileId) {
-				setConnectionStatus(user?.id === profileId ? "self" : "not_connected")
-				return
-			}
+			if (!user?.id || !profileId) {
+				setConnectionStatus("not_connected");
+				setConnectionRow(null);
+				return;
+			  }
+		
+			  if (user.id === profileId) {
+				setConnectionStatus("self");
+				setConnectionRow(null);
+				return;
+			  }
 
 			const { data, error } = await connectionsService.getConnectionStatus(user.id, profileId)
 
 			if (error) {
 				console.error("Error fetching connection status:", error)
 				setConnectionStatus("not_connected")
+				setConnectionRow(null);
 				return
 			}
 
-			if (data) {
-				if (data.status === "pending" && data.user_id === user.id) {
-					setConnectionStatus("pending") // Current user sent request
-				} else if (data.status === "pending" && data.connected_user_id === user.id) {
-					setConnectionStatus("not_connected") // Other user sent request, current user can accept
-				} else if (data.status === "accepted") {
-					setConnectionStatus("connected")
+			if (!data) {
+				setConnectionStatus("not_connected");
+				setConnectionRow(null);
+				return;
+			  }
+		
+			  // If a row exists, check status and who initiated
+			  setConnectionRow(data);
+		
+			  if (data.status === "accepted") {
+				setConnectionStatus("connected");
+			  } else if (data.status === "pending") {
+				if (data.user_id === user.id) {
+				  setConnectionStatus("pending_outgoing"); // we sent it
+				} else if (data.connected_user_id === user.id) {
+				  setConnectionStatus("pending_incoming"); // they sent it -> can accept
+				} else {
+				  setConnectionStatus("not_connected");
 				}
-			} else {
-				setConnectionStatus("not_connected")
-			}
+			  } else {
+				setConnectionStatus("not_connected");
+			  }
 		}
 
 		fetchConnectionStatus()
@@ -129,7 +154,7 @@ const PublicProfileView: React.FC = () => {
 			return
 		}
 
-		if (connectionStatus === "pending" || connectionStatus === "connected") {
+		if (connectionStatus === "pending_outgoing" || connectionStatus === "connected") {
 			toast({
 				title: "Info",
 				description: "Connection request already sent or already connected.",
@@ -138,7 +163,7 @@ const PublicProfileView: React.FC = () => {
 			return
 		}
 
-		const { error } = await connectionsService.connect(user.id, profileId)
+		const { data, error } = await connectionsService.connect(user.id, profileId)
 
 		if (error) {
 			toast({
@@ -150,12 +175,82 @@ const PublicProfileView: React.FC = () => {
 			return
 		}
 
-		setConnectionStatus("pending")
+		setConnectionRow(data);
+		setConnectionStatus("pending_outgoing")
 		toast({
 			title: "Success",
 			description: "Connection request sent!",
 		})
 	}
+
+	const handleAccept = async () => {
+		if (!connectionRow?.id) {
+		  toast({ title: "Error", description: "No connection request to accept.", variant: "destructive" });
+		  return;
+		}
+	
+		const { data, error } = await connectionsService.acceptRequest(connectionRow.id);
+		if (error) {
+		  console.error("Error accepting request:", error);
+		  toast({ title: "Error", description: "Failed to accept request.", variant: "destructive" });
+		  return;
+		}
+	
+		// update UI
+		setConnectionRow(data);
+		setConnectionStatus("connected");
+		toast({ title: "Success", description: "Connection accepted." });
+	  };
+	
+	  // Render buttons (simplified)
+	  const renderConnectButtons = () => {
+		if (!user || connectionStatus === "self") return null;
+	
+		if (connectionStatus === "connected") {
+		  return (
+			<Button variant="outline" disabled>
+			  Connected
+			</Button>
+		  );
+		}
+	
+		if (connectionStatus === "pending_outgoing") {
+		  return (
+			<Button disabled>
+			  Pending
+			</Button>
+		  );
+		}
+	
+		if (connectionStatus === "pending_incoming") {
+		  // show Accept button and optionally a decline button (not implemented here)
+		  return (
+			<>
+			  <Button onClick={handleAccept}>
+				Accept
+			  </Button>
+			  <Button variant="outline">
+				Message
+			  </Button>
+			</>
+		  );
+		}
+	 // default: not connected
+	 return (
+		<>
+		  <Button onClick={handleConnect}>
+			<UserPlus className="mr-2 h-4 w-4" />
+			Connect
+		  </Button>
+		  <Button variant="outline">
+			<MessageCircle className="mr-2 h-4 w-4" />
+			Message
+		  </Button>
+		</>
+	  );
+	};
+  
+
 
 	if (loading) {
 		return (
@@ -219,20 +314,7 @@ const PublicProfileView: React.FC = () => {
 
 					{user && connectionStatus !== "self" && (
 						<div className="mt-4 flex gap-2">
-							<Button
-								onClick={handleConnect}
-								disabled={connectionStatus === "pending" || connectionStatus === "connected"}>
-								<UserPlus className="mr-2 h-4 w-4" />
-								{connectionStatus === "pending"
-									? "Pending"
-									: connectionStatus === "connected"
-									? "Connected"
-									: "Connect"}
-							</Button>
-							<Button variant="outline">
-								<MessageCircle className="mr-2 h-4 w-4" />
-								Message
-							</Button>
+							{renderConnectButtons()}
 						</div>
 					)}
 				</CardContent>
