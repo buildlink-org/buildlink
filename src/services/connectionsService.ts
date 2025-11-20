@@ -5,7 +5,7 @@ export const connectionsService = {
   async connect(userId: string, targetId: string) {
     return await supabase
       .from("connections")
-      .insert({ user_id: userId, connected_user_id: targetId })
+      .insert({ user_id: userId, connected_user_id: targetId, status: "pending",  })
       .select()
       .single();
   },
