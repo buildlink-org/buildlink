@@ -33,7 +33,7 @@ const Header = () => {
             </a>
             <a href="/auth">
             <Button variant="cta" size="sm">
-              Sign Up
+              Log In
             </Button>
             </a>
           </nav>
@@ -63,7 +63,7 @@ const Header = () => {
               <div className="flex flex-col space-y-2 pt-4">
                <a href="/auth">
                 <Button variant="cta" size="sm" className="w-full">
-                  Sign Up
+                  Log In
                 </Button>
                 </a>
               </div>

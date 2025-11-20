@@ -33,7 +33,7 @@ const HeroSection = () => {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12 animate-fade-in-up" style={{ animationDelay: '0.4s' }}>
             <a href="/auth">
               <Button variant="cta" size="lg" className="text-lg px-8 py-6">
-                Sign Up
+                Sign Up For Free
                 <ArrowRight className="ml-2" size={20} />
               </Button>
             </a>
