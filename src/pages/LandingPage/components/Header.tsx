@@ -23,15 +23,6 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {/* <a href="#home" className="text-foreground hover:text-primary transition-colors">
-              Home
-            </a> 
-            <a href="#features" className="text-foreground hover:text-primary transition-colors">
-              Features
-            </a>
-            <a href="#process" className="text-foreground hover:text-primary transition-colors">
-              Process
-            </a> */}
             <HashLink smooth to="/#home" className="text-foreground hover:text-primary transition-colors"> Home</HashLink>
             <HashLink smooth to="/#features" className="text-foreground hover:text-primary transition-colors"> Features</HashLink>
             <HashLink smooth to="/#process" className="text-foreground hover:text-primary transition-colors"> Process</HashLink>
