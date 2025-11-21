@@ -46,15 +46,10 @@ const Header = () => {
         {isMenuOpen && (
           <nav className="md:hidden mt-4 pb-4 border-t">
             <div className="flex flex-col space-y-4 pt-4">
-                <a href="#home" className="text-foreground hover:text-primary transition-colors">
-              Home
-            </a>
-            <a href="#features" className="text-foreground hover:text-primary transition-colors">
-              Features
-            </a>
-            <a href="#process" className="text-foreground hover:text-primary transition-colors">
-              Process
-            </a>
+                <HashLink smooth to="/#home" className="text-foreground hover:text-primary transition-colors"> Home</HashLink>
+                <HashLink smooth to="/#features" className="text-foreground hover:text-primary transition-colors"> Features</HashLink>
+                <HashLink smooth to="/#process" className="text-foreground hover:text-primary transition-colors"> Process</HashLink>
+           
               <div className="flex flex-col space-y-2 pt-4">
                <a href="/auth">
                 <Button variant="cta" size="sm" className="w-full">
