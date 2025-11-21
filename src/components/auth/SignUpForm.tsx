@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { signUpSchema } from '@/lib/validationSchemas';
 import { z } from 'zod';
+import {Eye, EyeOff} from 'lucide-react';
 
 interface SignUpFormProps {
   showOtpModal: (email: string) => void
@@ -17,6 +18,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
   const { signUp } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -107,14 +109,26 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="signup-password">Password</Label>
-            <Input
-              id="signup-password"
-              name="password"
-              type="password"
-              placeholder="Create a password"
-              required
-              minLength={6}
-            />
+              <div className="relative">
+                <Input
+                  id="signup-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Create a password"
+                  required
+                  minLength={6}
+                  className="pr-10"
+                />
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff /> : <Eye/>}
+                  </Button>
+            </div>
           </div>
           <div className="space-y-2">
             <Label htmlFor="signup-usertype">Account Type</Label>

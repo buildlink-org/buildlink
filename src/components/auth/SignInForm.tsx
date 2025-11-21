@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface SignInFormProps {
   showOtpModal: (email: string) => void;
@@ -16,6 +17,8 @@ const SignInForm: React.FC<SignInFormProps> = ({showOtpModal}) => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  // toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -81,13 +84,25 @@ const SignInForm: React.FC<SignInFormProps> = ({showOtpModal}) => {
           </div>
           <div className="space-y-2">
             <Label htmlFor="signin-password">Password</Label>
-            <Input
-              id="signin-password"
-              name="password"
-              type="password"
-              placeholder="Enter your password"
-              required
-            />
+              <div className="relative">
+                <Input
+                  id="signin-password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  required
+                  className="pr-10"
+                />
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff /> : <Eye/>}
+                  </Button>
+            </div>
           </div>
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? 'Signing in...' : 'Sign In'}
