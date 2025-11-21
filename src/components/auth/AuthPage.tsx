@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import SignInForm from "./SignInForm"
 import SignUpForm from "./SignUpForm"
 import OtpVerificationModal from "./OTPVerifyModal"
+import Header from "@/pages/LandingPage/components/Header"
 
 const AuthPage = () => {
 	const { user, loading } = useAuth()
@@ -44,7 +45,9 @@ const AuthPage = () => {
 
 	return (
 		<>
-			<div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
+			<div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-24">
+				{/* header */}
+				<Header />
 				<div className="w-full max-w-md">
 					<Tabs
 						defaultValue="signin"
