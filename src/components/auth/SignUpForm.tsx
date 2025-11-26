@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { signUpSchema } from '@/lib/validationSchemas';
+import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import {Eye, EyeOff, ArrowLeft, ArrowRight} from 'lucide-react';
 
@@ -41,6 +42,16 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
     expertise: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Auto-focus on slide change
+  useEffect(() => {
+    if (step > 0 && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [step]);
+
   // restore form data from local storage
   useEffect(() => {
     const storedForm = localStorage.getItem(STORAGE_KEY);
@@ -59,43 +70,160 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
       ...prevForm,
       [field]: value,
     }));
+     // Clear error for this field when user types
+    if (errors[field]) {
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
   // slide to slide validation
-  const validateStep = () => {
-    switch (step) {
-      case 0:
-        return form.userType.trim() !== "";
-      case 1:
-        return form.email.trim() !== "";
-      case 2:
-        return form.password.length >= 6 && form.confirmPassword === form.password;
-      case 3:
-        return form.fullName.trim().length >= 2;
-      case 4:
-        return form.profession !== "";
-      case 5:
-        if (form.userType === "company") return form.companyName.trim() !== "";
-        return form.educationLevel !== "";
-      case 6:
-        if (form.userType === "company") return form.yearsActive.trim() !== "";
-        return form.skills.trim() !== "";
-      default:
-        return true;
+   const validateCurrentStep = (): boolean => {
+    setErrors({});
+   
+
+    try {
+      switch (step) {
+        case 0: // Account Type
+          if (!form.userType.trim()) {
+            setErrors({ userType: "Please select an account type" });
+            return false;
+          }
+          break;
+
+        case 1: {// Email
+          // baseSchema.shape.email.parse(form.email);
+          const emailValue = form.email.trim();
+          if (!emailValue) {
+          setErrors({ email: "Email is required" });
+          return false;
+         }
+          // Basic email validation regex
+          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          if (!emailRegex.test(emailValue)) {
+            setErrors({ email: "Invalid email address" });
+            return false;
+          }
+          if (emailValue.length > 255) {
+            setErrors({ email: "Email must be less than 255 characters" });
+            return false;
+          }
+        }
+          break;
+
+        case 2: // Password
+            // baseSchema.shape.password.parse(form.password);
+            if (!form.password) {
+              setErrors({ password: "Password is required" });
+              return false;
+            }
+            if (form.password.length < 6) {
+              setErrors({ password: "Password must be at least 6 characters" });
+              return false;
+            }
+            if (form.password.length > 128) {
+              setErrors({ password: "Password must be less than 128 characters" });
+              return false;
+            }
+          break;
+
+        case 3: // Confirm Password
+          if (form.confirmPassword !== form.password) {
+            setErrors({ confirmPassword: "Passwords do not match" });
+            return false;
+          }
+          if (!form.confirmPassword) {
+            setErrors({ confirmPassword: "Please confirm your password" });
+            return false;
+          }
+          break;
+
+        case 4: // Full Name / Company Name
+          if (form.userType === "company") {
+            if (!form.companyName.trim()) {
+              setErrors({ companyName: "Company name is required" });
+              return false;
+            }
+            if (form.companyName.trim().length < 2) {
+              setErrors({ companyName: "Company name must be at least 2 characters" });
+              return false;
+            }
+          } else {
+            if (!form.fullName.trim()) {
+              setErrors({ fullName: "Full name is required" });
+              return false;
+            }
+            if (form.fullName.trim().length < 2) {
+              setErrors({ fullName: "Full name must be at least 2 characters" });
+              return false;
+            }
+          }
+          break;
+
+        case 5: // Profession
+          if (!form.profession) {
+            setErrors({ profession: "Please select a profession" });
+            return false;
+          }
+          break;
+
+        case 6: // Education Level / Years Active
+          if (form.userType === "company") {
+            if (!form.yearsActive.trim()) {
+              setErrors({ yearsActive: "Enter some value" });
+              return false;
+            }
+            if (isNaN(Number(form.yearsActive)) || Number(form.yearsActive) < 0) {
+              setErrors({ yearsActive: "Please enter a valid number" });
+              return false;
+            }
+          } else {
+            if (!form.educationLevel) {
+              setErrors({ educationLevel: "Please select an education level" });
+              return false;
+            }
+          }
+          break;
+
+        case 7: // Skills / Expertise
+          if (form.userType === "company") {
+            if (!form.expertise.trim()) {
+              setErrors({ expertise: "Include at least 1 expertise" });
+              return false;
+            }
+          } else {
+            if (!form.skills.trim()) {
+              setErrors({ skills: "Add at least 1 skill" });
+              return false;
+            }
+          }
+          break;
+
+        default:
+          return true;
+      }
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldError = error.errors[0];
+        const fieldName = fieldError.path[0] as string;
+        setErrors({ [fieldName]: fieldError.message });
+        return false;
+      }
+      return false;
     }
   };
 
   // slide navigation
   const next = () => {
-    if (!validateStep()) {
-      toast({
-        title: "Missing Information",
-        description: "Please complete this step before continuing.",
-        variant: "destructive",
-      });
-      return;
+    if (!validateCurrentStep()) {
+        return;
     }
-    const transition = setTimeout(() => setStep(step + 1), 500);
+    setStep(step + 1)
+    const transition = setTimeout(() => setStep(step + 1), 300);
   };
 
   const back = () => setStep(step - 1);
@@ -104,27 +232,47 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
     if (index <= step) setStep(index);
   };
 
-  const handleSignUp = async (e) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if(!validateCurrentStep()) {
+      return;
+    }
     setIsLoading(true);
 
     try {
-      const supabaseFullName =
-        form.userType === "company" ? form.companyName : form.fullName;
+      const formData = new FormData();
+      formData.append("email", form.email);
+      formData.append("password", form.password);
+      formData.append("fullName", form.userType === "company" ? form.companyName : form.fullName);
+      formData.append("userType", form.userType);
+      formData.append("profession", form.profession);
+
+      const rawData = {
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+        fullName: formData.get("fullName") as string,
+        userType: formData.get("userType") as string,
+        profession: formData.get("profession") as string,
+      };
+
+      const validatedData = signUpSchema.parse(rawData);
 
       const supabaseSkills =
-        form.userType === "company"
+        validatedData.userType === "company"
           ? form.expertise.split(",").map((s) => s.trim())
           : form.skills.split(",").map((s) => s.trim());
+       
 
-      const { error } = await signUp(form.email, form.password, {
-        full_name: supabaseFullName,
-        user_type: form.userType,
-        profession: form.profession,
+      const { data, error } = await signUp(validatedData.email, validatedData.password, {
+        full_name: validatedData.fullName,
+        user_type: validatedData.userType,
+        profession: validatedData.profession,
         education_level: form.educationLevel || null,
         years_active: form.yearsActive || null,
         skills: supabaseSkills,
       });
+   
 
       if (error) {
         toast({
@@ -132,23 +280,49 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
           description: error.message,
           variant: "destructive",
         });
-      } else {
+        return;
+      } else if (data.user?.identities?.length ===0) {
         toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account.",
-        });
-        localStorage.removeItem(STORAGE_KEY);
-        showOtpModal(form.email);
+          title: "Account exists",
+          description: "You are already signed up. Please login",
+          variant: "destructive",
+        }) 
       }
+      else {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account.",
+          });
+        localStorage.removeItem(STORAGE_KEY);
+        showOtpModal(validatedData.email);
+      } 
     } catch (err) {
+        if (err instanceof z.ZodError) {
+      // Zod schema errors
+      toast({
+        title: "Validation Error",
+        description: err.errors[0].message,
+        variant: "destructive",
+      });
+    } else {
       toast({
         title: "Error",
         description: "An unexpected error occurred.",
         variant: "destructive",
       });
     }
+    } finally {
+      setIsLoading(false);
 
-    setIsLoading(false);
+    }
+
+  };
+
+  // Error display component
+  const ErrorMessage = ({ field }: { field: string }) => {
+    return errors[field] ? (
+      <p className="text-sm text-red-500 mt-1">{errors[field]}</p>
+    ) : null;
   };
 
   // slides
@@ -157,31 +331,39 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
     <div key="type">
       <Label>Account Type</Label>
       <Select
+        // ref={step === 1 ? inputRef : null}
         value={form.userType}
         onValueChange={(v) => {
           update("userType", v);
           setStep(1);
         }}
       >
-        <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+        <SelectTrigger className={errors.userType ? "border-red-500" : ""}>
+          <SelectValue placeholder="Select type" />
+        </SelectTrigger>
         <SelectContent>
           <SelectItem value="student">Student</SelectItem>
           <SelectItem value="professional">Professional</SelectItem>
           <SelectItem value="company">Company</SelectItem>
         </SelectContent>
       </Select>
+      <ErrorMessage field="userType" />
     </div>,
 
     // 1 — EMAIL
     <div key="email">
       <Label>Email</Label>
       <Input
+        ref={inputRef}
         type="email"
         value={form.email}
         onChange={(e) => update("email", e.target.value)}
-        placeholder="Enter your email"
+        // change placeholder based on userType
+        placeholder={form.userType === "company" ? "Enter company email" : "Enter your email"}
         onKeyDown={(e) => e.key === "Enter" && next()}
+        className={errors.email ? "border-red-500" : ""}
       />
+      <ErrorMessage field="email" />
     </div>,
 
     // 2 — PASSWORD
@@ -189,11 +371,12 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
       <Label>Password</Label>
       <div className="relative">
         <Input
+          ref={inputRef}
           type={showPassword ? "text" : "password"}
           value={form.password}
           onChange={(e) => update("password", e.target.value)}
           placeholder="Create a password"
-          className="pr-10"
+          className={`pr-10 ${errors.password ? "border-red-500" : ""}`}
           onKeyDown={(e) => e.key === "Enter" && next()}
         />
         <Button
@@ -206,21 +389,40 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
           {showPassword ? <EyeOff /> : <Eye />}
         </Button>
       </div>
-
-      <Label className="mt-4">Confirm Password</Label>
-      <Input
-        type={showPassword ? "text" : "password"}
-        value={form.confirmPassword}
-        onChange={(e) => update("confirmPassword", e.target.value)}
-        placeholder="Confirm password"
-        onKeyDown={(e) => e.key === "Enter" && next()}
-      />
+      <ErrorMessage field="password" />
     </div>,
 
-    // 3 — NAME (OR COMPANY NAME)
+    // 3 - CONFIRM PASSWORD
+    <div key="confirm-password">
+      <Label>Confirm Password</Label>
+      <div className="relative">
+          <Input
+            ref={inputRef}
+            type={showPassword ? "text" : "password"}
+            value={form.confirmPassword}
+            onChange={(e) => update("confirmPassword", e.target.value)}
+            placeholder="Confirm password"
+            onKeyDown={(e) => e.key === "Enter" && next()}
+            className={errors.confirmPassword ? "border-red-500" : ""}
+          />
+          <Button
+          type="button"
+          variant="link"
+          size="sm"
+          className="absolute right-1 top-1/2 -translate-y-1/2"
+          onClick={() => setShowPassword(!showPassword)}
+        >
+          {showPassword ? <EyeOff /> : <Eye />}
+        </Button>
+       </div>
+        <ErrorMessage field="confirmPassword" />
+    </div>,
+
+    // 4 — NAME (OR COMPANY NAME)
     <div key="name">
       <Label>{form.userType === "company" ? "Company Name" : "Full Name"}</Label>
       <Input
+        ref={inputRef}
         value={form.userType === "company" ? form.companyName : form.fullName}
         onChange={(e) =>
           update(form.userType === "company" ? "companyName" : "fullName", e.target.value)
@@ -231,20 +433,25 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
             : "Enter your full name"
         }
         onKeyDown={(e) => e.key === "Enter" && next()}
+        className={errors.fullName || errors.companyName ? "border-red-500" : ""}        
       />
+      <ErrorMessage field={form.userType === "company" ? "companyName" : "fullName"} />
     </div>,
 
-    // 4 — PROFESSION
+    // 5 — PROFESSION
     <div key="profession">
       <Label>Profession</Label>
-      <Select
+      <Select    
         value={form.profession}
         onValueChange={(v) => {
           update("profession", v);
-          next();
+          // next();
+          setStep(6)
         }}
       >
-        <SelectTrigger><SelectValue placeholder="Select profession" /></SelectTrigger>
+        <SelectTrigger className={errors.profession ? "border-red-500" : ""}>
+          <SelectValue placeholder="Select profession" />
+        </SelectTrigger>
         <SelectContent>
           <SelectItem value="architecture">Architecture</SelectItem>
           <SelectItem value="interior-design">Interior Design</SelectItem>
@@ -261,19 +468,24 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
           <SelectItem value="advocacy-awareness">Advocacy & Awareness</SelectItem>
         </SelectContent>
       </Select>
+      <ErrorMessage field="profession" />
     </div>,
 
-    // 5 — EDUCATION LEVEL OR YEARS ACTIVE
+    // 6 — EDUCATION LEVEL OR YEARS ACTIVE
     form.userType === "company"
       ? (
         <div key="years">
           <Label>Years Active</Label>
           <Input
+            ref={inputRef}
+            type='number'
             value={form.yearsActive}
             onChange={(e) => update("yearsActive", e.target.value)}
             placeholder="e.g. 10"
             onKeyDown={(e) => e.key === "Enter" && next()}
+            className={errors.yearsActive ? "border-red-500" : ""}
           />
+          <ErrorMessage field="yearsActive" />
         </div>
       )
       : (
@@ -283,10 +495,13 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
             value={form.educationLevel}
             onValueChange={(v) => {
               update("educationLevel", v);
-              next();
+              // next();
+              setStep(7)
             }}
           >
-            <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+            <SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
+              <SelectValue placeholder="Select level" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="diploma">Diploma</SelectItem>
               <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
@@ -294,31 +509,38 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
               <SelectItem value="phd">PhD</SelectItem>
             </SelectContent>
           </Select>
+          <ErrorMessage field="educationLevel" />
         </div>
       ),
 
-    // 6 — SKILLS OR EXPERTISE
+    // 7 — SKILLS OR EXPERTISE
     form.userType === "company"
       ? (
         <div key="expertise">
           <Label>Expertise (comma separated)</Label>
           <Input
+            ref={inputRef}
             value={form.expertise}
             onChange={(e) => update("expertise", e.target.value)}
             placeholder="e.g. manufacturing, logistics"
             onKeyDown={(e) => e.key === "Enter" && next()}
+            className={errors.expertise ? "border-red-500" : ""}
           />
+          <ErrorMessage field="expertise" />
         </div>
       )
       : (
         <div key="skills">
           <Label>Skills (comma separated)</Label>
           <Input
+            ref={inputRef}
             value={form.skills}
             onChange={(e) => update("skills", e.target.value)}
             placeholder="e.g. AutoCAD, BIM, Revit"
             onKeyDown={(e) => e.key === "Enter" && next()}
+            className={errors.skills ? "border-red-500" : ""}
           />
+          <ErrorMessage field="skills" />
         </div>
       ),
   ];
