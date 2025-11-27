@@ -97,7 +97,7 @@ const ProfileTabs = ({
   return (
     <Card className="border-0 shadow-sm">
       <CardContent className="p-0">
-        <div className="flex border-b overflow-x-auto">
+        <div className="flex border-b overflow-x-auto no-scrollbar">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
 

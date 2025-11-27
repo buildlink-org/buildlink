@@ -8,7 +8,6 @@ import ProfilePortfolio from "../profile/ProfilePortfolio";
 import ProfileEducation from "../profile/ProfileEducation";
 import ProfileExperience from "../profile/ProfileExperience";
 import ProfileSkills from "../profile/ProfileSkills";
-
 import ProfileCertifications from "../profile/ProfileCertifications";
 import ProfileJobs from "../profile/ProfileJobs";
 import ProfilePeople from "../profile/ProfilePeople";
@@ -94,7 +93,7 @@ const ProfileBoard = () => {
   };
 
   return (
-    <div className="space-y-4 p-6 md:space-y-6 md:px-0">
+    <div className="space-y-4 p-6 md:space-y-6 md:px-0 max-w-5xl mx-auto">
       <ProfileHeader
         profile={profile}
         uploading={uploading}
