@@ -3,10 +3,18 @@ import ProfileHeader from "./ProfileHeader";
 import ProfileTabs from "./ProfileTabs";
 import ProfileAbout from "./ProfileAbout";
 import ProfileActivity from "./ProfileActivity";
-import ProfilePortfolio from "./ProfilePortfolio";
-import ProfileExperience from "./ProfileExperience";
-import ProfileSkills from "./ProfileSkills";
-import ProfileCertifications from "./ProfileCertifications";
+
+import ProfilePortfolio from "../profile/ProfilePortfolio";
+import ProfileEducation from "../profile/ProfileEducation";
+import ProfileExperience from "../profile/ProfileExperience";
+import ProfileSkills from "../profile/ProfileSkills";
+
+import ProfileCertifications from "../profile/ProfileCertifications";
+import ProfileJobs from "../profile/ProfileJobs";
+import ProfilePeople from "../profile/ProfilePeople";
+import ProfileProducts from "../profile/ProfileProducts";
+import ProfileEvents from "../profile/ProfileEvents";
+import ProfileCulture from "../profile/ProfileCulture";
 
 import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent } from "@/components/ui/card";
@@ -60,37 +68,26 @@ const ProfileBoard = () => {
 
       case "portfolio":
         return <ProfilePortfolio profile={profile} />;
-
       case "education":
         return <ProfileEducation profile={profile} />;
-
       case "experience":
         return <ProfileExperience profile={profile} />;
-
       case "skills":
         return <ProfileSkills profile={profile} />;
-
       case "certifications":
         return <ProfileCertifications profile={profile} />;
 
-      case "connections":
-        return <div>Connections coming soon...</div>;
-
+      // company sections
       case "jobs":
-        return <div>Company roles coming soon...</div>;
-
+        return <ProfileJobs profile={profile} />;
       case "people":
-        return <div>People section coming soon...</div>;
-
+        return <ProfilePeople profile={profile} />;
       case "products":
-        return <div>Products / Services coming soon...</div>;
-
+        return <ProfileProducts profile={profile} />;
       case "events":
-        return <div>Events coming soon...</div>;
-
+        return <ProfileEvents profile={profile} />;
       case "culture":
-        return <div>Life & Culture coming soon...</div>;
-
+        return <ProfileCulture profile={profile} />;
       default:
         return <div>Section not available</div>;
     }
