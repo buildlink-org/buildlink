@@ -315,7 +315,7 @@ const PublicProfileView: React.FC = () => {
 
 								<div className="mb-1 flex items-center text-muted-foreground">
 									<Briefcase className="mr-2 h-4 w-4" />
-									<span>{profile.profession || "(profession: Not set)"}</span>
+									<span>{profile?.profession || "(profession: Not set)"}</span>
 									<span className="ml-2">at {profile.organization || "(Org : Not set)"}</span>
 								</div>
 
