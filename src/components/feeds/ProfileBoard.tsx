@@ -3,6 +3,18 @@ import ProfileHeader from "./ProfileHeader";
 import ProfileTabs from "./ProfileTabs";
 import ProfileAbout from "./ProfileAbout";
 import ProfileActivity from "./ProfileActivity";
+
+import ProfilePortfolio from "../profile/ProfilePortfolio";
+import ProfileEducation from "../profile/ProfileEducation";
+import ProfileExperience from "../profile/ProfileExperience";
+import ProfileSkills from "../profile/ProfileSkills";
+import ProfileCertifications from "../profile/ProfileCertifications";
+import ProfileJobs from "../profile/ProfileJobs";
+import ProfilePeople from "../profile/ProfilePeople";
+import ProfileProducts from "../profile/ProfileProducts";
+import ProfileEvents from "../profile/ProfileEvents";
+import ProfileCulture from "../profile/ProfileCulture";
+
 import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent } from "@/components/ui/card";
 import ProfileCompletionIndicator from "@/components/profile/ProfileCompletionIndicator";
@@ -39,10 +51,49 @@ const ProfileBoard = () => {
     );
   }
 
-  
+  // Map activeTab to the component to render dynamically
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case "about":
+        return (
+          <ProfileAbout
+            profile={profile}
+            handleProfileUpdate={handleProfileUpdate}
+          />
+        );
+
+      case "activity":
+        return <ProfileActivity userPosts={userPosts} />;
+
+      case "portfolio":
+        return <ProfilePortfolio profile={profile} />;
+      case "education":
+        return <ProfileEducation profile={profile} />;
+      case "experience":
+        return <ProfileExperience profile={profile} />;
+      case "skills":
+        return <ProfileSkills profile={profile} />;
+      case "certifications":
+        return <ProfileCertifications profile={profile} />;
+
+      // company sections
+      case "jobs":
+        return <ProfileJobs profile={profile} />;
+      case "people":
+        return <ProfilePeople profile={profile} />;
+      case "products":
+        return <ProfileProducts profile={profile} />;
+      case "events":
+        return <ProfileEvents profile={profile} />;
+      case "culture":
+        return <ProfileCulture profile={profile} />;
+      default:
+        return <div>Section not available</div>;
+    }
+  };
 
   return (
-    <div className="space-y-4 p-6 md:space-y-6 md:px-0">
+    <div className="space-y-4 p-6 md:space-y-6 md:px-0 max-w-5xl mx-auto">
       <ProfileHeader
         profile={profile}
         uploading={uploading}
@@ -95,8 +146,8 @@ const ProfileBoard = () => {
         postsCount={userPosts.length}
         profile={profile}
       />
-      
-      <div className="px-2 md:px-0">
+
+      {/* <div className="px-2 md:px-0">
         {activeTab === "about" ? (
           <ProfileAbout
             profile={profile}
@@ -105,7 +156,8 @@ const ProfileBoard = () => {
         ) : (
           <ProfileActivity userPosts={userPosts} />
         )}
-      </div>
+      </div> */}
+      <div className="px-2 md:px-0">{renderTabContent()}</div>
     </div>
   );
 };
