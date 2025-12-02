@@ -280,7 +280,7 @@ const PublicProfileView: React.FC = () => {
 			</div>
 		)
 	}
-	console.log(profile)
+	// console.log(profile)
 
 	if (!profile) {
 		return (

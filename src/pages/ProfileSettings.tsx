@@ -68,9 +68,9 @@ const ProfileSettings = () => {
 
     try {
       // Save settings logic
-      await profileService.updateProfile(user.id, {
-        profile_visibility: profileVisibility,
-      });
+      // await profileService.updateProfile(user.id, {
+      //   profile_visibility: profileVisibility,
+      // });
 
       toast({
         title: "Settings Saved",
@@ -124,9 +124,9 @@ const ProfileSettings = () => {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="profile">Profile</TabsTrigger>
-            <TabsTrigger value="privacy">Privacy</TabsTrigger>
+            {/* <TabsTrigger value="privacy">Privacy</TabsTrigger> */}
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
@@ -170,7 +170,7 @@ const ProfileSettings = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="privacy" className="space-y-4">
+          {/* <TabsContent value="privacy" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -208,7 +208,7 @@ const ProfileSettings = () => {
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
+          </TabsContent> */}
 
           <TabsContent value="notifications" className="space-y-4">
             <Card>
