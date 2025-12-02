@@ -105,7 +105,7 @@ export const publicProfileService = {
 				return { data: null, error }
 			}
 
-			return { data: data?.profile_visibility || "private", error: null }
+			return { data: data?.profile_visibility || "public", error: null }
 		} catch (err) {
 			console.error("Exception in getProfileVisibility:", err)
 			return { data: null, error: err }
@@ -113,7 +113,7 @@ export const publicProfileService = {
 	},
 
 	// Update profile visibility (only for own profile)
-	async updateProfileVisibility(visibility: "public" | "private") {
+	async updateProfileVisibility(visibility: "public") {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser()

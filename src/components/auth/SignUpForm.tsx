@@ -662,7 +662,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({showOtpModal}) => {
                 key={i}
                 onClick={() => jumpTo(i)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center cursor-pointer text-sm transition-colors duration-300
-                  ${i === step ? 'bg-primary text-white transition' : i < step ? 'bg-green-500 text-white' : 'bg-muted'}
+                  ${i === step ? 'bg-primary text-white transition' : i < step ? 'bg-green-900 text-white' : 'bg-muted'}
                 `}
               >
                 {i + 1}
