@@ -8,7 +8,7 @@ import { Shield, Eye, EyeOff, Users, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { secureProfileService } from '@/services/secureProfileService';
-import { publicProfileService } from '@/services/publicProfileService';
+// import { publicProfileService } from '@/services/publicProfileService';
 
 interface PrivacySettingsDialogProps {
   open: boolean;
@@ -22,7 +22,7 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
   const [saving, setSaving] = useState(false);
   
   // Profile visibility setting
-  const [profileVisibility, setProfileVisibility] = useState<'public' | 'private'>('private');
+  // const [profileVisibility, setProfileVisibility] = useState<'public' | 'private'>('private');
   
   // Granular privacy settings
   const [privacySettings, setPrivacySettings] = useState({
@@ -46,10 +46,10 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
     setLoading(true);
     try {
       // Load profile visibility
-      const { data: visibility } = await publicProfileService.getProfileVisibility(user.id);
-      if (visibility) {
-        setProfileVisibility(visibility as 'public' | 'private');
-      }
+      // const { data: visibility } = await publicProfileService.getProfileVisibility(user.id);
+      // if (visibility) {
+      //   setProfileVisibility(visibility as 'public' | 'private');
+      // }
 
       // Load privacy settings
       const { data: settings } = await secureProfileService.getPrivacySettings(user.id);
@@ -81,7 +81,7 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
     setSaving(true);
     try {
       // Save profile visibility
-      await publicProfileService.updateProfileVisibility(profileVisibility);
+      // await publicProfileService.updateProfileVisibility(profileVisibility);
       
       // Save privacy settings
       await secureProfileService.updatePrivacySettings(user.id, privacySettings);
@@ -135,7 +135,8 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
 
         <div className="space-y-6">
           {/* Profile Visibility */}
-          <div className="space-y-3">
+          {/* ALL PROFILES ARE PUBLIC FOR NOW */}
+          {/* <div className="space-y-3">
             <Label className="text-base font-medium flex items-center space-x-2">
               <Users className="h-4 w-4" />
               <span>Profile Visibility</span>
@@ -166,7 +167,7 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
                 }
               </p>
             </div>
-          </div>
+          </div> */}
 
           <Separator />
 

@@ -74,7 +74,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
           <Tabs defaultValue="profile" className="flex-1 overflow-hidden">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="privacy">Privacy</TabsTrigger>
+              {/* <TabsTrigger value="privacy">Privacy</TabsTrigger> */}
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
@@ -121,7 +121,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
                 </Card>
               </TabsContent>
 
-              <TabsContent value="privacy" className="space-y-4">
+              {/* <TabsContent value="privacy" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -164,7 +164,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
                     </Button>
                   </CardContent>
                 </Card>
-              </TabsContent>
+              </TabsContent> */}
 
               <TabsContent value="notifications" className="space-y-4">
                 <Card>
