@@ -20,11 +20,13 @@ const ProfileAbout = ({ profile, handleProfileUpdate, compact = false }: Profile
 	// If compact mode, only show AboutSection
 	if (compact) {
 		return (
-			<div className="space-y-4">
-				<AboutSection
-					profile={profile}
-					handleProfileUpdate={handleProfileUpdate}
-				/>
+			<div className="space-y-4 h-full flex flex-col">
+				<div className="flex-1">
+					<AboutSection
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+				</div>
 			</div>
 		)
 	}
