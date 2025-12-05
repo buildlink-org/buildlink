@@ -14,7 +14,6 @@ import SocialLinksEditDialog from "../profile/SocialLinksEditDialog"
 interface ProfileHeaderProps {
 	profile: UserProfile
 	uploading: boolean
-	userPostsCount: number
 	handleAvatarChange: (file: File) => Promise<void>
 	handleAvatarRemove: () => Promise<void>
 	handleProfileUpdate: () => void

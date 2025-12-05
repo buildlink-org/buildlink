@@ -147,7 +147,6 @@ const ProfileBoard = () => {
 			<ProfileHeader
 				profile={profile}
 				uploading={uploading}
-				userPostsCount={userPosts.length}
 				handleAvatarChange={handleAvatarChange}
 				handleAvatarRemove={handleAvatarRemove}
 				handleProfileUpdate={handleProfileUpdate}
@@ -219,7 +218,7 @@ const ProfileBoard = () => {
 						profile={profile} 
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-					{profile.experience && profile.experience.length > 0 && (
+					{profile.experiences && profile.experiences.length > 0 && (
 						<ProfileExperience 
 							profile={profile} 
 							handleProfileUpdate={handleProfileUpdate}
@@ -242,10 +241,12 @@ const ProfileBoard = () => {
 						profile={profile} 
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-					<ProfileExperience 
-						profile={profile} 
-						handleProfileUpdate={handleProfileUpdate}
-					/>
+					{profile.experiences && profile.experiences.length > 0 && (
+						<ProfileExperience 
+							profile={profile} 
+							handleProfileUpdate={handleProfileUpdate}
+						/>
+					)}
 					<ProfileEducation 
 						profile={profile} 
 						handleProfileUpdate={handleProfileUpdate}
