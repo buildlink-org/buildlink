@@ -35,7 +35,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				descColor: "text-green-700",
 				emoji: "😊",
 				iconEmoji: "🎓",
-				title: `Welcome${profile.full_name || "User"}`,
+				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Your journey into the industry starts right here!"
 			}
 		} else if (userType === "professional") {
@@ -46,7 +46,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				descColor: "text-blue-700",
 				emoji: "😊",
 				iconEmoji: "💼",
-				title: `Welcome, ${profile.full_name || "User"}`,
+				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Ready to connect, grow, and lead in Kenya's built environment?"
 			}
 		} else if (userType === "company") {
@@ -70,7 +70,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			descColor: "text-green-700",
 			emoji: "😊",
 			iconEmoji: "🎓",
-			title: `Welcome${profile.full_name || "User"}`,
+			title: `Welcome ${profile.full_name || "User"}`,
 			message: "Your journey into the industry starts right here!"
 		}
 	}
