@@ -39,8 +39,8 @@ const AboutSection = ({ profile, handleProfileUpdate }: AboutSectionProps) => {
 	}
 
 	return (
-		<Card className="border-0 shadow-sm">
-			<CardContent className="px-4 py-4 shadow-md">
+		<Card className="border-0 shadow-sm h-full flex flex-col">
+			<CardContent className="px-4 py-4 shadow-md flex-1 flex flex-col">
 				<div className="mb-4 flex items-center justify-between">
 					<h2 className="text-lg font-semibold text-gray-800">About</h2>
 					<AboutEditDialog
@@ -53,7 +53,7 @@ const AboutSection = ({ profile, handleProfileUpdate }: AboutSectionProps) => {
 						</Button>
 					</AboutEditDialog>
 				</div>
-				<div className="prose prose-gray max-w-none">{renderAboutContent()}</div>
+				<div className="prose prose-gray max-w-none flex-1">{renderAboutContent()}</div>
 			</CardContent>
 		</Card>
 	)
