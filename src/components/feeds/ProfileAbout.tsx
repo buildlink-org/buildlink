@@ -13,9 +13,25 @@ import { UserProfile } from "@/types"
 interface ProfileAboutProps {
 	profile: UserProfile
 	handleProfileUpdate: () => void
+	compact?: boolean
 }
 
-const ProfileAbout = ({ profile, handleProfileUpdate }: ProfileAboutProps) => {
+const ProfileAbout = ({ profile, handleProfileUpdate, compact = false }: ProfileAboutProps) => {
+	// If compact mode, only show AboutSection
+	if (compact) {
+		return (
+			<div className="space-y-4 h-full flex flex-col">
+				<div className="flex-1">
+					<AboutSection
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+				</div>
+			</div>
+		)
+	}
+
+	// Full mode - show everything
 	return (
 		<div className="space-y-6">
 			{/* Account Type Dashboard */}
@@ -25,25 +41,21 @@ const ProfileAbout = ({ profile, handleProfileUpdate }: ProfileAboutProps) => {
 			{profile.verification_badges && profile.verification_badges.length > 0 && (
 				<div className="space-y-2">
 					<h3 className="font-semibold">Verification Badges</h3>
-					<VerificationBadges badges={profile.verification_badges} />
+					<VerificationBadges 
+						badges={Array.isArray(profile.verification_badges) && typeof profile.verification_badges[0] === 'string'
+							? profile.verification_badges.map(badge => ({
+								type: badge,
+								label: badge,
+								description: `${badge} verified`,
+								verified_at: new Date().toISOString()
+							}))
+							: (profile.verification_badges as any)
+						} 
+					/>
 				</div>
 			)}
 
-			{/* Social Links */}
-			<div className="space-y-4">
-				<div className="flex items-center justify-between">
-					<h3 className="font-semibold">Social Links</h3>
-					<SocialLinksEditDialog
-						currentLinks={profile.social_links || {}}
-						onLinksUpdated={handleProfileUpdate}
-						trigger={<button className="text-sm text-muted-foreground hover:text-foreground">Edit</button>}
-					/>
-				</div>
-				<SocialMediaLinks
-					links={profile.social_links || {}}
-					editable={false}
-				/>
-			</div>
+			{/* Remove Social Links section - now in header */}
 
 			<AboutSection
 				profile={profile}

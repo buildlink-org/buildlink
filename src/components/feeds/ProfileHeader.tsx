@@ -6,30 +6,86 @@ import AvatarUploader from "../profile-sections/AvatarUploader"
 import AccountTypeBadge from "../AccountTypeBadge"
 import RatingDialog from "../RatingDialog"
 import ProfileSettingsDialog from "../ProfileSettingsDialog"
-import { GraduationCap } from "lucide-react"
 import { useState } from "react"
 import { UserProfile } from "@/types"
+import SocialMediaLinks from "../profile/SocialMediaLinks"
+import SocialLinksEditDialog from "../profile/SocialLinksEditDialog"
 
 interface ProfileHeaderProps {
 	profile: UserProfile
 	uploading: boolean
-	userPostsCount: number
 	handleAvatarChange: (file: File) => Promise<void>
 	handleAvatarRemove: () => Promise<void>
 	handleProfileUpdate: () => void
 }
 
-const ProfileHeader = ({ profile, uploading, userPostsCount, handleAvatarChange, handleAvatarRemove, handleProfileUpdate }: ProfileHeaderProps) => {
+const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRemove, handleProfileUpdate }: ProfileHeaderProps) => {
 	const [showRatingDialog, setShowRatingDialog] = useState(false)
+	
+	// Get account-type-specific welcome config
+	const getWelcomeConfig = () => {
+		const userType = profile?.user_type?.toLowerCase() || "student"
+		
+		if (userType === "student") {
+			return {
+				bgColor: "bg-gradient-to-r from-green-50 to-emerald-50",
+				borderColor: "border-green-200",
+				titleColor: "text-green-900",
+				descColor: "text-green-700",
+				emoji: "😊",
+				iconEmoji: "🎓",
+				title: `Welcome ${profile.full_name || "User"}`,
+				message: "Your journey into the industry starts right here!"
+			}
+		} else if (userType === "professional") {
+			return {
+				bgColor: "bg-gradient-to-r from-blue-50 to-indigo-50",
+				borderColor: "border-blue-200",
+				titleColor: "text-blue-900",
+				descColor: "text-blue-700",
+				emoji: "😊",
+				iconEmoji: "💼",
+				title: `Welcome ${profile.full_name || "User"}`,
+				message: "Ready to connect, grow, and lead in Kenya's built environment?"
+			}
+		} else if (userType === "company") {
+			return {
+				bgColor: "bg-gradient-to-r from-purple-50 to-pink-50",
+				borderColor: "border-purple-200",
+				titleColor: "text-purple-900",
+				descColor: "text-purple-700",
+				emoji: "😊",
+				iconEmoji: "🪪",
+				title: `Welcome ${profile.organization || profile.full_name || "Your Company"}`,
+				message: "Relevance and Visibility has never been easier until now."
+			}
+		}
+		
+		// Default fallback (student)
+		return {
+			bgColor: "bg-gradient-to-r from-green-50 to-emerald-50",
+			borderColor: "border-green-200",
+			titleColor: "text-green-900",
+			descColor: "text-green-700",
+			emoji: "😊",
+			iconEmoji: "🎓",
+			title: `Welcome ${profile.full_name || "User"}`,
+			message: "Your journey into the industry starts right here!"
+		}
+	}
+	
+	const welcomeConfig = getWelcomeConfig()
+	
 	return (
 		<>
-			<Card className="mt-4 border-blue-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+			<Card className={`mt-4 border ${welcomeConfig.borderColor} ${welcomeConfig.bgColor}`}>
 				<CardHeader>
-					<div className="flex items-center gap-2">
-						<GraduationCap className="h-6 w-6 text-blue-600" />
-						<CardTitle className="text-blue-900">Welcome, {profile.full_name}!</CardTitle>
-					</div>
-					<CardDescription className="text-blue-700">🎓 Emerging talent on the path to success. Build your network, showcase your work, and discover opportunities.</CardDescription>
+					<CardTitle className={welcomeConfig.titleColor}>
+						Welcome, {profile.user_type === "company" ? (profile.organization || profile.full_name || "Your Company") : (profile.full_name || "User")}! {welcomeConfig.emoji}
+					</CardTitle>
+					<CardDescription className={welcomeConfig.descColor}>
+						{welcomeConfig.message} {welcomeConfig.iconEmoji}
+					</CardDescription>
 				</CardHeader>
 			</Card>
 
@@ -64,31 +120,53 @@ const ProfileHeader = ({ profile, uploading, userPostsCount, handleAvatarChange,
 						</div>
 					</div>
 					{/* Action Buttons */}
-					<div className="flex flex-col gap-2 sm:flex-row">
-						<Button
-							variant="outline"
-							className="flex-1 sm:flex-none">
-							<MessageCircle className="mr-1 h-4 w-4" />
-							Message
-						</Button>
-
-						<ProfileEditDialog
-							currentProfile={profile}
-							onProfileUpdated={handleProfileUpdate}>
-							<Button className="flex-1 sm:flex-none">
-								<Edit className="mr-1 h-4 w-4" />
-								Edit Profile
-							</Button>
-						</ProfileEditDialog>
-
-						<ProfileSettingsDialog>
+					<div className="flex flex-col gap-4 items-end">
+						<div className="flex flex-col gap-2 sm:flex-row justify-end">
 							<Button
 								variant="outline"
-								size="icon"
-								className="flex-shrink-0">
-								<Settings className="h-4 w-4" />
+								className="flex-1 sm:flex-none">
+								<MessageCircle className="mr-1 h-4 w-4" />
+								Message
 							</Button>
-						</ProfileSettingsDialog>
+
+							<ProfileEditDialog
+								currentProfile={profile}
+								onProfileUpdated={handleProfileUpdate}>
+								<Button className="flex-1 sm:flex-none">
+									<Edit className="mr-1 h-4 w-4" />
+									Edit Profile
+								</Button>
+							</ProfileEditDialog>
+
+							<ProfileSettingsDialog>
+								<Button
+									variant="outline"
+									size="icon"
+									className="flex-shrink-0">
+									<Settings className="h-4 w-4" />
+								</Button>
+							</ProfileSettingsDialog>
+						</div>
+						
+						{/* Social Links - Below action buttons */}
+						<div className="flex items-center gap-2 flex-wrap justify-end">
+							<SocialLinksEditDialog
+								currentLinks={profile.social_links || {}}
+								onLinksUpdated={handleProfileUpdate}
+								trigger={
+									<Button
+										variant="outline"
+										size="sm"
+										className="text-xs">
+										Social Links
+									</Button>
+								}
+							/>
+							<SocialMediaLinks
+								links={profile.social_links || {}}
+								editable={false}
+							/>
+						</div>
 					</div>
 				</div>
 			</CardContent>
