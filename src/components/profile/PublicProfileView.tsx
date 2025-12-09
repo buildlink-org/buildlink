@@ -12,7 +12,7 @@ import SocialMediaLinks from "./SocialMediaLinks"
 import { profileService } from "@/services/profileService"
 import { Education, UserProfile } from "@/types"
 import { connectionsService } from "@/services/connectionsService"   // Added
-import { MessagingDialog } from "../DirectMessages/MessagingDialog"
+import { useMessagingStore } from "@/stores/messagingStore"
 
 type ConnectionStatus = 
 | "not_connected"
@@ -31,7 +31,7 @@ const PublicProfileView: React.FC = () => {
 	const [connectionRow, setConnectionRow] = useState<any | null>(null);
 	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected");
 
-	const [messagingOpen, setMessagingOpen] = useState(false);
+	const openConversation = useMessagingStore((state) => state.openConversation);
   
 
 	const student = profile?.user_type === "student"
@@ -218,7 +218,7 @@ const PublicProfileView: React.FC = () => {
 				  return;
 				}
 			//    Open messaging dialog
-				setMessagingOpen(true);
+				openConversation(profileId!, profile?.full_name, profile?.avatar);
 			  }}
 			  className={connectionStatus !== "connected" && "opacity-50 cursor-not-allowed"}
 			  title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
@@ -514,13 +514,7 @@ const PublicProfileView: React.FC = () => {
 					<CardContent></CardContent>
 				</Card>
 			)}
-			<MessagingDialog
-				open={messagingOpen}
-				onOpenChange={setMessagingOpen}
-				initialRecipientId={profile?.id}
-				initialRecipientName={profile?.full_name}
-				initialRecipientAvatar={profile?.avatar}
-			/>
+			
 		</div>
 	)
 }

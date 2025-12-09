@@ -62,12 +62,28 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 
     fetchMessages();
 
-    // TODO: Set up real-time subscription here
-    // const subscription = supabase
-    //   .channel('messages')
-    //   .on('postgres_changes', { ... }, handleNewMessage)
-    //   .subscribe();
-    // return () => subscription.unsubscribe();
+    // Real-time subscription here
+//    const channel = supabase
+//     .channel('messages')
+//     .on(
+//       'postgres_changes',
+//       {
+//         event: 'INSERT',
+//         schema: 'public',
+//         table: 'direct_messages',
+//         filter: `recipient_id=eq.${user.id}`,
+//       },
+//       (payload) => {
+//         if (payload.new.sender_id === otherUserId) {
+//           setMessages((msgs) => [...msgs, payload.new as Message]);
+//         }
+//       }
+//     )
+//     .subscribe();
+
+//   return () => {
+//     supabase.removeChannel(channel);
+//   };
   }, [user, otherUserId]);
 
   useEffect(() => {

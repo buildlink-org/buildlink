@@ -94,8 +94,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         <MessageSquare className="h-16 w-16 text-muted-foreground mb-4" />
         <h3 className="font-semibold text-lg mb-2">No messages yet</h3>
         <p className="text-sm text-muted-foreground max-w-sm">
-          Start a conversation by visiting someone's profile and clicking the
-          Message button
+          Start a conversation by visiting your connection's profile
         </p>
       </div>
     );

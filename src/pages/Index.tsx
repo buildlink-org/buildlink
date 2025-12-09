@@ -10,6 +10,7 @@ import ProfileBoard from "@/components/feeds/ProfileBoard"
 import ResponsiveNavigation from "@/components/ResponsiveNavigation"
 import ContentFilters from "@/components/ContentFilters"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
+import FloatingMessagingWidget from "@/components/DirectMessages/FloatingMessageWidget"
 
 interface IndexProps {
 	customContent?: ReactNode
@@ -126,6 +127,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 					<div className={`transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
 				</div>
 			</div>
+			{user && <FloatingMessagingWidget />}
 		</div>
 	)
 }
