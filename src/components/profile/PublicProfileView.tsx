@@ -12,6 +12,7 @@ import SocialMediaLinks from "./SocialMediaLinks"
 import { profileService } from "@/services/profileService"
 import { Education, UserProfile } from "@/types"
 import { connectionsService } from "@/services/connectionsService"   // Added
+import { MessagingDialog } from "../DirectMessages/MessagingDialog"
 
 type ConnectionStatus = 
 | "not_connected"
@@ -29,6 +30,8 @@ const PublicProfileView: React.FC = () => {
 	const [viewRecorded, setViewRecorded] = useState(false)
 	const [connectionRow, setConnectionRow] = useState<any | null>(null);
 	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected");
+
+	const [messagingOpen, setMessagingOpen] = useState(false);
   
 
 	const student = profile?.user_type === "student"
@@ -214,9 +217,8 @@ const PublicProfileView: React.FC = () => {
 				  toast({ title: "Info", description: "Connect first to send messages", variant: "default" });
 				  return;
 				}
-			
-				// add here: open chat window/modal/function
-				toast({ title: "Info", description: "Messaging coming soon!", variant: "default" });
+			//    Open messaging dialog
+				setMessagingOpen(true);
 			  }}
 			  className={connectionStatus !== "connected" && "opacity-50 cursor-not-allowed"}
 			  title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
@@ -512,6 +514,13 @@ const PublicProfileView: React.FC = () => {
 					<CardContent></CardContent>
 				</Card>
 			)}
+			<MessagingDialog
+				open={messagingOpen}
+				onOpenChange={setMessagingOpen}
+				initialRecipientId={profile?.id}
+				initialRecipientName={profile?.full_name}
+				initialRecipientAvatar={profile?.avatar}
+			/>
 		</div>
 	)
 }
