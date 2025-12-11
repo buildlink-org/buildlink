@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare } from 'lucide-react';
 import { useMessagingStore } from '@/stores/messagingStore';
+import { formatTimestamp } from '@/lib/utils';
 
 interface UserListItem {
   id: string;
@@ -104,6 +105,16 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     return prefix + contentSnippet;
   };
 
+  // Get last message timestamp for each conversation
+  const getLastMessageTimestamp = (otherUserId: string): string | null => {
+    const conversationMessages = messagesByUserId[otherUserId];
+    if (!conversationMessages || conversationMessages.length === 0) {
+      return null;
+    }
+    const lastMessage = conversationMessages[conversationMessages.length - 1];
+    return formatTimestamp(lastMessage.created_at, false);
+  }
+
   if (loading) {
     return (
       <div className="p-4 space-y-3">
@@ -151,9 +162,14 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <p className="font-semibold text-sm truncate">{u.name || 'Unknown User'}</p>
+              <div className="flex">
+                <p className="font-semibold text-sm truncate">{u.name || 'Unknown User'}</p>
+                <span className="text-[9px] text-muted-foreground ml-auto pl-2 flex-shrink-0">
+                {getLastMessageTimestamp(u.id)}
+              </span>
+                </div>
               <p className="text-xs text-muted-foreground">{getLastMessageSnippet(u.id)}</p>
-            </div>
+            </div>            
           </button>
           { /* message list seperator */}
           {index < users.length - 1 && (
