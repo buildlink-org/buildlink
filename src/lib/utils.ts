@@ -26,3 +26,34 @@ export const getFilenameFromUrl = (url: string): string => {
     return 'document.pdf';
   }
 };
+
+// timestamp utility function
+export const formatTimestamp = (dateString: string, detailed: boolean = false): string => {
+  const date = new Date(dateString);
+  const now = new Date();
+  
+  // Set times to midnight for day comparison
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(today);
+  yesterday.setDate(yesterday.getDate() - 1);
+  const messageDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+  const timeFormat = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const monthDayFormat = date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+
+  let dayString: string;
+
+  if (messageDate.getTime() === today.getTime()) {
+    dayString = 'Today';
+  } else if (messageDate.getTime() === yesterday.getTime()) {
+    dayString = 'Yesterday';
+  } else {
+    dayString = monthDayFormat;
+  }
+  
+  if (detailed) {
+    return `${dayString} at ${timeFormat}`;
+  } else {
+    return dayString;
+  }
+};
