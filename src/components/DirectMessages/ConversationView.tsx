@@ -125,7 +125,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   return (
     <div className="flex flex-col h-full">
       {/* Messages Area */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 p-4">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 py-4 px-2">
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
@@ -138,7 +138,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
                 <div
                   key={msg.id}
                   className={cn(
-                    'flex gap-3',
+                    'flex gap-2',
                     isOwnMessage ? 'flex-row-reverse' : 'flex-row'
                   )}
                 >
@@ -165,7 +165,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
                     </p>
                     <p
                       className={cn(
-                        'text-xs mt-1',
+                        'text-[9px] mt-[-1px]',
                         isOwnMessage
                           ? 'text-primary-foreground/70'
                           : 'text-muted-foreground'

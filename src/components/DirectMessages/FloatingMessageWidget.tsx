@@ -61,9 +61,9 @@ const FloatingMessagingWidget: React.FC = () => {
       {!isOpen && (
         <button
           onClick={handleOpen}
-          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform flex items-center justify-center"
+          className="fixed bottom-6 max-sm:bottom-10 right-4 max-sm:right-2 z-50 h-14 w-14 max-sm:h-10 max-sm:w-10 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform duration-600 ease-in flex items-center justify-center"
         >
-          <MessageSquare className="h-6 w-6" />
+          <MessageSquare className="h-6 w-6 max-sm:h-5 max-sm:w-5" />
           {unreadCount > 0 && (
             <Badge className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 flex items-center justify-center bg-red-500">
               {unreadCount}
@@ -75,12 +75,12 @@ const FloatingMessagingWidget: React.FC = () => {
       {/* Messaging Window */}
       {isOpen && (
         <div
-          className={`fixed bottom-0 right-6 z-50 bg-white rounded-t-lg shadow-2xl border border-border transition-all duration-300 ${
-            isMinimized ? 'h-14 w-80' : 'h-[600px] w-[400px]'
+          className={`fixed bottom-0 right-2 z-50 bg-white rounded-t-lg shadow-2xl border border-border transition-all duration-300 ${
+            isMinimized ? 'h-10 w-60' : 'h-[600px] w-[300px]'
           }`}
         >
           {/* Header */}
-          <div className="flex items-center justify-between p-3 border-b bg-card">
+          <div className="flex items-center justify-between py-2 px-3 border-b bg-card">
             <div className="flex items-center gap-2">
               {selectedUser && !isMinimized && (
                 <Button
@@ -92,8 +92,8 @@ const FloatingMessagingWidget: React.FC = () => {
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               )}
-              <MessageSquare className="h-5 w-5" />
-              <h3 className="font-semibold">
+              <MessageSquare className="h-4 w-4" />
+              <h3 className="font-semibold text-sm">
                 {selectedUser ? selectedUser.name || 'Chat' : 'Inbox'}
               </h3>
               {unreadCount > 0 && !selectedUser && (
