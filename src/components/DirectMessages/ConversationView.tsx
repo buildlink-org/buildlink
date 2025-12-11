@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useMessagingStore } from '@/stores/messagingStore';
+import { formatTimestamp } from '@/lib/utils';
 
 
 interface ConversationViewProps {
@@ -16,6 +17,36 @@ interface ConversationViewProps {
   otherUserName?: string;
   otherUserAvatar?: string;
 }
+
+type ConversationItem = 
+  | ({ type: 'message' } & Message)
+  | { type: 'separator'; id: string; dateLabel: string };
+
+  // Process messages and add date separators
+  const addDateSeparators = (messages: Message[]): ConversationItem[] => {
+  const items: ConversationItem[] = [];
+  let lastDate: string | null = null;
+
+  const sortedMessages = [...messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+
+  sortedMessages.forEach((msg, index) => {
+    const messageDate = new Date(msg.created_at);
+    const dateKey = messageDate.toISOString().split('T')[0];
+
+    if (dateKey !== lastDate) {
+      items.push({
+        type: 'separator',
+        id: `sep-${dateKey}-${index}`,
+        dateLabel: formatTimestamp(msg.created_at, false),
+      });
+      lastDate = dateKey;
+    }
+
+    items.push({ ...msg, type: 'message' });
+  });
+
+  return items;
+};
 
 const ConversationView: React.FC<ConversationViewProps> = ({
   otherUserId,
@@ -33,6 +64,9 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   const [content, setContent] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+
+  const conversationItems = React.useMemo(() => addDateSeparators(messages), [messages]);
+
 
   useEffect(() => {
     if (!user || !otherUserId) return;
@@ -107,12 +141,23 @@ const ConversationView: React.FC<ConversationViewProps> = ({
       {/* Messages Area */}
       <ScrollArea ref={scrollAreaRef} className="flex-1 py-4 px-2">
         <div className="space-y-4">
-          {messages.length === 0 ? (
+          {messages.length === 0 && conversationItems.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               <p>No messages yet. Say hi! 👋</p>
             </div>
           ) : (
-            messages.map((msg) => {
+            conversationItems.map((item) => {
+              // render the seperator
+               if (item.type === 'separator') {
+                return (
+                  <div key={item.id} className="flex justify-center my-4">
+                    <span className="text-xs text-muted-foreground bg-secondary px-3 py-1 rounded-full shadow-sm">
+                      {item.dateLabel}
+                    </span>
+                  </div>
+                );
+              }
+              const msg = item;
               const isOwnMessage = msg.sender_id === user?.id;
               return (
                 <div
@@ -185,7 +230,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
             onClick={handleSend}
             disabled={!content.trim() || sending}
             size="icon"
-            className="self-end"
+            className="self-end item-center"
           >
             {sending ? (
               <Loader2 className="h-4 w-4 animate-spin" />
