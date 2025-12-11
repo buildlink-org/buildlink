@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { directMessagesService } from '@/services/directMessagesService';
+import { directMessagesService, Message } from '@/services/directMessagesService';
 import { profileService } from '@/services/profileService';
 import { useAuth } from '@/contexts/AuthContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare } from 'lucide-react';
+import { useMessagingStore } from '@/stores/messagingStore';
 
 interface UserListItem {
   id: string;
@@ -23,6 +24,10 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const { user } = useAuth();
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
+
+    // Get all messages from the store
+  const messagesByUserId = useMessagingStore(state => state.messagesByUserId);
+  const fetchMessagesFromStore = useMessagingStore(state => state.fetchMessages);
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -65,12 +70,39 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
       });
 
       const results = await Promise.all(promises);
-      setUsers(results.filter(Boolean) as UserListItem[]);
+      const uniqueUsers = results.filter(Boolean) as UserListItem[];
+      setUsers(uniqueUsers);
       setLoading(false);
+
+      // Fetch messages for each user
+      uniqueUsers.forEach(u => {
+        if (user && u.id) {
+          fetchMessagesFromStore(user.id, u.id);
+        }
+      });
     };
 
     fetchConversations();
   }, [user]);
+
+  // Get last message from each conversation
+  const getLastMessageSnippet = (otherUserId: string): string => {
+    const conversationMessages = messagesByUserId[otherUserId];
+    if (!conversationMessages || conversationMessages.length === 0) {
+      return "Click to open conversation"; 
+    }
+    const lastMessage = conversationMessages[conversationMessages.length - 1];
+    
+    // Determine if "You" sent it or "Them"
+    const prefix = lastMessage.sender_id === user?.id ? 'You: ' : '';
+
+    // Truncate message content for snippet view
+    const contentSnippet = lastMessage.content.length > 40 
+        ? lastMessage.content.substring(0, 40) + '...' 
+        : lastMessage.content;
+        
+    return prefix + contentSnippet;
+  };
 
   if (loading) {
     return (
@@ -120,7 +152,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
             </Avatar>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm truncate">{u.name || 'Unknown User'}</p>
-              <p className="text-xs text-muted-foreground">Click to open conversation</p>
+              <p className="text-xs text-muted-foreground">{getLastMessageSnippet(u.id)}</p>
             </div>
           </button>
           { /* message list seperator */}

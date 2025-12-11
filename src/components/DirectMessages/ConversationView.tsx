@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { directMessagesService } from '@/services/directMessagesService';
+import { directMessagesService, Message } from '@/services/directMessagesService';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -8,15 +8,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Send, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useMessagingStore } from '@/stores/messagingStore';
 
-interface Message {
-  id: string;
-  sender_id: string;
-  recipient_id: string;
-  content: string;
-  created_at: string;
-  read: boolean;
-}
 
 interface ConversationViewProps {
   otherUserId: string;
@@ -31,36 +24,21 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
+   const messages = useMessagingStore(state => state.messagesByUserId[otherUserId] || []);
+  const loading = useMessagingStore(state => state.loadingStatus[otherUserId] || false);
+  const fetchMessages = useMessagingStore(state => state.fetchMessages);
+  const addMessageToStore = useMessagingStore(state => state.addMessage);
+
   const [sending, setSending] = useState(false);
   const [content, setContent] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || !otherUserId) return;
 
-    const fetchMessages = async () => {
-      setLoading(true);
-      const { data, error } = await directMessagesService.getMessages(
-        user.id,
-        otherUserId
-      );
+        fetchMessages(user.id, otherUserId);
 
-      if (error) {
-        toast({
-          title: 'Failed to load messages',
-          description: error.message,
-          variant: 'destructive',
-        });
-      } else {
-        setMessages(data || []);
-      }
-      setLoading(false);
-    };
-
-    fetchMessages();
 
     // Real-time subscription here
 //    const channel = supabase
@@ -84,7 +62,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 //   return () => {
 //     supabase.removeChannel(channel);
 //   };
-  }, [user, otherUserId]);
+  }, [user, otherUserId, fetchMessages]);
 
   useEffect(() => {
     // Scroll to bottom when messages change
@@ -95,11 +73,13 @@ const ConversationView: React.FC<ConversationViewProps> = ({
     if (!user || !content.trim() || sending) return;
 
     setSending(true);
-    const { data, error } = await directMessagesService.sendMessage({
+    const newMessageData = {
       sender_id: user.id,
       recipient_id: otherUserId,
       content: content.trim(),
-    });
+    };
+
+    const { data, error } = await directMessagesService.sendMessage(newMessageData);
 
     if (error) {
       toast({
@@ -108,7 +88,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
         variant: 'destructive',
       });
     } else if (data) {
-      setMessages((msgs) => [...msgs, data]);
+      addMessageToStore(data);
       setContent('');
     }
     setSending(false);
