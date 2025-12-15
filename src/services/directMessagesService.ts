@@ -1,6 +1,16 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
+export interface Message {
+  id: string;
+  sender_id: string;
+  recipient_id: string;
+  content: string;
+  created_at: string;
+  read: boolean;
+}
+
+
 export const directMessagesService = {
   async sendMessage({ sender_id, recipient_id, content, image_url }: {
     sender_id: string;
