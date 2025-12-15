@@ -32,7 +32,6 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				borderColor: "border-green-200",
 				titleColor: "text-green-900",
 				descColor: "text-green-700",
-				emoji: "😊",
 				iconEmoji: "🎓",
 				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Your journey into the industry starts right here!"
@@ -43,7 +42,6 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				borderColor: "border-blue-200",
 				titleColor: "text-blue-900",
 				descColor: "text-blue-700",
-				emoji: "😊",
 				iconEmoji: "💼",
 				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Ready to connect, grow, and lead in Kenya's built environment?"
@@ -54,7 +52,6 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				borderColor: "border-purple-200",
 				titleColor: "text-purple-900",
 				descColor: "text-purple-700",
-				emoji: "😊",
 				iconEmoji: "🪪",
 				title: `Welcome ${profile.organization || profile.full_name || "Your Company"}`,
 				message: "Relevance and Visibility has never been easier until now."
@@ -67,7 +64,6 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			borderColor: "border-green-200",
 			titleColor: "text-green-900",
 			descColor: "text-green-700",
-			emoji: "😊",
 			iconEmoji: "🎓",
 			title: `Welcome ${profile.full_name || "User"}`,
 			message: "Your journey into the industry starts right here!"
@@ -81,7 +77,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			<Card className={`mt-4 border ${welcomeConfig.borderColor} ${welcomeConfig.bgColor}`}>
 				<CardHeader>
 					<CardTitle className={welcomeConfig.titleColor}>
-						Welcome, {profile.user_type === "company" ? (profile.organization || profile.full_name || "Your Company") : (profile.full_name || "User")}! {welcomeConfig.emoji}
+						Welcome, {profile.user_type === "company" ? (profile.organization || profile.full_name || "Your Company") : (profile.full_name || "User")}!
 					</CardTitle>
 					<CardDescription className={welcomeConfig.descColor}>
 						{welcomeConfig.message} {welcomeConfig.iconEmoji}
