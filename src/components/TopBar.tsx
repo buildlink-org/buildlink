@@ -5,6 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import UserProfileButton from "@/components/UserProfileButton";
 import SearchDialog from "@/components/SearchDialog";
 import EnhancedNotificationsDropdown from "@/components/EnhancedNotificationsDropdown";
+import SearchDropdown from "./SearchDropdown";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { cn } from "@/lib/utils";
 import logo from "@/assets/buildlink-logo.png";
@@ -43,6 +44,10 @@ const TopBar = ({
 
         {/* Center - Search Bar */}
         <div className="hidden sm:flex flex-1 max-w-md mx-2 lg:mx-4">
+          <SearchDropdown />
+        </div>
+
+        {/*<div className="hidden sm:flex flex-1 max-w-md mx-2 lg:mx-4">
           <SearchDialog>
             <div className="relative w-full cursor-pointer">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
@@ -53,7 +58,7 @@ const TopBar = ({
               />
             </div>
           </SearchDialog>
-        </div>
+        </div>  /*}
 
         {/* Right side actions */}
         <div className="flex items-center space-x-1">

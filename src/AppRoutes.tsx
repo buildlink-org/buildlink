@@ -14,6 +14,7 @@ import AdminRoute from "@/components/auth/AdminRoute";
 import PublicProfile from "@/pages/PublicProfile";
 import ProfileSettings from "@/pages/ProfileSettings";
 import LandingPage from "./pages/LandingPage";
+import SearchResultsPage from "./pages/SearchResultsPage";
 
 const AppRoutes = () => (
   <Routes>
@@ -89,6 +90,12 @@ const AppRoutes = () => (
         <ProtectedRoute>
           <ProfileSettings />
         </ProtectedRoute>
+      }
+    />
+    <Route
+      path="/search"
+      element={
+        <SearchResultsPage />
       }
     />
     <Route path="*" element={<NotFound />} />
