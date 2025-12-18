@@ -23,6 +23,7 @@ interface MessagingState {
   subscribeToMessages: (userId: string) => () => void;
   markConversationAsRead: (currentUserId: string, otherUserId: string) => Promise<void>;
   fetchTotalUnreadCount: (userId: string) => Promise<void>;
+  calculateUnreadConversationCount: () => void;
 }
 
 export const useMessagingStore = create<MessagingState>((set, get) => ({
@@ -91,11 +92,31 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
     }));
   },
 
+  calculateUnreadConversationCount: () => {
+    const { messagesByUserId } = get();
+    const unreadConversationIds = Object.values(messagesByUserId).filter(messages => {
+        // Check if any message from this specific user is unread by the current user
+        return messages.some(m => !m.read && m.recipient_id === m.sender_id);
+    }).length;
+    // Set the state with the count of unique conversations
+    set({ totalUnreadCount: unreadConversationIds });
+  },
+
+
    // Mark all messages in a specific conversation as read
     markConversationAsRead: async (currentUserId, otherUserId) => {
         await directMessagesService.markMessagesAsRead(currentUserId, otherUserId);
+
+        // Update local store to mark messages as read
+        set(state => ({
+            messagesByUserId: {
+              ...state.messagesByUserId,
+              [otherUserId]: (state.messagesByUserId[otherUserId] || []).map(m => ({ ...m, read: true }))
+            }
+          }));
         
-        get().fetchTotalUnreadCount(currentUserId);
+        // get().fetchTotalUnreadCount(currentUserId);
+        get().calculateUnreadConversationCount();
     },
 
     // Fetch the total unread count for the badge
@@ -126,7 +147,8 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
                     get().addMessage(newMessage);
 
                     // 2. Increment global unread count instantly
-                    set(state => ({ totalUnreadCount: state.totalUnreadCount + 1 }));
+                    // set(state => ({ totalUnreadCount: state.totalUnreadCount + 1 }));
+                    get().calculateUnreadConversationCount();
 
                     // 3. If the user is currently looking at this conversation, mark it as read immediately
                     if (get().recipientId === newMessage.sender_id) {

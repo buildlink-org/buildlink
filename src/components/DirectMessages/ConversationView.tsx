@@ -55,7 +55,8 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
-   const messages = useMessagingStore(state => state.messagesByUserId[otherUserId] || []);
+  const EMPTY_ARRAY: any[] = [];
+  const messages = useMessagingStore(state => state.messagesByUserId[otherUserId] || EMPTY_ARRAY);
   const loading = useMessagingStore(state => state.loadingStatus[otherUserId] || false);
   const fetchMessages = useMessagingStore(state => state.fetchMessages);
   const addMessageToStore = useMessagingStore(state => state.addMessage);

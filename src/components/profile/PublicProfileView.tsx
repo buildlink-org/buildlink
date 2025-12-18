@@ -213,16 +213,16 @@ const PublicProfileView: React.FC = () => {
 			<Button 
 			  variant="outline"
 			  onClick={() => {
-				if (connectionStatus !== "connected") {
-				  toast({ title: "Info", description: "Connect first to send messages", variant: "default" });
-				  return;
-				}
+				// Can only message a connection
+				// if (connectionStatus !== "connected") {
+				//   toast({ title: "Info", description: "Connect first to send messages", variant: "default" });
+				//   return;
+				// }
 			//    Open messaging dialog
 				openConversation(profileId!, profile?.full_name, profile?.avatar);
 			  }}
-			  className={connectionStatus !== "connected" && "opacity-50 cursor-not-allowed"}
-			  title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
-			//   disabled={connectionStatus !== "connected"}
+			//   className={connectionStatus !== "connected" && "opacity-50 cursor-not-allowed"}
+			//   title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
 			>
 			  <MessageCircle className="mr-2 h-4 w-4" />
 			  Message
