@@ -1,5 +1,7 @@
 import { create } from 'zustand';
-import { directMessagesService, Message } from '@/services/directMessagesService'; // Assuming you define Message interface in service file
+import { directMessagesService, Message } from '@/services/directMessagesService';
+import { supabase } from "@/integrations/supabase/client";
+
 
 // Define the shape of our store state
 interface MessagingState {
@@ -7,6 +9,7 @@ interface MessagingState {
   recipientId: string | null;
   recipientName: string | null;
   recipientAvatar: string | null;
+  totalUnreadCount: number;
 
   // Data State for actual messages (indexed by otherUserId)
   messagesByUserId: Record<string, Message[]>;
@@ -17,6 +20,9 @@ interface MessagingState {
   clearRecipient: () => void;
   fetchMessages: (currentUserId: string, otherUserId: string) => Promise<void>;
   addMessage: (message: Message) => void;
+  subscribeToMessages: (userId: string) => () => void;
+  markConversationAsRead: (currentUserId: string, otherUserId: string) => Promise<void>;
+  fetchTotalUnreadCount: (userId: string) => Promise<void>;
 }
 
 export const useMessagingStore = create<MessagingState>((set, get) => ({
@@ -24,6 +30,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
   recipientId: null,
   recipientName: null,
   recipientAvatar: null,
+  totalUnreadCount: 0,
   
   // Initial Data state
   messagesByUserId: {},
@@ -83,4 +90,55 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
         }
     }));
   },
+
+   // Mark all messages in a specific conversation as read
+    markConversationAsRead: async (currentUserId, otherUserId) => {
+        await directMessagesService.markMessagesAsRead(currentUserId, otherUserId);
+        
+        get().fetchTotalUnreadCount(currentUserId);
+    },
+
+    // Fetch the total unread count for the badge
+    fetchTotalUnreadCount: async (userId) => {
+        const { data, error } = await directMessagesService.getTotalUnreadCount(userId);
+        if (data !== null) {
+            set({ totalUnreadCount: data });
+        }
+    },
+
+    // Real-time subscription
+    subscribeToMessages: (currentUserId: string) => {
+        const channel = supabase
+            .channel(`messages_for_user_${currentUserId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'direct_messages',
+                    filter: `recipient_id=eq.${currentUserId}`,
+                },
+                (payload) => {
+                    const newMessage = payload.new as Message;
+                    console.log('Real-time new message received:', newMessage);
+                    
+                    // 1. Add the message to the specific conversation in the store
+                    get().addMessage(newMessage);
+
+                    // 2. Increment global unread count instantly
+                    set(state => ({ totalUnreadCount: state.totalUnreadCount + 1 }));
+
+                    // 3. If the user is currently looking at this conversation, mark it as read immediately
+                    if (get().recipientId === newMessage.sender_id) {
+                        get().markConversationAsRead(currentUserId, newMessage.sender_id);
+                    }
+                }
+            )
+            .subscribe();
+
+        // Return the unsubscribe function
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    },
 }));

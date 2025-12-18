@@ -45,5 +45,31 @@ export const directMessagesService = {
       )
       .order("created_at", { ascending: true });
     return { data, error };
-  }
+  },
+   async markMessagesAsRead (userId: string, otherUserId: string) {
+    // This updates messages where the current user is the recipient AND the other user is the sender
+    const { error } = await supabase
+      .from('direct_messages')
+      .update({ read: true })
+      .eq('recipient_id', userId)
+      .eq('sender_id', otherUserId)
+      .eq('read', false);
+
+    if (error) console.error('Error marking messages as read:', error);
+    return { error };
+  },
+
+  async getTotalUnreadCount (userId: string) {
+    const { count, error } = await supabase
+      .from('direct_messages')
+      .select('*', { count: 'exact' })
+      .eq('recipient_id', userId)
+      .eq('read', false);
+
+    if (error) {
+      console.error('Error fetching unread count:', error);
+      return { data: null, error };
+    }
+    return { data: count, error: null };
+  },
 };
