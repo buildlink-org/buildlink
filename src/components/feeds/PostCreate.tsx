@@ -348,7 +348,7 @@ const PostCreate = () => {
       </Card>
 
       {/* Quick Templates */}
-      <Card
+      {/* <Card
         className={cn("border-0 shadow-sm", isMobile ? "rounded-none" : "")}>
         <CardHeader>
           <CardTitle
@@ -423,7 +423,7 @@ const PostCreate = () => {
             </Button>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };
