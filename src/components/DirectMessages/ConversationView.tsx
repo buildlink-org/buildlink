@@ -64,24 +64,42 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   const [sending, setSending] = useState(false);
   const [content, setContent] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
 
   const conversationItems = React.useMemo(() => addDateSeparators(messages), [messages]);
 
+    // Scroll to bottom
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }
+  };
 
   useEffect(() => {
     if (!user || !otherUserId) return;
 
-        fetchMessages(user.id, otherUserId);
-
+    fetchMessages(user.id, otherUserId);
     // Mark conversation as read when opened
     markConversationAsRead(user.id, otherUserId);
+    
   }, [user, otherUserId, fetchMessages, markConversationAsRead]);
 
+ // Scroll on initial load
   useEffect(() => {
-    // Scroll to bottom when messages change
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages.length]);
+    if (!loading && conversationItems.length > 0) {
+      setTimeout(scrollToBottom, 100);
+    }
+  }, [loading, conversationItems.length]);
+
+  // Scroll when new messages arrive
+  useEffect(() => {
+    if (conversationItems.length > 0) {
+      scrollToBottom();
+    }
+  }, [conversationItems.length]);
+
+
 
   const handleSend = async () => {
     if (!user || !content.trim() || sending) return;
@@ -186,7 +204,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
               );
             })
           )}
-          <div ref={bottomRef} />
+          <div ref={messagesEndRef} />
         </div>
       </ScrollArea>
 
