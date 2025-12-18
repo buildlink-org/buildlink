@@ -59,6 +59,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   const loading = useMessagingStore(state => state.loadingStatus[otherUserId] || false);
   const fetchMessages = useMessagingStore(state => state.fetchMessages);
   const addMessageToStore = useMessagingStore(state => state.addMessage);
+  const markConversationAsRead = useMessagingStore(state => state.markConversationAsRead);
 
   const [sending, setSending] = useState(false);
   const [content, setContent] = useState('');
@@ -73,30 +74,9 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 
         fetchMessages(user.id, otherUserId);
 
-
-    // Real-time subscription here
-//    const channel = supabase
-//     .channel('messages')
-//     .on(
-//       'postgres_changes',
-//       {
-//         event: 'INSERT',
-//         schema: 'public',
-//         table: 'direct_messages',
-//         filter: `recipient_id=eq.${user.id}`,
-//       },
-//       (payload) => {
-//         if (payload.new.sender_id === otherUserId) {
-//           setMessages((msgs) => [...msgs, payload.new as Message]);
-//         }
-//       }
-//     )
-//     .subscribe();
-
-//   return () => {
-//     supabase.removeChannel(channel);
-//   };
-  }, [user, otherUserId, fetchMessages]);
+    // Mark conversation as read when opened
+    markConversationAsRead(user.id, otherUserId);
+  }, [user, otherUserId, fetchMessages, markConversationAsRead]);
 
   useEffect(() => {
     // Scroll to bottom when messages change

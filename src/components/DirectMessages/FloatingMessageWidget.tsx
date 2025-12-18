@@ -11,8 +11,11 @@ interface UserListItem {
   name?: string;
   avatar?: string;
 }
+interface FloatingMessagingWidgetProps {
+  count: number;
+}
 
-const FloatingMessagingWidget: React.FC = () => {
+const FloatingMessagingWidget: React.FC<FloatingMessagingWidgetProps> = ({ count }) => {
    const recipientId = useMessagingStore((state) => state.recipientId);
   const recipientName = useMessagingStore((state) => state.recipientName);
   const recipientAvatar = useMessagingStore((state) => state.recipientAvatar);
@@ -20,7 +23,6 @@ const FloatingMessagingWidget: React.FC = () => {
 
   const [isOpen, setIsOpen] = useState(!!recipientId);
   const [isMinimized, setIsMinimized] = useState(false);
-  const [unreadCount] = useState(0); // TODO: Implement unread count from DB
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null);
 
   useEffect(() => {
@@ -64,9 +66,9 @@ const FloatingMessagingWidget: React.FC = () => {
           className="fixed bottom-6 max-sm:bottom-10 right-4 max-sm:right-2 z-50 h-14 w-14 max-sm:h-10 max-sm:w-10 rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-transform duration-600 ease-in flex items-center justify-center"
         >
           <MessageSquare className="h-6 w-6 max-sm:h-5 max-sm:w-5" />
-          {unreadCount > 0 && (
+          {count > 0 && (
             <Badge className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 flex items-center justify-center bg-red-500">
-              {unreadCount}
+              {count}
             </Badge>
           )}
         </button>
@@ -96,9 +98,9 @@ const FloatingMessagingWidget: React.FC = () => {
               <h3 className="font-semibold text-sm">
                 {selectedUser ? selectedUser.name || 'Chat' : 'Inbox'}
               </h3>
-              {unreadCount > 0 && !selectedUser && (
+              {count > 0 && !selectedUser && (
                 <Badge variant="secondary" className="ml-1">
-                  {unreadCount}
+                  {count}
                 </Badge>
               )}
             </div>

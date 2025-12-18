@@ -1,4 +1,4 @@
-import { useState, useCallback, ReactNode } from "react"
+import { useState, useEffect, useCallback, ReactNode } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
 import TopBar from "@/components/TopBar"
@@ -11,6 +11,7 @@ import ResponsiveNavigation from "@/components/ResponsiveNavigation"
 import ContentFilters from "@/components/ContentFilters"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import FloatingMessagingWidget from "@/components/DirectMessages/FloatingMessageWidget"
+import {useMessagingStore} from "@/stores/messagingStore"
 
 interface IndexProps {
 	customContent?: ReactNode
@@ -26,6 +27,21 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 	const [activeTab, setActiveTab] = useState(initialTab)
 	const [activeFilter, setActiveFilter] = useState("latest")
 	const [loading, setLoading] = useState(false)
+
+	const subscribe = useMessagingStore(state => state.subscribeToMessages);
+    const fetchTotalUnreadCount = useMessagingStore(state => state.fetchTotalUnreadCount);
+    const totalUnreadCount = useMessagingStore(state => state.totalUnreadCount);
+
+	useEffect(() => {
+		if (user?.id) {
+			fetchTotalUnreadCount(user.id);
+
+			const unsubscribe = subscribe(user.id);
+			return () => unsubscribe();
+
+		}
+	}, [user?.id, subscribe, fetchTotalUnreadCount]);
+
 
 	const handleTabChange = useCallback(
 		(tab: string) => {
@@ -127,7 +143,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 					<div className={`transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
 				</div>
 			</div>
-			{user && <FloatingMessagingWidget />}
+			{user && <FloatingMessagingWidget count={totalUnreadCount} />}
 		</div>
 	)
 }

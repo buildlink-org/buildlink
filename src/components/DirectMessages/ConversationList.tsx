@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare } from 'lucide-react';
 import { useMessagingStore } from '@/stores/messagingStore';
 import { formatTimestamp } from '@/lib/utils';
+import { cn } from '@/lib/utils';
 
 interface UserListItem {
   id: string;
@@ -29,6 +30,15 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     // Get all messages from the store
   const messagesByUserId = useMessagingStore(state => state.messagesByUserId);
   const fetchMessagesFromStore = useMessagingStore(state => state.fetchMessages);
+
+  const hasUnreadMessages = (otherUserId: string): boolean => {
+    const conversationMessages = messagesByUserId[otherUserId];
+    if (!conversationMessages) return false;
+
+    return conversationMessages?.some(
+      (msg) => msg.recipient_id === user?.id && msg.read === false
+    ) || false;
+  }
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -146,39 +156,56 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   return (
     <ScrollArea className="h-full">
       <div className="">
-        {users.map((u, index) => (
-          <div key={u.id}>
-          <button
-            onClick={() => onSelectUser(u)}
-            className="w-full px-4 py-2 flex items-center gap-2 text-left"
-          >
-            <Avatar className="h-10 w-10">
-              <AvatarImage src={u.avatar} alt={u.name} />
-              <AvatarFallback>
-                {u.name
-                  ?.split(' ')
-                  .map((n) => n[0])
-                  .join('') || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <div className="flex">
-                <p className="font-semibold text-sm truncate">{u.name || 'Unknown User'}</p>
-                <span className="text-[9px] text-muted-foreground ml-auto pl-2 flex-shrink-0">
-                {getLastMessageTimestamp(u.id)}
-              </span>
+        {users.map((u, index) => {
+            const isUnread = hasUnreadMessages(u.id);
+            
+            return (
+              <div key={u.id}>
+              <button
+                onClick={() => onSelectUser(u)}
+                className="w-full px-4 py-2 flex items-center gap-2 text-left"
+              >
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={u.avatar} alt={u.name} />
+                  <AvatarFallback>
+                    {u.name
+                      ?.split(' ')
+                      .map((n) => n[0])
+                      .join('') || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <div className="flex">
+                    <p className={cn(
+                      "text-sm truncate",
+                      isUnread ? 'font-bold text-foreground' : 'font-semibold text-muted-foreground'
+                    )}>
+                      {u.name || 'Unknown User'}
+                    </p>
+                    <span className={cn(
+                      "text-[9px] flex-shrink-0 ml-auto pl-2",
+                      isUnread ? 'font-bold text-blue-600' : 'text-muted-foreground'
+                    )}>
+                      {getLastMessageTimestamp(u.id)}
+                    </span>
+                  </div>
+                  <p className={cn(
+                    "text-xs truncate",
+                    isUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'
+                  )}>
+                    {getLastMessageSnippet(u.id)}
+                  </p>
+                </div>            
+              </button>
+              { /* message list seperator */}
+              {index < users.length - 1 && (
+                        <div className="px-4">
+                            <hr className="bg-[#a51e06] opacity-20 h-[2px]" />
+                        </div>
+                    )}
                 </div>
-              <p className="text-xs text-muted-foreground">{getLastMessageSnippet(u.id)}</p>
-            </div>            
-          </button>
-          { /* message list seperator */}
-          {index < users.length - 1 && (
-                    <div className="px-4">
-                        <hr className="bg-[#a51e06] opacity-20 h-[2px]" />
-                    </div>
-                )}
-            </div>
-        ))}
+            );
+        })}
       </div>
     </ScrollArea>
   );
