@@ -24,6 +24,7 @@ import EducationSection from "@/components/profile-sections/details/EducationSec
 import CertificationsSection from "@/components/profile-sections/details/CertificationsSection"
 import CompactSkillsSection from "@/components/profile-sections/details/CompactSkillsSection"
 import AccountTypeBadge from "@/components/AccountTypeBadge"
+import { useMessagingStore } from "@/stores/messagingStore"
 
 type ConnectionStatus =
 	| "not_connected"
@@ -232,6 +233,9 @@ const PublicProfileView: React.FC = () => {
 	const isOwner = user?.id === profileId
 	const mode: Mode = isOwner ? "edit" : "view"
 
+	const openConversation = useMessagingStore((state) => state.openConversation)
+
+
 	const student = profile?.user_type === "student"
 	const professional = profile?.user_type === "professional"
 	const company = profile?.user_type === "company"
@@ -425,15 +429,21 @@ const PublicProfileView: React.FC = () => {
 
 		const messageButton = (
 			<Button
-				variant="outline"
-				onClick={() => {
-					if (connectionStatus !== "connected") {
-						toast({ title: "Info", description: "Connect first to send messages", variant: "default" })
-						return
-					}
+			  variant="outline"
+			  onClick={() => {
+				if (connectionStatus !== "connected") {
+				  toast({ title: "Info", description: "Connect first to send messages", variant: "default" })
+				  return
+				}
+				if (openConversation) {
+					openConversation(profileId!, profile?.full_name, profile?.avatar)
+				} else {
 					toast({ title: "Info", description: "Messaging coming soon!", variant: "default" })
-				}}
-				className={connectionStatus !== "connected" ? "opacity-60 cursor-not-allowed" : ""}
+				}
+			  }}
+			  className={connectionStatus !== "connected" ? "opacity-60 cursor-not-allowed" : ""}
+			  title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
+			  disabled={connectionStatus !== "connected"}
 			>
 				<MessageCircle className="mr-2 h-4 w-4" />
 				Message
@@ -977,6 +987,107 @@ const PublicProfileView: React.FC = () => {
 					)}
 				</SectionCard>
 			) : null}
+
+			{/* Certification Section */}
+			{professional && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Certifications</CardTitle>
+					</CardHeader>
+					{profile.Certification && profile.Certification.length > 0 && (
+						<CardContent className="space-y-4">
+							{profile.education.map((edu: any, index: number) => (
+								<div
+									key={index}
+									className="border-l-2 border-muted pl-4">
+									<h3 className="font-semibold">{edu.degree}</h3>
+									<p className="text-sm text-muted-foreground">{edu.institution}</p>
+									<p className="text-xs text-muted-foreground">
+										{edu.startDate} - {edu.endDate || "Present"}
+									</p>
+									{edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
+								</div>
+							))}
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Jobs/Roles Section */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Roles</CardTitle>
+					</CardHeader>
+					{profile.Certification && profile.Certification.length > 0 && (
+						<CardContent className="space-y-4">
+							{profile.education.map((edu: any, index: number) => (
+								<div
+									key={index}
+									className="border-l-2 border-muted pl-4">
+									<h3 className="font-semibold">{edu.degree}</h3>
+									<p className="text-sm text-muted-foreground">{edu.institution}</p>
+									<p className="text-xs text-muted-foreground">
+										{edu.startDate} - {edu.endDate || "Present"}
+									</p>
+									{edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
+								</div>
+							))}
+						</CardContent>
+					)}
+				</Card>
+			)}
+
+			{/* Connection Preview */}
+			{(student || professional) && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Connection Preview</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* People Preview */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>People</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* Products/Services */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Products/Services</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* Events */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Events</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+
+			{/* Life/Culture */}
+			{company && (
+				<Card>
+					<CardHeader>
+						<CardTitle>Life/Culture</CardTitle>
+					</CardHeader>
+					<CardContent></CardContent>
+				</Card>
+			)}
+			
 		</div>
 	)
 }
