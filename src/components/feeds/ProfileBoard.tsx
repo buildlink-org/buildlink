@@ -7,6 +7,7 @@ import ProfileEducation from "../profile-sections/details/EducationSection";
 import ProfileExperience from "../profile-sections/details/ExperienceSection";
 import ProfileSkills from "../profile-sections/details/CompactSkillsSection";
 import ProfileCertifications from "../profile-sections/details/CertificationsSection";
+import LanguagesSection from "../profile-sections/details/LanguagesSection";
 import ProfileJobs from "../profile/ProfileJobs";
 import ProfilePeople from "../profile/ProfilePeople";
 import ProfileProducts from "../profile/ProfileProducts";
@@ -14,11 +15,13 @@ import ProfileProducts from "../profile/ProfileProducts";
 import { useProfile } from "@/hooks/useProfile";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import ProfileCompletionIndicator from "@/components/profile/ProfileCompletionIndicator";
 import { BookOpen, Users } from "lucide-react";
 import { UserProfile } from "@/types";
+import { useState } from "react";
 
-// About & Activity Side-by-Side Component
+// About & Activity Tabbed Component
 const AboutActivitySection = ({ 
 	profile, 
 	userPosts, 
@@ -28,28 +31,79 @@ const AboutActivitySection = ({
 	userPosts: any[]
 	handleProfileUpdate: () => void 
 }) => {
+	const [activeTab, setActiveTab] = useState("about");
+	const userType = profile?.user_type?.toLowerCase() || "student"
+
+	// Get account-type-specific colors matching ProfileHeader
+	const getColorConfig = () => {
+		if (userType === "student") {
+			return {
+				bgColor: "bg-yellow-100",
+				borderColor: "border-yellow-50",
+			}
+		} else if (userType === "professional") {
+			return {
+				bgColor: "bg-[#FFCBA4]",
+				borderColor: "border-[#FFCBA4]",
+			}
+		} else if (userType === "company") {
+			return {
+				bgColor: "bg-green-200",
+				borderColor: "border-green-200",
+			}
+		}
+		// Default fallback
+		return {
+			bgColor: "bg-gradient-to-r from-blue-50 to-indigo-50",
+			borderColor: "border-blue-200",
+		}
+	}
+
+	const colorConfig = getColorConfig();
+
 	return (
-		<div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:items-stretch">
-			{/* About - Left Column */}
-			<div className="space-y-4 flex flex-col h-full">
-				<h2 className="text-xl font-semibold">About</h2>
-				<div className="flex-1">
-					<ProfileAbout 
-						profile={profile} 
-						handleProfileUpdate={handleProfileUpdate}
-						compact={true}
-					/>
-				</div>
-			</div>
-			
-			{/* Activity - Right Column */}
-			<div className="space-y-4 flex flex-col h-full">
-				<h2 className="text-xl font-semibold">Activity</h2>
-				<div className="flex-1">
-					<ProfileActivity userPosts={userPosts} />
-				</div>
-			</div>
-		</div>
+		<Card className={`${colorConfig.bgColor} border ${colorConfig.borderColor} shadow-sm`}>
+			<CardContent className="p-0">
+				<Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+					<div className="relative border-b border-gray-200">
+						<TabsList className="w-full h-auto p-0 bg-transparent rounded-none border-0">
+							<TabsTrigger 
+								value="about" 
+								className={`flex-1 rounded-none border border-b-0 text-foreground/70 hover:text-foreground transition-all py-3 px-6 ${
+									activeTab === "about" 
+										? `${colorConfig.bgColor} border-border border-b-transparent -mb-[1px] text-foreground shadow-sm`
+										: "bg-transparent border-border rounded-lg"
+								}`}
+							>
+								About
+							</TabsTrigger>
+							<TabsTrigger 
+								value="activity" 
+								className={`flex-1 rounded-none border border-b-0 text-foreground/70 hover:text-foreground transition-all py-3 px-6 ${
+									activeTab === "activity" 
+										? `${colorConfig.bgColor} border-border border-b-transparent -mb-[1px] text-foreground shadow-sm`
+										: "bg-transparent border-border border-lg"
+								}`}
+							>
+								Activity
+							</TabsTrigger>
+						</TabsList>
+					</div>
+					
+					<TabsContent value="about" className="mt-0 p-6">
+						<ProfileAbout 
+							profile={profile} 
+							handleProfileUpdate={handleProfileUpdate}
+							compact={true}
+						/>
+					</TabsContent>
+					
+					<TabsContent value="activity" className="mt-0 p-6">
+						<ProfileActivity userPosts={userPosts} noCard={true} />
+					</TabsContent>
+				</Tabs>
+			</CardContent>
+		</Card>
 	)
 }
 
@@ -81,33 +135,6 @@ const ConnectionsPreview = ({ profile }: { profile: UserProfile }) => {
 	)
 }
 
-// Following Preview Component
-const FollowingPreview = ({ profile }: { profile: UserProfile }) => {
-	// TODO: Fetch from following service
-	const following: any[] = []
-	
-	return (
-		<Card>
-			<CardContent className="p-6">
-				<div className="flex items-center justify-between mb-4">
-					<h3 className="text-lg font-semibold">Following</h3>
-					<Button variant="outline" size="sm">View All</Button>
-				</div>
-				{following.length > 0 ? (
-					<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-						{following.slice(0, 8).map((follow) => (
-							<div key={follow.id} className="text-center">
-								{/* Following preview card */}
-							</div>
-						))}
-					</div>
-				) : (
-					<p className="text-muted-foreground text-center py-4">Not following anyone yet</p>
-				)}
-			</CardContent>
-		</Card>
-	)
-}
 
 const ProfileBoard = () => {
 	const {
@@ -214,24 +241,25 @@ const ProfileBoard = () => {
 						profile={profile} 
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-					<ProfileEducation 
-						profile={profile} 
+					{/* Professional Experience - on its own */}
+					<ProfileExperience
+						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-					{profile.experiences && profile.experiences.length > 0 && (
-						<ProfileExperience 
-							profile={profile} 
-							handleProfileUpdate={handleProfileUpdate}
-						/>
-					)}
-					{profile.certifications && profile.certifications.length > 0 && (
-						<ProfileCertifications 
-							profile={profile} 
-							handleProfileUpdate={handleProfileUpdate}
-						/>
-					)}
-					<ConnectionsPreview profile={profile} />
-					<FollowingPreview profile={profile} />
+					{/* Education & Training - on its own */}
+					<ProfileEducation
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+					{/* Licenses & Certifications - on its own */}
+					<ProfileCertifications
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+					<LanguagesSection
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
 				</>
 			)}
 
@@ -241,27 +269,28 @@ const ProfileBoard = () => {
 						profile={profile} 
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-					{profile.experiences && profile.experiences.length > 0 && (
-						<ProfileExperience 
-							profile={profile} 
-							handleProfileUpdate={handleProfileUpdate}
-						/>
-					)}
-					<ProfileEducation 
-						profile={profile} 
+					{/* Professional Experience - on its own */}
+					<ProfileExperience
+						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-					{profile.certifications && profile.certifications.length > 0 && (
-						<ProfileCertifications 
-							profile={profile} 
-							handleProfileUpdate={handleProfileUpdate}
-						/>
-					)}
-					<ConnectionsPreview profile={profile} />
-					<FollowingPreview profile={profile} />
+					{/* Education & Training - on its own */}
+					<ProfileEducation
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+					{/* Licenses & Certifications - on its own */}
+					<ProfileCertifications
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+					<LanguagesSection
+						profile={profile}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
 				</>
 			)}
-
+			
 			{userType === "company" && (
 				<>
 					{/* Featured Section */}
@@ -273,7 +302,6 @@ const ProfileBoard = () => {
 					</Card>
 					<ProfileProducts profile={profile} />
 					<ProfilePeople profile={profile} />
-					<FollowingPreview profile={profile} />
 				</>
 			)}
 		</div>

@@ -27,7 +27,7 @@ const AccountTypeBadge = ({ userType, className = '' }: AccountTypeBadgeProps) =
         return {
           icon: Users,
           label: 'Professional',
-          variant: 'outline' as const,
+          variant: 'default' as const,
           description: '🏗️ Practicing professional with accreditation/experience'
         };
       case 'company':

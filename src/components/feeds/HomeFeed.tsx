@@ -263,22 +263,22 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 
 			{/* Notifications Panel */}
 			{showNotifications && user && (
-				<div className="rounded-lg border bg-white p-6">
+				<div className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
 					<NotificationsList />
 				</div>
 			)}
 
 			{/* Create Post Section */}
 			{user && (
-				<div className="rounded-lg border bg-white p-4">
+				<div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
 					<CreatePostDialog onPostCreated={handleCreatePost} />
 				</div>
 			)}
 
 			{/* Filter Results Info */}
 			{activeFilter !== "latest" && (
-				<div className="rounded-lg border bg-white p-4">
-					<p className="text-sm text-gray-600">
+				<div className="rounded-lg border border-border bg-card p-4 text-card-foreground shadow-sm">
+					<p className="text-sm text-muted-foreground">
 						Showing {posts.length} {activeFilter} posts
 					</p>
 				</div>

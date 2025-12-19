@@ -29,7 +29,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
     <>
       {/* Desktop Sidebar */}
       <div className="md:block hidden fixed md:w-30 lg:w-60 xl:w-72 h-full">
-        <nav className="p-4 space-y-2 h-full overflow-y-auto">
+        <nav className="p-4 space-y-2 h-full overflow-y-auto text-foreground">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -42,8 +42,8 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                   "flex items-center gap-3 w-full p-3 rounded-md text-left transition-colors",
                   "hover:bg-accent hover:text-accent-foreground",
                   active
-                    ? "bg-accent text-accent-foreground font-medium"
-                    : "text-foreground",
+                    ? "bg-accent text-accent-foreground font-semibold"
+                    : "text-foreground/90",
                   loading && "opacity-50 cursor-not-allowed"
                 )}>
                 <Icon size={20} />
@@ -57,41 +57,45 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
 
           <div className="fixed bottom-4">
             {/* Quick Links */}
-            <div className="flex flex-row  justify-start space-x-6">
+            <div className="flex flex-row justify-start space-x-6">
               <a
                 href="/privacy-policy.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-foreground/60 hover:text-primary transition-colors">
+                className="text-sm text-foreground/80 hover:text-primary transition-colors">
                 Privacy Policy
               </a>
               <a
                 href="/terms-of-service.pdf"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-foreground/60 hover:text-primary transition-colors">
+                className="text-sm text-foreground/80 hover:text-primary transition-colors">
                 Terms of Service
               </a>
             </div>
 
             {/* Contact Icons */}
-            <div className="flex justify-start space-x-4 mt-4">
+            <div className="flex justify-start space-x-4 mt-4 text-foreground/80">
               <a
+                title="Email"
                 href="mailto:info@buildlink.co.ke"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <Mail size={20} />
               </a>
               <a
+                title="Linkedin"
                 href="#"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <Linkedin size={20} />
               </a>
               <a
+                title="Twitter"
                 href="#"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <X size={20} />
               </a>
               <a
+                title="Instagram"
                 href="#"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <Instagram size={20} />
