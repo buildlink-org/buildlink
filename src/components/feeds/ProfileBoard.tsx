@@ -82,7 +82,7 @@ const AboutActivitySection = ({
 								className={`flex-1 rounded-none border border-b-0 text-foreground/70 hover:text-foreground transition-all py-3 px-6 ${
 									activeTab === "activity" 
 										? `${colorConfig.bgColor} border-border border-b-transparent -mb-[1px] text-foreground shadow-sm`
-										: "bg-transparent border-border border-lg"
+										: "bg-transparent border-border rounded-lg"
 								}`}
 							>
 								Activity
