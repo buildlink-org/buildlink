@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Dialog, DialogContent } from "@/components/ui/dialog"
-import MediaPreview from "@/components/ui/media-preview"
 import PortfolioGallery from "./PortfolioGallery"
 import PortfolioEditorDialog from "./PortfolioEditorDialog"
 import { supabase } from "@/integrations/supabase/client"
@@ -23,32 +21,58 @@ type PortfolioItem = {
 interface PortfolioSectionProps {
 	profile: UserProfile
 	handleProfileUpdate: () => void
+	canEdit?: boolean
 }
 
-const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProfileUpdate }) => {
+const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProfileUpdate, canEdit: canEditProp }) => {
 	const [editorOpen, setEditorOpen] = useState(false)
 	const [galleryOpen, setGalleryOpen] = useState(false)
-	const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
-	const [selectedPdfUrl, setSelectedPdfUrl] = useState<string>("")
-	const [selectedPdfName, setSelectedPdfName] = useState<string>("")
 	const [updating, setUpdating] = useState(false)
 	const [portfolioList, setPortfolioList] = useState<PortfolioItem[]>([])
 	const [activeGalleryIndex, setActiveGalleryIndex] = useState(0)
 	const { toast } = useToast()
 
 	useEffect(() => {
-		setPortfolioList(Array.isArray(profile.portfolio) ? profile.portfolio : [])
-	}, [profile.portfolio])
+		setPortfolioList(Array.isArray((profile as any).portfolio) ? (profile as any).portfolio : [])
+	}, [(profile as any).portfolio])
 
-	const canEdit = true
+	const canEdit = canEditProp !== undefined ? canEditProp : true
+
+	// Get account-type-specific colors matching ProfileHeader
+	const getColorConfig = () => {
+		const userType = profile?.user_type?.toLowerCase() || "student"
+
+		if (userType === "student") {
+			return {
+				bgColor: "bg-yellow-100",
+				borderColor: "border-yellow-50",
+			}
+		} else if (userType === "professional") {
+			return {
+				bgColor: "bg-[#FFCBA4]",
+				borderColor: "border-[#FFCBA4]",
+			}
+		} else if (userType === "company") {
+			return {
+				bgColor: "bg-green-200",
+				borderColor: "border-green-200",
+			}
+		}
+		// Default fallback
+		return {
+			bgColor: "bg-gradient-to-r from-blue-50 to-indigo-50",
+			borderColor: "border-blue-200",
+		}
+	}
+
+	const colorConfig = getColorConfig()
 
 	const handlePortfolioAdd = async (item: PortfolioItem) => {
-		// Check PDF limit
-		const currentPdfCount = portfolioList.filter((p) => p.type === "pdf").length
-		if (item.type === "pdf" && currentPdfCount >= 5) {
+		// Check portfolio limit (max 3 items)
+		if (portfolioList.length >= 3) {
 			toast({
-				title: "PDF Limit Reached",
-				description: "You can only upload up to 5 PDF files in your portfolio.",
+				title: "Portfolio Limit Reached",
+				description: "You can only upload up to 3 portfolio items.",
 				variant: "destructive",
 			})
 			return
@@ -90,19 +114,10 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 				<div className="mb-6 flex flex-wrap items-center justify-between gap-y-2">
 					<div className="flex items-center space-x-2">
 						<h3 className="text-lg font-semibold text-foreground">Portfolio</h3>
-						<span className="text-sm text-muted-foreground">({portfolioList.length}/5 portfolio items uploaded)</span>
+						<span className="text-sm text-muted-foreground">({portfolioList.length}/3 items uploaded)</span>
 					</div>
 					{canEdit && (
 						<div className="flex items-center gap-2">
-							<Button
-								variant="ghost"
-								size="sm"
-								className="gap-2"
-								onClick={() => setGalleryOpen(true)}
-								disabled={updating || portfolioList.length === 0}>
-								<Edit className="h-4 w-4" />
-								Edit
-							</Button>
 							<Button
 								variant="outline"
 								size="sm"
@@ -111,6 +126,14 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 								disabled={updating}>
 								<Plus className="h-4 w-4" />
 								Add Project
+							</Button>
+							<Button
+								variant="ghost"
+								size="sm"
+								className="gap-2"
+								onClick={() => setGalleryOpen(true)}
+								disabled={updating || portfolioList.length === 0}>
+								<Edit className="h-4 w-4" />
 							</Button>
 						</div>
 					)}
@@ -134,45 +157,56 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 					</div>
 				) : (
 					<div className="space-y-6">
-						{/* Enhanced Portfolio Grid */}
-						<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-							{portfolioList.map((item, index) => (
-								<div
-									key={item.id}
-									className="cursor-pointer overflow-hidden rounded-lg border border-border bg-card transition-all duration-200"
-									onClick={() => {
-										if (item.type === "pdf") {
-											setSelectedPdfUrl(item.url)
-											setSelectedPdfName(item.name.replace(/\.(pdf|PDF)$/, ""))
-											setPdfViewerOpen(true)
-										} else if (item.type === "link") {
-											window.open(item.url, "_blank")
-										} else {
-											setActiveGalleryIndex(index)
-											setGalleryOpen(true)
-										}
-									}}>
-									<div className="p-4">
-										<h4 className="py-4 font-semibold">{item.name.replace(/\.(pdf|PDF)$/, "")}</h4>
-										{item.description && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{item.description}</p>}
-										<div className="mt-2 flex items-center justify-between">
-											<span className={`text-xs text-muted-foreground capitalize px-2 py-1 rounded ${item.type === "pdf" ? "bg-red-100 text-red-800" : "bg-green-100 text-green-800"}`}>{item.type === "pdf" ? "PDF" : item.type}</span>
-											<MoveRight className="h-4 w-4" />
-											{/* {canEdit && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleRemove(item.id);
-                          }}
-                          className="p-1 text-destructive opacity-0 transition-all hover:text-destructive/80 group-hover:opacity-100"
-                          disabled={updating}>
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      )} */}
+						{/* Portfolio Grid styled as folder cards */}
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+							{portfolioList.map((item, index) => {
+								// Determine card positioning: middle card (index 1) gets mt-6, others get mb-6
+								const isMiddleCard = index === 1 && portfolioList.length === 3;
+								const cardClasses = isMiddleCard ? "mt-6" : "mb-6";
+								
+								return (
+									<div
+										key={item.id}
+										className={`cursor-pointer group ${cardClasses}`}
+										onClick={() => {
+											if (item.type === "link") {
+												window.open(item.url, "_blank")
+											} else {
+												setActiveGalleryIndex(index)
+												setGalleryOpen(true)
+											}
+										}}>
+										{/* Folder-style card with stacked effect */}
+										<div className="relative flex h-full flex-col overflow-visible transition-transform group-hover:scale-105">
+											{/* Top tab bar - darker gray, behind the card */}
+											<div className="absolute -top-1 left-3 right-3 h-5 bg-gray-400 rounded-t-lg z-0 shadow-sm" />
+											
+											{/* Card body - color-coded card in front, overlapping the gray tab */}
+											<div className={`relative flex h-full flex-col rounded-lg ${colorConfig.bgColor} border ${colorConfig.borderColor} shadow-sm z-10 mt-1`}>
+												<div className="flex-1 px-5 pb-5 pt-5 flex flex-col min-h-[160px]">
+												{/* White rectangular field at top with project name */}
+												<div className="w-full rounded-md bg-white px-4 py-3 shadow-sm border border-gray-100 mb-4">
+													<h4 className="font-medium text-base truncate text-gray-900">
+														{item.name}
+													</h4>
+												</div>
+
+												{/* Thumbnail preview if available */}
+												{item.thumbnailUrl && (
+													<div className="w-full h-24 rounded-md overflow-hidden mb-2 bg-gray-100">
+														<img 
+															src={item.thumbnailUrl} 
+															alt={item.name}
+															className="w-full h-full object-cover"
+														/>
+													</div>
+												)}
+												</div>
+											</div>
 										</div>
 									</div>
-								</div>
-							))}
+								)
+							})}
 						</div>
 					</div>
 				)}
@@ -186,23 +220,6 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 					onRemove={handleRemove}
 					updating={updating}
 				/>
-
-				{/* PDF Viewer Dialog */}
-				<Dialog
-					open={pdfViewerOpen}
-					onOpenChange={setPdfViewerOpen}>
-					<DialogContent className="flex h-[90vh] w-full max-w-6xl flex-col">
-						<div className="min-h-0 flex-1">
-							<MediaPreview
-								url={selectedPdfUrl}
-								type="pdf"
-								name={selectedPdfName}
-								className="h-full w-full"
-								showActions={true}
-							/>
-						</div>
-					</DialogContent>
-				</Dialog>
 
 				<PortfolioEditorDialog
 					open={editorOpen}

@@ -67,7 +67,7 @@ export default function SearchResultsPage() {
             {profiles.map((p) => (
               <div
                 key={p.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-accent/20 hover:bg-accent/80 cursor-pointer"
+                className="group flex items-center gap-3 p-3 rounded-lg border border-accent/20 hover:bg-accent/80 cursor-pointer"
                 onClick={() => navigate(`/profile/${p.id}`)}
               >
                 <Avatar className="h-12 w-12">
@@ -76,10 +76,14 @@ export default function SearchResultsPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <p className="font-medium truncate">{p.full_name || "Unknown"}</p>
-                    <Badge variant="outline" className="text-[10px]">{p.user_type}</Badge>
+                    <p className="font-medium truncate group-hover:text-accent-foreground">
+                      {p.full_name || "Unknown"}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] group-hover:text-accent-foreground group-hover:border-accent-foreground">
+                      {p.user_type}
+                    </Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-muted-foreground truncate group-hover:text-accent-foreground">
                     {p.profession || p.title || "No profession"}
                     {p.organization && ` • ${p.organization}`}
                   </p>

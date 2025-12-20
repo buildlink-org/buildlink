@@ -13,13 +13,13 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 	return (
 		<div className="space-y-6">
 			{/* Welcome Message */}
-			<Card className="border-purple-200 bg-gradient-to-r from-purple-50 to-pink-50">
+			<Card className="border border-border bg-gradient-to-r from-primary/20 via-primary/10 to-background">
 				<CardHeader>
 					<div className="flex items-center gap-2">
-						<Building2 className="h-6 w-6 text-purple-600" />
-						<CardTitle className="text-purple-900">Welcome to {profile.organization || "Your Company"}!</CardTitle>
+						<Building2 className="h-6 w-6 text-primary" />
+						<CardTitle className="text-foreground">Welcome to {profile.organization || "Your Company"}!</CardTitle>
 					</div>
-					<CardDescription className="text-purple-700">🏢 Build your brand, showcase projects, and connect with top talent in the built environment.</CardDescription>
+					<CardDescription className="text-muted-foreground">🏢 Build your brand, showcase projects, and connect with top talent in the built environment.</CardDescription>
 				</CardHeader>
 			</Card>
 
@@ -146,20 +146,20 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 			</div>
 
 			{/* Premium Features Highlight */}
-			<Card className="border-yellow-200 bg-yellow-50">
+			<Card className="border border-border bg-muted">
 				<CardHeader>
-					<CardTitle className="flex items-center gap-2 text-yellow-900">
+					<CardTitle className="flex items-center gap-2 text-foreground">
 						<Building2 className="h-5 w-5" />
 						Premium Company Features
 					</CardTitle>
-					<CardDescription className="text-yellow-700">Unlock premium visibility and advanced analytics for your company profile</CardDescription>
+					<CardDescription className="text-muted-foreground">Unlock premium visibility and advanced analytics for your company profile</CardDescription>
 				</CardHeader>
 				<CardContent>
 					<div className="space-y-3">
 						<div className="flex items-center gap-2">
 							<Badge
 								variant="outline"
-								className="bg-yellow-100 text-yellow-800">
+								className="bg-primary/10 text-primary">
 								Premium
 							</Badge>
 							<span className="text-sm">Featured project placement on homepage</span>
@@ -167,7 +167,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 						<div className="flex items-center gap-2">
 							<Badge
 								variant="outline"
-								className="bg-yellow-100 text-yellow-800">
+								className="bg-primary/10 text-primary">
 								Analytics
 							</Badge>
 							<span className="text-sm">Advanced engagement metrics for projects and job postings</span>

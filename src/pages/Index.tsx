@@ -96,7 +96,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 
 	const shouldShowFilters = showFilters && (activeTab === "home" || activeTab === "skillup")
 
-	return (
+		return (
 		<div className="min-h-screen bg-background">
 			<TopBar
 				onLogoClick={handleLogoClick}
@@ -107,7 +107,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 			{/* Main Content */}
 			<div className="relative top-12 mx-auto grid h-screen w-full max-w-screen-xl grid-cols-12 px-4 pb-20 md:pb-8">
 				{showNavigation && (
-					<div className="col-span-3 bg-white">
+					<div className="col-span-3 bg-background/80">
 						<ResponsiveNavigation loading={loading} />
 					</div>
 				)}

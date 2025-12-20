@@ -17,7 +17,7 @@ interface ProfileAboutProps {
 }
 
 const ProfileAbout = ({ profile, handleProfileUpdate, compact = false }: ProfileAboutProps) => {
-	// If compact mode, only show AboutSection
+	// If compact mode, only show AboutSection without card wrapper
 	if (compact) {
 		return (
 			<div className="space-y-4 h-full flex flex-col">
@@ -25,6 +25,7 @@ const ProfileAbout = ({ profile, handleProfileUpdate, compact = false }: Profile
 					<AboutSection
 						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
+						noCard={true}
 					/>
 				</div>
 			</div>
