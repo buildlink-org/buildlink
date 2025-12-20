@@ -119,7 +119,7 @@ export default function SearchDropdown() {
               {profiles.map((p) => (
                 <button
                   key={p.id}
-                  className="w-full px-4 py-3 text-left hover:bg-accent flex items-center gap-3"
+                  className="group w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-accent hover:text-accent-foreground text-foreground"
                   onClick={() => {
                     navigate(`/profile/${p.id}`);
                     setOpen(false);
@@ -127,14 +127,21 @@ export default function SearchDropdown() {
                 >
                   <Avatar className="h-9 w-9">
                     <AvatarImage src={p.avatar || undefined} />
-                    <AvatarFallback>{p.full_name?.[0] || "U"}</AvatarFallback>
+                    <AvatarFallback className="group-hover:text-foreground">{p.full_name?.[0] || "U"}</AvatarFallback>
                   </Avatar>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-sm truncate">{p.full_name || "Unknown"}</span>
-                      <Badge variant="outline" className="text-[10px]">{p.user_type}</Badge>
+                      <span className="font-medium text-sm truncate group-hover:text-accent-foreground">
+                        {p.full_name || "Unknown"}
+                      </span>
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] group-hover:text-accent-foreground group-hover:border-accent-foreground"
+                      >
+                        {p.user_type}
+                      </Badge>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">
+                    <p className="text-xs text-muted-foreground truncate group-hover:text-accent-foreground">
                       {p.profession || p.title || "No profession"}
                     </p>
                     {p.skills && p.skills.length > 0 && (
@@ -161,7 +168,7 @@ export default function SearchDropdown() {
               {posts.map((post) => (
                 <button
                   key={post.id}
-                  className="w-full px-4 py-3 text-left hover:bg-accent flex items-center gap-3"
+                  className="w-full px-4 py-3 text-left flex items-center gap-3 hover:bg-accent hover:text-accent-foreground text-foreground"
                   onClick={() => {
                     // Adjust when a post detail route exists
                     setOpen(false);
@@ -179,14 +186,19 @@ export default function SearchDropdown() {
           )}
         </div>
 
-        <div className="flex items-center justify-between px-3 py-2 border-t">
-          <span className="text-xs text-muted-foreground">
-            {query.trim().length < 2 ? "Type at least 2 characters" : `${profiles.length} shown · see all results`}
-          </span>
-          <Button variant="link" size="sm" onClick={seeAll} disabled={query.trim().length < 2}>
-            See all results
-          </Button>
-        </div>
+        {/* See all results link */}
+        {query.trim().length >= 2 && (profiles.length > 0 || posts.length > 0) && (
+          <div className="border-t px-3 py-2 flex justify-end">
+            <Button
+              variant="link"
+              size="sm"
+              className="text-xs px-0"
+              onClick={() => seeAll()}
+            >
+              See all results
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

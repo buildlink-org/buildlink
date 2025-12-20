@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Settings, User, Shield, Bell, Palette } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Settings, Bell, Palette, Sun, Moon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,16 +19,7 @@ import {
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import ProfileEditForm from "./ProfileEditForm";
-import { PrivacySettingsDialog } from "./PrivacySettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 
 interface ProfileSettingsDialogProps {
@@ -37,14 +28,39 @@ interface ProfileSettingsDialogProps {
 
 const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const { toast } = useToast();
+
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark" || saved === "light") return saved;
+      // Check system preference
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+    }
+    return "light";
+  });
 
   // Settings state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [profileVisibility, setProfileVisibility] = useState("public");
+
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const handleThemeChange = (isDark: boolean) => {
+    setTheme(isDark ? "dark" : "light");
+  };
 
   const handleSaveSettings = () => {
     // Save settings logic would go here
@@ -71,40 +87,61 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
             </DialogDescription>
           </DialogHeader>
 
-          <Tabs defaultValue="profile" className="flex-1 overflow-hidden">
+          <Tabs defaultValue="theme" className="flex-1 overflow-hidden">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              {/* <TabsTrigger value="privacy">Privacy</TabsTrigger> */}
+              <TabsTrigger value="theme">Colour Theme</TabsTrigger>
+              <TabsTrigger value="account">Account Actions</TabsTrigger>
               <TabsTrigger value="notifications">Notifications</TabsTrigger>
             </TabsList>
 
             <div className="mt-4 max-h-[60vh] overflow-y-auto">
-              <TabsContent value="profile" className="space-y-4">
+              <TabsContent value="theme" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <User className="h-4 w-4" />
-                      Profile Information
+                      <Palette className="h-4 w-4" />
+                      Colour Theme
                     </CardTitle>
                     <CardDescription>
-                      Update your personal information and professional details
+                      Choose between light and dark mode for your interface
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <Button
-                      onClick={() => {
-                        setOpen(false);
-                        setShowProfileEdit(true);
-                      }}
-                      className="w-full">
-                      Edit Profile Details
-                    </Button>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {theme === "light" ? (
+                          <Sun className="h-5 w-5 text-yellow-500" />
+                        ) : (
+                          <Moon className="h-5 w-5 text-blue-400" />
+                        )}
+                        <div>
+                          <Label htmlFor="theme-toggle" className="text-base font-medium">
+                            {theme === "light" ? "Light Mode" : "Dark Mode"}
+                          </Label>
+                          <p className="text-sm text-muted-foreground">
+                            {theme === "light"
+                              ? "Bright interface for daytime use"
+                              : "Dark interface for reduced eye strain"}
+                          </p>
+                        </div>
+                      </div>
+                      <Switch
+                        id="theme-toggle"
+                        checked={theme === "dark"}
+                        onCheckedChange={(checked) => handleThemeChange(checked)}
+                      />
+                    </div>
                   </CardContent>
                 </Card>
+              </TabsContent>
 
+              <TabsContent value="account" className="space-y-4">
                 <Card>
                   <CardHeader>
                     <CardTitle>Account Actions</CardTitle>
+                    <CardDescription>
+                      Manage your account settings and data
+                    </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Button variant="outline" className="w-full justify-start">
@@ -120,51 +157,6 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
                   </CardContent>
                 </Card>
               </TabsContent>
-
-              {/* <TabsContent value="privacy" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Shield className="h-4 w-4" />
-                      Privacy Settings
-                    </CardTitle>
-                    <CardDescription>
-                      Control who can see your profile and contact you
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Label htmlFor="profile-visibility">
-                        Profile Visibility
-                      </Label>
-                      <Select
-                        value={profileVisibility}
-                        onValueChange={setProfileVisibility}>
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="public">Public</SelectItem>
-                          <SelectItem value="connections">
-                            Connections Only
-                          </SelectItem>
-                          <SelectItem value="private">Private</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setOpen(false);
-                        setShowPrivacySettings(true);
-                      }}
-                      className="w-full">
-                      Advanced Privacy Settings
-                    </Button>
-                  </CardContent>
-                </Card>
-              </TabsContent> */}
 
               <TabsContent value="notifications" className="space-y-4">
                 <Card>
@@ -238,23 +230,6 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
         </DialogContent>
       </Dialog>
 
-      {/* Sub-dialogs */}
-      <ProfileEditForm
-        isOpen={showProfileEdit}
-        onClose={() => setShowProfileEdit(false)}
-        onSave={() => {
-          setShowProfileEdit(false);
-          toast({
-            title: "Profile Updated",
-            description: "Your profile has been successfully updated!",
-          });
-        }}
-      />
-
-      <PrivacySettingsDialog
-        open={showPrivacySettings}
-        onOpenChange={setShowPrivacySettings}
-      />
     </>
   );
 };
