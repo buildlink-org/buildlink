@@ -8,9 +8,10 @@ import { UserProfile } from "@/types"
 interface AboutSectionProps {
 	profile: UserProfile
 	handleProfileUpdate: () => void
+	noCard?: boolean
 }
 
-const AboutSection = ({ profile, handleProfileUpdate }: AboutSectionProps) => {
+const AboutSection = ({ profile, handleProfileUpdate, noCard = false }: AboutSectionProps) => {
 	const [isAboutExpanded, setIsAboutExpanded] = useState(false)
 
 	const renderAboutContent = () => {
@@ -30,7 +31,7 @@ const AboutSection = ({ profile, handleProfileUpdate }: AboutSectionProps) => {
 						variant="ghost"
 						size="sm"
 						onClick={() => setIsAboutExpanded(!isAboutExpanded)}
-						className="h-auto p-0 font-medium text-primary hover:text-primary/80">
+						className="h-auto p-0 font-medium text-primary hover:text-primary">
 						{isAboutExpanded ? "Show less" : "Read more"}
 					</Button>
 				)}
@@ -38,22 +39,32 @@ const AboutSection = ({ profile, handleProfileUpdate }: AboutSectionProps) => {
 		)
 	}
 
+	const content = (
+		<div className="flex-1 flex flex-col">
+			<div className="mb-4 flex items-center justify-between">
+				<h2 className="text-lg font-semibold text-gray-800">About</h2>
+				<AboutEditDialog
+					currentProfile={profile}
+					onProfileUpdated={handleProfileUpdate}>
+					<Button
+						variant="ghost"
+						size="sm">
+						<Edit className="h-4 w-4" />
+					</Button>
+				</AboutEditDialog>
+			</div>
+			<div className="prose prose-gray max-w-none flex-1">{renderAboutContent()}</div>
+		</div>
+	)
+
+	if (noCard) {
+		return content
+	}
+
 	return (
 		<Card className="border-0 shadow-sm h-full flex flex-col">
 			<CardContent className="px-4 py-4 shadow-md flex-1 flex flex-col">
-				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-gray-800">About</h2>
-					<AboutEditDialog
-						currentProfile={profile}
-						onProfileUpdated={handleProfileUpdate}>
-						<Button
-							variant="ghost"
-							size="sm">
-							<Edit className="h-4 w-4" />
-						</Button>
-					</AboutEditDialog>
-				</div>
-				<div className="prose prose-gray max-w-none flex-1">{renderAboutContent()}</div>
+				{content}
 			</CardContent>
 		</Card>
 	)

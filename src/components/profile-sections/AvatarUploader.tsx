@@ -10,6 +10,7 @@ interface AvatarUploaderProps {
   uploading: boolean;
   onAvatarChange: (file: File) => Promise<void>;
   onAvatarRemove?: () => Promise<void>;
+  userType?: "student" | "professional" | "company" | string;
 }
 
 const AvatarUploader: React.FC<AvatarUploaderProps> = ({
@@ -18,6 +19,7 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
   uploading,
   onAvatarChange,
   onAvatarRemove,
+  userType,
 }) => {
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -55,24 +57,35 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       <div className="relative">
         <Avatar className="h-20 w-20">
           <AvatarImage src={avatarUrl} />
-          <AvatarFallback>{fullName?.charAt(0) || "U"}</AvatarFallback>
+          <AvatarFallback 
+            className={!avatarUrl ? (() => {
+              const type = userType?.toLowerCase();
+              if (type === "student") return "bg-yellow-100 text-black-900";
+              if (type === "professional") return "bg-[#FFCBA4] text-black-900";
+              if (type === "company") return "bg-green-200 text-black-900";
+              return "bg-gradient-to-r from-blue-50 to-indigo-50 text-foreground" ;
+            })() : ""}
+          >
+            {fullName?.charAt(0) || "U"}
+          </AvatarFallback>
         </Avatar>
-        <label className="absolute bottom-0 left-0 bg-primary text-white rounded-full p-1 cursor-pointer hover:bg-primary/90">
+        <label className="absolute bottom-0 left-0 bg-primary text-white rounded-full p-1 cursor-pointer hover:bg-primary/90" htmlFor="avatar-upload-input">
           <Camera className="h-3 w-3" />
           <input
+            id="avatar-upload-input"
             type="file"
             accept="image/*"
             onChange={handleFileInputChange}
             className="hidden"
             disabled={uploading}
+            aria-label="Upload profile photo"
           />
         </label>
         {/* Remove Photo button */}
         {avatarUrl && onAvatarRemove && (
           <button
             type="button"
-            className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 hover:bg-destructive/80 transition"
-            style={{ transform: 'translate(50%,-50%)' }}
+            className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 hover:bg-destructive/80 transition translate-x-1/2 -translate-y-1/2"
             onClick={handleRemovePhoto}
             disabled={uploading}
             aria-label="Remove profile photo"

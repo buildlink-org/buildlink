@@ -25,49 +25,45 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 	// Get account-type-specific welcome config
 	const getWelcomeConfig = () => {
 		const userType = profile?.user_type?.toLowerCase() || "student"
-		
+
 		if (userType === "student") {
 			return {
-				bgColor: "bg-gradient-to-r from-green-50 to-emerald-50",
-				borderColor: "border-green-200",
-				titleColor: "text-green-900",
-				descColor: "text-green-700",
-				emoji: "😊",
+				bgColor: "bg-yellow-100",
+				borderColor: "border-yellow-50",
+				titleColor: "text-black-200",
+				descColor: "text-black-200",
 				iconEmoji: "🎓",
 				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Your journey into the industry starts right here!"
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-gradient-to-r from-blue-50 to-indigo-50",
-				borderColor: "border-blue-200",
-				titleColor: "text-blue-900",
-				descColor: "text-blue-700",
-				emoji: "😊",
+				bgColor: "bg-[#FFCBA4]",
+				borderColor: "bg-[#FFCBA4]",
+				titleColor: "text-black-200",
+				descColor: "text-black-200",
 				iconEmoji: "💼",
 				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Ready to connect, grow, and lead in Kenya's built environment?"
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-gradient-to-r from-purple-50 to-pink-50",
-				borderColor: "border-purple-200",
-				titleColor: "text-purple-900",
-				descColor: "text-purple-700",
-				emoji: "😊",
+				bgColor: "bg-green-200",
+				borderColor: "bg-green-200",
+				titleColor: "text-black-200",
+				descColor: "text-black-400",
 				iconEmoji: "🪪",
 				title: `Welcome ${profile.organization || profile.full_name || "Your Company"}`,
-				message: "Relevance and Visibility has never been easier until now."
+				message: "Relevance & Visibility has never been easier until now."
 			}
 		}
-		
-		// Default fallback (student)
+
+		// Default fallback
 		return {
-			bgColor: "bg-gradient-to-r from-green-50 to-emerald-50",
-			borderColor: "border-green-200",
-			titleColor: "text-green-900",
-			descColor: "text-green-700",
-			emoji: "😊",
+			bgColor: "bg-gradient-to-r from-blue-50 to-indigo-50",
+			borderColor: "border-blue-200",
+			titleColor: "text-black-200",
+			descColor: "text-black-400",
 			iconEmoji: "🎓",
 			title: `Welcome ${profile.full_name || "User"}`,
 			message: "Your journey into the industry starts right here!"
@@ -81,7 +77,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			<Card className={`mt-4 border ${welcomeConfig.borderColor} ${welcomeConfig.bgColor}`}>
 				<CardHeader>
 					<CardTitle className={welcomeConfig.titleColor}>
-						Welcome, {profile.user_type === "company" ? (profile.organization || profile.full_name || "Your Company") : (profile.full_name || "User")}! {welcomeConfig.emoji}
+						Welcome {profile.user_type === "company" ? (profile.organization || profile.full_name || "Your Company") : (profile.full_name || "User")}!
 					</CardTitle>
 					<CardDescription className={welcomeConfig.descColor}>
 						{welcomeConfig.message} {welcomeConfig.iconEmoji}
@@ -100,6 +96,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 								uploading={uploading}
 								onAvatarChange={handleAvatarChange}
 								onAvatarRemove={profile.avatar ? handleAvatarRemove : undefined}
+								userType={profile.user_type}
 							/>
 						</div>
 						<div className="flex-1">
@@ -122,21 +119,12 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 					{/* Action Buttons */}
 					<div className="flex flex-col gap-4 items-end">
 						<div className="flex flex-col gap-2 sm:flex-row justify-end">
-							<Button
+							{/* <Button
 								variant="outline"
 								className="flex-1 sm:flex-none">
 								<MessageCircle className="mr-1 h-4 w-4" />
 								Message
-							</Button>
-
-							<ProfileEditDialog
-								currentProfile={profile}
-								onProfileUpdated={handleProfileUpdate}>
-								<Button className="flex-1 sm:flex-none">
-									<Edit className="mr-1 h-4 w-4" />
-									Edit Profile
-								</Button>
-							</ProfileEditDialog>
+							</Button> */}
 
 							<ProfileSettingsDialog>
 								<Button
@@ -146,6 +134,15 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 									<Settings className="h-4 w-4" />
 								</Button>
 							</ProfileSettingsDialog>
+
+							<ProfileEditDialog
+								currentProfile={profile}
+								onProfileUpdated={handleProfileUpdate}>
+								<Button className="flex-1 sm:flex-none">
+									<Edit className="mr-1 h-4 w-4" />
+									Edit Profile
+								</Button>
+							</ProfileEditDialog>
 						</div>
 						
 						{/* Social Links - Below action buttons */}

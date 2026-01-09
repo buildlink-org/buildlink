@@ -122,17 +122,20 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     setThumbnailUrl(publicUrlData.publicUrl);
   };
 
-  // Handle project file upload (main project asset)
+  // Handle project file upload (main project asset - images only)
   const handleFileUpload = async (file: File) => {
     setError(null);
     
-    // Check PDF limit
-    if (file.type === 'application/pdf') {
-      const currentPdfCount = portfolioList.filter(p => p.type === 'pdf').length;
-      if (currentPdfCount >= 5) {
-        setError("You can only upload up to 5 PDF files in your portfolio.");
-        return false;
-      }
+    // Check if it's an image
+    if (!file.type.startsWith('image/')) {
+      setError("Only image files are allowed. Please upload a JPG, PNG, or GIF file.");
+      return false;
+    }
+
+    // Check portfolio limit
+    if (portfolioList.length >= 3) {
+      setError("You can only upload up to 3 portfolio items.");
+      return false;
     }
 
     const ext = file.name.split(".").pop();
@@ -156,10 +159,11 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
 
     const item: PortfolioItem = {
       id: Math.random().toString(36).substring(2),
-      name: file.name,
+      name: file.name.replace(/\.[^/.]+$/, ""), // Remove extension from name
       url,
-      type: getType(file.name),
+      type: "image",
       description: desc,
+      thumbnailUrl: thumbnailUrl || url, // Use thumbnail if provided, otherwise use main image
     };
     const newPortfolio = [...portfolioList, item];
     await updatePortfolio(newPortfolio);
@@ -168,6 +172,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     setOpen(false);
     setDesc("");
     setSelectedFile(null);
+    setThumbnailUrl("");
     if (onPortfolioAdd) onPortfolioAdd(item);
     handleProfileUpdate();
     return true;
@@ -176,6 +181,12 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   // Handle adding portfolio (both files and links)
   const handleAddPortfolio = async () => {
     if (!linkURL && !selectedFile) return;
+    
+    // Check portfolio limit
+    if (portfolioList.length >= 3) {
+      setError("You can only upload up to 3 portfolio items.");
+      return;
+    }
     
     setUploading(true);
     
@@ -196,6 +207,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
         url: linkURL,
         type: "link",
         description: desc,
+        thumbnailUrl: thumbnailUrl || "", // Use thumbnail if provided
       };
       const newPortfolio = [...portfolioList, item];
       await updatePortfolio(newPortfolio);
@@ -203,6 +215,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setLinkURL("");
       setDesc("");
       setSelectedFile(null);
+      setThumbnailUrl("");
       if (onPortfolioAdd) onPortfolioAdd(item);
       handleProfileUpdate();
     }
@@ -216,8 +229,24 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const hasBothInputs = hasFile && hasLink;
   const hasValidInput = (hasFile || hasLink) && !hasBothInputs;
 
+  // Reset form when dialog closes
+  const handleDialogClose = (open: boolean) => {
+    if (!open) {
+      setLinkURL("");
+      setDesc("");
+      setSelectedFile(null);
+      setThumbnailUrl("");
+      setError(null);
+      setProgress(0);
+      if (fileInput.current) {
+        fileInput.current.value = '';
+      }
+    }
+    setOpen(open);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={disabled ? () => {} : setOpen}>
+    <Dialog open={open} onOpenChange={disabled ? () => {} : handleDialogClose}>
       <DialogTrigger asChild>
         {asIconButton ? (
           <Button variant="ghost" size="sm" className="px-2" disabled={disabled} aria-label="Add to Portfolio">
@@ -232,15 +261,16 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             Add New Portfolio Project
           </DialogTitle>
           <DialogDescription>
-            Share your best workâ€"upload files or add live project/web links.
+            Share your best work—upload images or add accessible project links. You can also choose custom thumbnails.
           </DialogDescription>
         </DialogHeader>
         <div className="mt-2">
-          <label className="block font-semibold mb-1">Attach a File</label>
+          <label className="block font-semibold mb-1">Upload an Image</label>
           <div className="flex items-center gap-2">
             <input
+              title="Upload an Image"
               type="file"
-              accept=".pdf"
+              accept="image/*"
               ref={fileInput}
               onChange={handleFileChange}
               disabled={uploading || disabled}
@@ -267,17 +297,58 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             <Progress value={progress} className="mt-2" />
           )}
           <div className="text-xs text-gray-500 mt-1 mb-2">
-            Max 50MB. PDF files only.
-            {portfolioList.filter(item => item.type === 'pdf').length >= 5 && (
-              <div className="text-red-600 mt-1">PDF limit reached (5/5). Remove existing PDFs to upload new ones.</div>
+            Max 10MB. Image files only (JPG, PNG, GIF, WebP).
+            {portfolioList.length >= 3 && (
+              <div className="text-red-600 mt-1">Portfolio limit reached (3/3). Remove existing items to upload new ones.</div>
             )}
-            {portfolioList.filter(item => item.type === 'pdf').length < 5 && portfolioList.filter(item => item.type === 'pdf').length > 0 && (
-              <div className="text-blue-600 mt-1">PDFs uploaded: {portfolioList.filter(item => item.type === 'pdf').length}/5</div>
+            {portfolioList.length < 3 && portfolioList.length > 0 && (
+              <div className="text-blue-600 mt-1">Items uploaded: {portfolioList.length}/3</div>
             )}
           </div>
         </div>
+        
+        {/* Thumbnail upload section */}
         <div className="mt-4">
-          <label className="block font-semibold mb-1">Or link a project</label>
+          <label className="block font-semibold mb-1">Choose Thumbnail (Optional)</label>
+          <div className="flex items-center gap-2">
+            <input
+              title="Upload a Thumbnail"
+              type="file"
+              accept="image/*"
+              onChange={handleThumbnailUpload}
+              disabled={uploading || disabled || thumbnailUploading}
+              className="block disabled:opacity-50 flex-1"
+            />
+            {thumbnailUrl && (
+              <button
+                type="button"
+                onClick={() => setThumbnailUrl("")}
+                disabled={uploading || disabled}
+                className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1"
+                aria-label="Remove thumbnail"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          {thumbnailUploading && (
+            <div className="text-sm text-gray-600 mt-1">Uploading thumbnail...</div>
+          )}
+          {thumbnailUrl && !thumbnailUploading && (
+            <div className="mt-2">
+              <img 
+                src={thumbnailUrl} 
+                alt="Thumbnail preview" 
+                className="w-32 h-32 object-cover rounded-md border border-gray-200"
+              />
+            </div>
+          )}
+          <div className="text-xs text-gray-500 mt-1">
+            Optional: Upload a custom thumbnail for this project. If not provided, the main image will be used.
+          </div>
+        </div>
+        <div className="mt-4">
+          <label className="block font-semibold mb-1">Or add a project link</label>
           <input
             type="url"
             value={linkURL}
@@ -286,6 +357,9 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             className="px-2 py-1 border rounded w-full"
             disabled={uploading || disabled}
           />
+          <div className="text-xs text-gray-500 mt-1">
+            Add an accessible link to your project (e.g., GitHub, Behance, live website).
+          </div>
         </div>
       
         {hasBothInputs && (

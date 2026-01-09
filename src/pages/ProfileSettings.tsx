@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, User, Shield, Bell, Palette, ArrowLeft } from "lucide-react";
+import { Settings, Bell, Palette, ArrowLeft, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,16 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
-import ProfileEditForm from "@/components/ProfileEditForm";
-import { PrivacySettingsDialog } from "@/components/PrivacySettingsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { profileService } from "@/services/profileService";
@@ -32,14 +23,24 @@ const ProfileSettings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [showProfileEdit, setShowProfileEdit] = useState(false);
-  const [showPrivacySettings, setShowPrivacySettings] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  // Theme state
+  const [theme, setTheme] = useState<"light" | "dark">(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("theme");
+      if (saved === "dark" || saved === "light") return saved;
+      // Check system preference
+      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+        return "dark";
+      }
+    }
+    return "light";
+  });
 
   // Settings state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
-  const [profileVisibility, setProfileVisibility] = useState("public");
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -47,12 +48,7 @@ const ProfileSettings = () => {
 
       try {
         setLoading(true);
-        // Load user's current settings
-        const { data: profileData } = await profileService.getProfile(user.id);
-
-        if (profileData) {
-          setProfileVisibility(profileData.profile_visibility || "public");
-        }
+        // Load user's current settings if needed
       } catch (error) {
         console.error("Error loading settings:", error);
       } finally {
@@ -62,6 +58,21 @@ const ProfileSettings = () => {
 
     loadSettings();
   }, [user]);
+
+  // Apply theme to document
+  useEffect(() => {
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
+
+  const handleThemeChange = (isDark: boolean) => {
+    setTheme(isDark ? "dark" : "light");
+  };
 
   const handleSaveSettings = async () => {
     if (!user) return;
@@ -123,37 +134,60 @@ const ProfileSettings = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue="theme" className="space-y-6">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="profile">Profile</TabsTrigger>
-            {/* <TabsTrigger value="privacy">Privacy</TabsTrigger> */}
+            <TabsTrigger value="theme">Colour Theme</TabsTrigger>
+            <TabsTrigger value="account">Account Actions</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="appearance">Appearance</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="profile" className="space-y-4">
+          <TabsContent value="theme" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
-                  Profile Information
+                  <Palette className="h-4 w-4" />
+                  Colour Theme
                 </CardTitle>
                 <CardDescription>
-                  Update your personal information and professional details
+                  Choose between light and dark mode for your interface
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Button
-                  onClick={() => setShowProfileEdit(true)}
-                  className="w-full">
-                  Edit Profile Details
-                </Button>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {theme === "light" ? (
+                      <Sun className="h-5 w-5 text-yellow-500" />
+                    ) : (
+                      <Moon className="h-5 w-5 text-blue-400" />
+                    )}
+                    <div>
+                      <Label htmlFor="theme-toggle" className="text-base font-medium">
+                        {theme === "light" ? "Light Mode" : "Dark Mode"}
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        {theme === "light"
+                          ? "Bright interface for daytime use"
+                          : "Dark interface for reduced eye strain"}
+                      </p>
+                    </div>
+                  </div>
+                  <Switch
+                    id="theme-toggle"
+                    checked={theme === "dark"}
+                    onCheckedChange={(checked) => handleThemeChange(checked)}
+                  />
+                </div>
               </CardContent>
             </Card>
+          </TabsContent>
 
+          <TabsContent value="account" className="space-y-4">
             <Card>
               <CardHeader>
                 <CardTitle>Account Actions</CardTitle>
+                <CardDescription>
+                  Manage your account settings and data
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button variant="outline" className="w-full justify-start">
@@ -277,23 +311,6 @@ const ProfileSettings = () => {
           </div>
         </Tabs>
 
-        {/* Sub-dialogs */}
-        <ProfileEditForm
-          isOpen={showProfileEdit}
-          onClose={() => setShowProfileEdit(false)}
-          onSave={() => {
-            setShowProfileEdit(false);
-            toast({
-              title: "Profile Updated",
-              description: "Your profile has been successfully updated!",
-            });
-          }}
-        />
-
-        <PrivacySettingsDialog
-          open={showPrivacySettings}
-          onOpenChange={setShowPrivacySettings}
-        />
       </div>
     </div>
   );
