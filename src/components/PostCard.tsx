@@ -17,6 +17,7 @@ import ShareDialog from "./ShareDialog"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 import { useNavigate } from "react-router-dom"
 import { getFilenameFromUrl } from "@/lib/utils"
+import ReadMoreText from "./ReadMore"
 
 interface PostCardProps {
 	post: Post
@@ -195,7 +196,12 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 			<CardContent className="pt-0">
 				<div className="space-y-3">
 					<div>
-						<p className="whitespace-pre-wrap text-muted-foreground">{post.content}</p>
+						<p className="whitespace-pre-wrap text-muted-foreground">
+							<ReadMoreText
+								text={post.content}
+								maxLength={300}
+							/>
+						</p>
 					</div>
 
 					{post.image_url && (
