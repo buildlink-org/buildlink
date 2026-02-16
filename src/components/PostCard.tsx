@@ -16,7 +16,7 @@ import EditPostDialog from "./EditPostDialog"
 import ShareDialog from "./ShareDialog"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 import { useNavigate } from "react-router-dom"
-import { getFilenameFromUrl } from "@/lib/utils"
+import { getFilenameFromUrl, handleProfileClick } from "@/lib/utils"
 import ReadMoreText from "./ReadMore"
 
 interface PostCardProps {
@@ -112,11 +112,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 
 	const isOwnPost = user && post.author_id === user.id
 
-	const handleProfileClick = () => {
-		if (post.author_id) {
-			navigate(`/profile/${post.author_id}`)
-		}
-	}
+	
 
 	const handleDownload = () => {
 		const link = document.createElement("a")
