@@ -14,11 +14,11 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
   const [isExpanded, setIsExpanded] = useState(true);
 
   const homeFilters = [
-    { id: "latest", label: "Latest" },
-    { id: "news", label: "News" },
-    { id: "jobs", label: "Jobs" },
-    { id: "portfolios", label: "Portfolios" },
-  ];
+		{ id: "latest", label: "Latest" },
+		{ id: "industry", label: "Industry" },
+		{ id: "projects", label: "Projects" },
+		{ id: "opportunities", label: "Opportunities" },
+  ]
 
   const skillUpFilters = [
     { id: "courses", label: "Courses" },
@@ -30,9 +30,9 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
   const filters = filterType === "skillup" ? skillUpFilters : homeFilters;
 
   return (
-    <div className="bg-background border-b border-border mb-4">
+    <div className="mb-4 border-b border-border bg-background">
       <div className="px-4 py-2">
-        <div className="flex items-center justify-between mb-2">
+        <div className="mb-2 flex items-center justify-between">
           <h3 className="text-sm font-medium text-foreground">Filters</h3>
           <Button
             variant="ghost"

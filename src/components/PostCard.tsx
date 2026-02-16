@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, ExternalLink } from "lucide-react"
+import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -246,7 +246,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 								onClick={handleLike}
 								disabled={isLiking}
 								className="flex items-center space-x-2 text-muted-foreground hover:text-red-500">
-								<Heart className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+								<ThumbsUp className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
 								<span>{post.likes_count}</span>
 							</Button>
 
@@ -254,8 +254,17 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 								variant="ghost"
 								size="sm"
 								onClick={onComment}
-								className="flex items-center space-x-2 text-muted-foreground hover:text-blue-500">
-								<MessageCircle className="h-4 w-4" />
+								className="flex items-center space-x-2 text-muted-foreground hover:text-red-500">
+								<MessageSquare className="h-4 w-4" />
+								<span>{post.comments_count}</span>
+							</Button>
+
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setShowShareDialog(true)}
+								className="text-muted-foreground hover:text-red-500">
+								<Share2 className="h-4 w-4" />
 								<span>{post.comments_count}</span>
 							</Button>
 						</div>
