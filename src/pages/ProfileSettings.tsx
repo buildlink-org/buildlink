@@ -104,10 +104,10 @@ const ProfileSettings = () => {
     return (
       <div className="min-h-screen bg-background">
         <TopBar onLogoClick={handleGoBack} />
-        <div className="pt-12 max-w-4xl mx-auto p-6">
+        <div className="mx-auto max-w-4xl p-6 pt-12">
           <div className="animate-pulse space-y-6">
-            <div className="h-8 bg-muted rounded w-1/3"></div>
-            <div className="h-96 bg-muted rounded"></div>
+            <div className="h-8 w-1/3 rounded bg-muted"></div>
+            <div className="h-96 rounded bg-muted"></div>
           </div>
         </div>
       </div>
@@ -118,14 +118,14 @@ const ProfileSettings = () => {
     <div className="min-h-screen bg-background">
       <TopBar onLogoClick={handleGoBack} />
 
-      <div className="pt-12 max-w-4xl mx-auto p-6">
+      <div className="mx-auto max-w-4xl p-6 pt-12">
         <div className="mb-6">
           <Button variant="ghost" onClick={handleGoBack} className="mb-4">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+            <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home Feed
           </Button>
 
-          <div className="flex items-center gap-3 mb-2">
+          <div className="mb-2 flex items-center gap-3">
             <Settings className="h-6 w-6 text-primary" />
             <h1 className="text-3xl font-bold">Profile Settings</h1>
           </div>
@@ -303,7 +303,7 @@ const ProfileSettings = () => {
             </Card>
           </TabsContent>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
+          <div className="flex justify-end gap-2 border-t pt-4">
             <Button variant="outline" onClick={handleGoBack}>
               Cancel
             </Button>

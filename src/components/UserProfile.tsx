@@ -15,6 +15,7 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+console.log({user});
 
   useEffect(() => {
     loadProfile();

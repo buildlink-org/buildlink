@@ -6,9 +6,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Users, Building2, FileText, TrendingUp, MessageCircle, Heart } from "lucide-react"
 import { UserProfile } from "@/types"
+import TopBar from "@/components/TopBar"
+import { useNavigate } from "react-router-dom"
+import Footer from "./LandingPage/components/Footer"
 
 export default function AdminAnalyticsPage() {
 	const { isAdmin } = useIsAdmin()
+	const navigate = useNavigate()
 
 	const {
 		data: stats,
@@ -46,7 +50,13 @@ export default function AdminAnalyticsPage() {
 	})
 
 	if (!isAdmin) return <div className="p-8 text-center text-red-600">Admins only.</div>
-	if (isLoading) return <div className="p-8 text-center">Loading analytics...</div>
+	if (isLoading)
+		return (
+			<div className="flex items-center justify-center py-4 text-sm text-muted-foreground">
+				<div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-primary" />
+				Loading analytics...
+			</div>
+		)
 	if (error) return <div className="p-8 text-red-600">{error.message}</div>
 
 	const metrics = [
@@ -58,90 +68,97 @@ export default function AdminAnalyticsPage() {
 		{ label: "Likes", value: stats?.likesCount, icon: Heart },
 	]
 
+	const handleGoBack = () => {
+		navigate("/feed")
+	}
 	return (
-		<div className="mx-auto max-w-7xl space-y-6 p-4 md:p-8">
-			<h2 className="text-2xl font-bold">Platform Analytics</h2>
+		<>
+			<TopBar onLogoClick={handleGoBack} />
+			<div className="mx-auto mt-10 max-w-5xl space-y-6 p-4 md:p-8">
+				<h2 className="text-2xl font-bold">Platform Analytics</h2>
 
-			{/* Metrics Grid */}
-			<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-				{metrics.map((m) => {
-					const Icon = m.icon
-					return (
-						<Card
-							key={m.label}
-							className="shadow-sm">
-							<CardHeader className="pb-2">
-								<div className="flex items-center justify-between">
-									<CardTitle className="text-sm font-medium">{m.label}</CardTitle>
-									<Icon className="h-4 w-4 text-muted-foreground" />
-								</div>
+				{/* Metrics Grid */}
+				<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
+					{metrics.map((m) => {
+						const Icon = m.icon
+						return (
+							<Card
+								key={m.label}
+								className="shadow-sm">
+								<CardHeader className="pb-2">
+									<div className="flex items-center justify-between">
+										<CardTitle className="text-sm font-medium">{m.label}</CardTitle>
+										<Icon className="h-4 w-4 text-muted-foreground" />
+									</div>
+								</CardHeader>
+								<CardContent>
+									<span className="text-2xl font-semibold">{m.value ?? 0}</span>
+								</CardContent>
+							</Card>
+						)
+					})}
+				</div>
+
+				{/* Detailed Lists */}
+				<Tabs
+					defaultValue="users"
+					className="w-full">
+					<TabsList className="grid w-full grid-cols-2">
+						<TabsTrigger value="users">Users</TabsTrigger>
+						<TabsTrigger value="companies">Companies</TabsTrigger>
+					</TabsList>
+
+					<TabsContent value="users">
+						<Card>
+							<CardHeader>
+								<CardTitle>All Users</CardTitle>
 							</CardHeader>
 							<CardContent>
-								<span className="text-2xl font-semibold">{m.value ?? 0}</span>
+								<ScrollArea className="h-[400px] w-full">
+									<div className="space-y-3">
+										{stats?.profiles.map((profile: UserProfile) => (
+											<div
+												key={profile.id}
+												className="flex flex-col justify-between rounded-lg border p-3 transition-colors hover:bg-accent/50 sm:flex-row sm:items-center">
+												<div className="space-y-1">
+													<p className="font-medium">{profile.full_name}</p>
+													<p className="text-sm text-muted-foreground">
+														{profile.profession || "No profession"} • {profile.user_type}
+													</p>
+													{profile.organization && <p className="text-sm text-muted-foreground">{profile.organization}</p>}
+												</div>
+												<p className="mt-2 text-xs text-muted-foreground sm:mt-0">Joined {new Date(profile.created_at).toLocaleDateString()}</p>
+											</div>
+										))}
+									</div>
+								</ScrollArea>
 							</CardContent>
 						</Card>
-					)
-				})}
-			</div>
+					</TabsContent>
 
-			{/* Detailed Lists */}
-			<Tabs
-				defaultValue="users"
-				className="w-full">
-				<TabsList className="grid w-full grid-cols-2">
-					<TabsTrigger value="users">Users</TabsTrigger>
-					<TabsTrigger value="companies">Companies</TabsTrigger>
-				</TabsList>
-
-				<TabsContent value="users">
-					<Card>
-						<CardHeader>
-							<CardTitle>All Users</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<ScrollArea className="h-[400px] w-full">
-								<div className="space-y-3">
-									{stats?.profiles.map((profile: UserProfile) => (
-										<div
-											key={profile.id}
-											className="flex flex-col justify-between rounded-lg border p-3 transition-colors hover:bg-accent/50 sm:flex-row sm:items-center">
-											<div className="space-y-1">
-												<p className="font-medium">{profile.full_name}</p>
-												<p className="text-sm text-muted-foreground">
-													{profile.profession || "No profession"} • {profile.user_type}
-												</p>
-												{profile.organization && <p className="text-sm text-muted-foreground">{profile.organization}</p>}
+					<TabsContent value="companies">
+						<Card>
+							<CardHeader>
+								<CardTitle>Registered Companies</CardTitle>
+							</CardHeader>
+							<CardContent>
+								<ScrollArea className="h-[400px] w-full">
+									<div className="space-y-2">
+										{stats?.companies.map((company: string, idx: number) => (
+											<div
+												key={idx}
+												className="rounded-lg border p-3 transition-colors hover:bg-accent/50">
+												<p className="font-medium">{company}</p>
 											</div>
-											<p className="mt-2 text-xs text-muted-foreground sm:mt-0">Joined {new Date(profile.created_at).toLocaleDateString()}</p>
-										</div>
-									))}
-								</div>
-							</ScrollArea>
-						</CardContent>
-					</Card>
-				</TabsContent>
-
-				<TabsContent value="companies">
-					<Card>
-						<CardHeader>
-							<CardTitle>Registered Companies</CardTitle>
-						</CardHeader>
-						<CardContent>
-							<ScrollArea className="h-[400px] w-full">
-								<div className="space-y-2">
-									{stats?.companies.map((company: string, idx: number) => (
-										<div
-											key={idx}
-											className="rounded-lg border p-3 transition-colors hover:bg-accent/50">
-											<p className="font-medium">{company}</p>
-										</div>
-									))}
-								</div>
-							</ScrollArea>
-						</CardContent>
-					</Card>
-				</TabsContent>
-			</Tabs>
-		</div>
+										))}
+									</div>
+								</ScrollArea>
+							</CardContent>
+						</Card>
+					</TabsContent>
+				</Tabs>
+			</div>
+			<Footer />
+		</>
 	)
 }
