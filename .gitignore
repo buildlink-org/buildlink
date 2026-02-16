@@ -25,3 +25,4 @@ credentials.txt
 *.sln
 *.sw?
 .env
+package-lock.json
