@@ -18,7 +18,7 @@ const AboutEditDialog = ({ children, currentProfile, onProfileUpdated }: AboutEd
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [bio, setBio] = useState(currentProfile?.bio || '');
+  const [bio, setBio] = useState<string>(currentProfile?.bio || '');
   const maxLength = 1000;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -101,7 +101,7 @@ const AboutEditDialog = ({ children, currentProfile, onProfileUpdated }: AboutEd
               rows={8}
               className={`resize-none ${isOverLimit ? 'border-red-500 focus:border-red-500' : ''}`}
             />
-            <div className="flex justify-between items-center">
+            <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">
                 Express yourself authentically - your story matters
               </p>

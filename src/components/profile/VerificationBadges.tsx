@@ -61,10 +61,10 @@ const VerificationBadges: React.FC<VerificationBadgesProps> = ({ badges }) => {
             <TooltipTrigger asChild>
               <Badge 
                 variant={getBadgeVariant(badge.type) as any}
-                className="text-xs cursor-help"
+                className="text-md cursor-help"
               >
                 {getBadgeIcon(badge.type)}
-                <span className="ml-1">{badge.label}</span>
+                {/* <span className="ml-1">{badge.label}</span> */}
               </Badge>
             </TooltipTrigger>
             <TooltipContent>

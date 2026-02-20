@@ -41,6 +41,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 	const [isDeleting, setIsDeleting] = useState(false)
 	const [isPrefetching, setIsPrefetching] = useState(false)
 
+	
 	// Prefetch post data on hover
 	const handleMouseEnter = async () => {
 		if (!isPrefetching && !dataSaver) {
@@ -265,17 +266,10 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 								onClick={() => setShowShareDialog(true)}
 								className="text-muted-foreground hover:text-red-500">
 								<Share2 className="h-4 w-4" />
-								<span>{post.comments_count}</span>
 							</Button>
 						</div>
 
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={() => setShowShareDialog(true)}
-							className="text-muted-foreground hover:text-green-500">
-							<Share2 className="h-4 w-4" />
-						</Button>
+						
 					</div>
 				</div>
 			</CardContent>

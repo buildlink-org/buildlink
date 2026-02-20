@@ -8,7 +8,7 @@ import { UserProfile } from "@/types"
 
 interface CompactSkillsSectionProps {
 	profile: UserProfile
-	handleProfileUpdate: () => void
+	handleProfileUpdate?: () => void
 	canEdit?: boolean
 }
 
@@ -17,7 +17,7 @@ const levelToPercent = (level: number): number => {
 	return Math.max(1, Math.min(5, level)) * 20
 }
 
-const CompactSkillsSection = ({ profile, handleProfileUpdate, canEdit = true }: CompactSkillsSectionProps) => {
+const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }: CompactSkillsSectionProps) => {
 	const skills = convertAndSanitizeSkills(profile?.skills || [])
 
 	const userType = profile.user_type?.toLowerCase() || "student"
@@ -29,9 +29,11 @@ const CompactSkillsSection = ({ profile, handleProfileUpdate, canEdit = true }: 
 		badgeClasses = "bg-green-100 text-green-900 border border-green-200"
 	}
 
+	if (!canEdit && skills.length === 0) return null
+
 	return (
-		<Card className="border-0 shadow-sm">
-			<CardContent className="rounded-md px-4 py-4 shadow-md">
+		<Card className="border border-border shadow-sm">
+			<CardContent className="rounded-md px-4 py-4 shadow-sm">
 				<div className="mb-3 flex items-center justify-between">
 					<h2 className="text-base font-semibold text-gray-800">Skills</h2>
 					{canEdit && (
@@ -70,4 +72,4 @@ const CompactSkillsSection = ({ profile, handleProfileUpdate, canEdit = true }: 
 	)
 }
 
-export default CompactSkillsSection
+export default ProfileSkillsSection

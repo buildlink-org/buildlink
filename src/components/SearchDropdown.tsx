@@ -8,33 +8,52 @@ import { Badge } from "@/components/ui/badge"
 import { Search, X } from "lucide-react"
 import { searchService, SearchResult, SearchFilters } from "@/services/searchService"
 
+type SearchResultsState = {
+	profiles: SearchResult[]
+	posts: any[] // replace with proper type later
+	skills: any[]
+	opportunity: any[]
+}
+
 const DEBOUNCE_MS = 350
 
 export default function SearchDropdown() {
 	const [activeTab, setActiveTab] = useState("people")
 	const [loading, setLoading] = useState(false)
 	const [open, setOpen] = useState(false)
-	const [posts, setPosts] = useState<any[]>([])
-	const [opportunity, setOpportunity] = useState<any[]>([])
-	const [skills, setSkills] = useState<any[]>([])
-	const [profiles, setProfiles] = useState<SearchResult[]>([])
 	const [query, setQuery] = useState("")
 	const inputRef = useRef<HTMLInputElement | null>(null)
+	const [results, setResults] = useState<SearchResultsState>({
+		profiles: [],
+		posts: [],
+		skills: [],
+		opportunity: [],
+	})
 
+	const { profiles, posts, skills, opportunity } = results
 	const navigate = useNavigate()
 
 	const debouncedSearch = useCallback(
 		searchService.debounce(async (q: string) => {
 			if (q.trim().length < 2) {
-				setProfiles([])
-				setPosts([])
+				setResults({
+					profiles: [],
+					posts: [],
+					skills: [],
+					opportunity: [],
+				})
+
 				return
 			}
 			setLoading(true)
 			const [{ data: people, error: peopleError }, { data: postData, error: postsError }] = await Promise.all([searchService.searchProfiles(q, {} as SearchFilters), searchService.searchPosts(q)])
 
-			if (!peopleError) setProfiles((people || []).slice(0, 5))
-			if (!postsError) setPosts((postData || []).slice(0, 5))
+			setResults({
+				profiles: peopleError ? [] : (people || []).slice(0, 5),
+				posts: postsError ? [] : (postData || []).slice(0, 5),
+				skills: [], // fill when implemented
+				opportunity: [], // fill when implemented
+			})
 			setLoading(false)
 		}, DEBOUNCE_MS),
 		[],
@@ -45,21 +64,24 @@ export default function SearchDropdown() {
 	}, [query, open, debouncedSearch])
 
 	useEffect(() => {
-		if (profiles.length > 0) {
+		if (results.profiles.length > 0) {
 			setActiveTab("people")
-		} else if (posts.length > 0) {
+		} else if (results.posts.length > 0) {
 			setActiveTab("content")
-		} else if (skills.length > 0) {
+		} else if (results.skills.length > 0) {
 			setActiveTab("skills")
-		} else if (opportunity.length > 0) {
+		} else if (results.opportunity.length > 0) {
 			setActiveTab("opportunity")
 		}
 	}, [profiles, posts, skills, opportunity])
 
 	const clear = () => {
-		setQuery("")
-		setProfiles([])
-		setPosts([])
+		setResults({
+			profiles: [],
+			posts: [],
+			skills: [],
+			opportunity: [],
+		})
 		setOpen(true)
 	}
 

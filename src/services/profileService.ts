@@ -8,7 +8,7 @@ export const profileService = {
 		return { data, error }
 	},
 
-	async updateProfile(userId: string, updates: UserProfile) {
+	async updateProfile(userId: string, updates: { [bio: string]: string | string[] | UserProfile }) {
 		const { data, error } = await supabase
 			.from("profiles")
 			.update({
@@ -39,7 +39,7 @@ export const profileService = {
 	async getStats() {
 		try {
 			// Method 1: Use separate count queries (more reliable)
-			const { count: professionalsCount, error: professionalsError } = await supabase.from("profiles").select("*", { count: "exact" }).in("user_type", [ "professional"])
+			const { count: professionalsCount, error: professionalsError } = await supabase.from("profiles").select("*", { count: "exact" }).in("user_type", ["professional"])
 
 			const { count: studentsCount, error: studentError } = await supabase.from("profiles").select("*", { count: "exact" }).in("user_type", ["student"])
 
