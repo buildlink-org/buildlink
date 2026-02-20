@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils"
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { Card, CardContent } from "../ui/card"
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
 import { Camera, FileText, MapPin, X } from "lucide-react"
@@ -62,6 +62,15 @@ const PostCreate = () => {
 					e.target.value = "" // Clear the input
 					return
 				}
+				if (fileType !== "application/pdf" && fileExtension !== "pdf") {
+					toast({
+						title: "Invalid File Type",
+						description: "Only PDF documents are supported for upload.",
+						variant: "destructive",
+					})
+					e.target.value = "" // Clear the input
+					return
+				}
 
 				setDocumentFile(file)
 			}
@@ -69,11 +78,18 @@ const PostCreate = () => {
 		[toast],
 	)
 
+	const cancelCreatePost = (e) => {
+		e.preventDefault()
+
+		setImageFile(null)
+		setContent("")
+	}
+
 	const handleSubmit = useCallback(async () => {
 		if (!user) return
 
 		setIsLoading(true)
-
+		setIsLoading(true)
 		try {
 			// Validate input
 			const validatedData = postContentSchema.parse({
@@ -198,7 +214,7 @@ const PostCreate = () => {
 
 	// Adjust paddings and spacings for mobile
 	return (
-		<div className={cn("space-y-6", isMobile ? "px-0" : "")}>
+		<div className={cn("space-y-6", isMobile ? "px-0" : "", "mt-4 mb-24")}>
 			{/* Post Type Selection */}
 			<PostTypeSelector
 				postType={postType}
@@ -296,64 +312,28 @@ const PostCreate = () => {
 
 					<div className={cn("flex justify-end mt-4 gap-4", isMobile && "mt-2")}>
 						<Button
-							className={cn("bg-primary hover:bg-primary-800", isMobile && "w-full py-3 text-base")}
+							className={cn("border-primary text-primary hover:bg-primary-800", isMobile && "w-full py-3 text-base")}
+							variant="outline"
 							disabled={!content.trim() || isLoading}
 							onClick={handleSubmit}>
-							{isLoading ? "Posting..." : postType === "job" ? "Post Job" : postType === "project" ? "Share Project" : postType === "collaboration" ? "Seek Collaboration" : "Share Update"}
+							{isLoading ? "Saving..." : "Create Later"}
+						</Button>
+						<Button
+							variant="link"
+							className={cn(isMobile && "w-full py-3 text-base")}
+							disabled={!content.trim() || isLoading}
+							onClick={cancelCreatePost}>
+							{isLoading ? "Canceling..." : "Cancel"}
 						</Button>
 						<Button
 							className={cn("bg-primary hover:bg-primary-800", isMobile && "w-full py-3 text-base")}
 							disabled={!content.trim() || isLoading}
 							onClick={handleSubmit}>
-							{isLoading ? "Posting..." : postType === "job" ? "Post Job" : postType === "project" ? "Share Project" : postType === "collaboration" ? "Seek Collaboration" : "Share Update"}
-						</Button>
-						<Button
-							className={cn("bg-primary hover:bg-primary-800", isMobile && "w-full py-3 text-base")}
-							disabled={!content.trim() || isLoading}
-							onClick={handleSubmit}>
-							{isLoading ? "Posting..." : postType === "job" ? "Post Job" : postType === "project" ? "Share Project" : postType === "collaboration" ? "Seek Collaboration" : "Share Update"}
+							{isLoading ? "Posting..." : "Share Update"}
 						</Button>
 					</div>
 				</CardContent>
 			</Card>
-
-			{/* Quick Templates */}
-			{/* <Card className={cn("border-0 shadow-sm", isMobile ? "rounded-none" : "")}>
-				<CardHeader>
-					<CardTitle className={cn("text-lg text-gray-800", isMobile ? "text-base" : "")}>Quick Templates</CardTitle>
-				</CardHeader>
-				<CardContent>
-					<div className="space-y-2">
-						<Button
-							variant="ghost"
-							className={cn("w-full justify-start text-left p-3 h-auto", isMobile ? "text-sm p-2" : "")}
-							onClick={() => setContent("🎉 Excited to announce that our team just completed [Project Name]! The project involved [brief description]. Key learnings include [insights]. #ProjectComplete #BuildingKenya")}>
-							<div>
-								<div className={cn("font-medium", isMobile ? "text-base" : "")}>Project Completion</div>
-								<div className="text-sm text-gray-600">Announce a finished project</div>
-							</div>
-						</Button>
-						<Button
-							variant="ghost"
-							className={cn("w-full justify-start text-left p-3 h-auto", isMobile ? "text-sm p-2" : "")}
-							onClick={() => setContent("💡 Industry Insight: After working on [project type] for [duration], I've learned that [key insight]. This could help fellow professionals because [explanation]. What's your experience? #IndustryInsights")}>
-							<div>
-								<div className={cn("font-medium", isMobile ? "text-base" : "")}>Industry Insight</div>
-								<div className="text-sm text-gray-600">Share professional knowledge</div>
-							</div>
-						</Button>
-						<Button
-							variant="ghost"
-							className={cn("w-full justify-start text-left p-3 h-auto", isMobile ? "text-sm p-2" : "")}
-							onClick={() => setContent("📢 We're hiring! Looking for a [position] to join our team at [company]. Requirements: [key requirements]. Interested candidates can [how to apply]. #JobOpening #Hiring")}>
-							<div>
-								<div className={cn("font-medium", isMobile ? "text-base" : "")}>Job Opening</div>
-								<div className="text-sm text-gray-600">Quick job post template</div>
-							</div>
-						</Button>
-					</div>
-				</CardContent>
-			</Card> */}
 		</div>
 	)
 }

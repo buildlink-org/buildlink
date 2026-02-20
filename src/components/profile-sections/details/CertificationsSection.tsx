@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Edit, Award, ChevronDown, ChevronUp } from "lucide-react"
 import CertificationsEditDialog from "@/components/profile-sections/CertificationsEditDialog"
 import { UserProfile } from "@/types"
+import ReadMoreText from "@/components/ReadMore"
 
 interface CertificationsSectionProps {
 	profile: UserProfile
@@ -32,7 +33,6 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 	}
 
 	if (!canEdit && certifications.length === 0) return null
-	
 	return (
 		<Card className="rounded-lg border border-border shadow-sm">
 			<CardContent className="px-4 py-4">
@@ -65,7 +65,14 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 										<h3 className="font-semibold text-gray-900">{cert.name || "[Certification Name]"}</h3>
 										<p className="text-gray-600">{cert.issuer || "[Issuing Organization]"}</p>
 										<p className="text-sm text-gray-500">{cert.date || "[Date]"}</p>
-										{cert.credential_id && <p className="text-xs text-gray-500">Credential ID: {cert.credential_id}</p>}
+										{cert.credential_id && (
+											<p className="text-xs text-gray-500">Credential ID: {cert.credential_id}
+												{/* <ReadMoreText
+													text={`Credential ID: ${cert.credential_id}`}
+													maxLength={300}
+												/> */}
+											</p>
+										)}
 									</div>
 								</div>
 							))}

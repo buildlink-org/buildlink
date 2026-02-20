@@ -177,21 +177,25 @@ const ProfileBoard = () => {
 			{userType === "professional" && (
 				<>
 					<PortfolioSection
+						canEdit={true}
 						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
 					{/* Professional Experience - on its own */}
 					<ProfileExperience
+						canEdit={true}
 						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
 					{/* Education & Training - on its own */}
 					<ProfileEducation
+						canEdit={true}
 						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
 					{/* Licenses & Certifications - on its own */}
 					<ProfileCertifications
+						canEdit={true}
 						profile={profile}
 						handleProfileUpdate={handleProfileUpdate}
 					/>

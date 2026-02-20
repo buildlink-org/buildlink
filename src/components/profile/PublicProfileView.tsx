@@ -1,28 +1,25 @@
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect } from "react"
 import { useParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MessageCircle, UserPlus, Briefcase, Globe2, Plus, Pencil, MoreHorizontal } from "lucide-react"
+import { MessageCircle, UserPlus, Plus, Pencil, MoreHorizontal } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { publicProfileService } from "@/services/publicProfileService"
 import { useToast } from "@/hooks/use-toast"
-import SocialMediaLinks from "./SocialMediaLinks"
-import { profileService } from "@/services/profileService"
-import { Education, Products, UserProfile } from "@/types"
+import { Products, UserProfile } from "@/types"
 import { connectionsService } from "@/services/connectionsService"
 import { postsService } from "@/services/postsService"
-import { Separator } from "@/components/ui/separator"
-import { Progress } from "@/components/ui/progress"
-import PortfolioSection from "@/components/profile-sections/details/PortfolioSection"
-import ExperienceSection from "@/components/profile-sections/details/ExperienceSection"
-import EducationSection from "@/components/profile-sections/details/EducationSection"
-import CertificationsSection from "@/components/profile-sections/details/CertificationsSection"
-import AccountTypeBadge from "@/components/AccountTypeBadge"
 import { useMessagingStore } from "@/stores/messagingStore"
+import AccountTypeBadge from "../AccountTypeBadge"
 import AboutActivitySection from "../profile-sections/details/AboutActivitySection"
+import CertificationsSection from "../profile-sections/details/CertificationsSection"
+import EducationSection from "../profile-sections/details/EducationSection"
+import ExperienceSection from "../profile-sections/details/ExperienceSection"
+import PortfolioSection from "../profile-sections/details/PortfolioSection"
 import ProfileSkillsSection from "../profile-sections/details/ProfileSkillsSection"
+import SocialMediaLinks from "./SocialMediaLinks"
 
 type ConnectionStatus = "not_connected" | "pending_outgoing" | "pending_incoming" | "connected" | "self"
 
@@ -215,12 +212,12 @@ const calculateProfileCompletion = (profile: UserProfile) => {
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	const anyProfile = profile
 	add(!!anyProfile.experience?.length || !!anyProfile.experiences?.length, 15)
-	add((profile)?.portfolio?.length > 0 || (profile)?.products?.length > 0, 15)
+	add(profile?.portfolio?.length > 0 || profile?.products?.length > 0, 15)
 	add(!!profile.social_links && Object.keys(profile.social_links).length > 0, 10)
 	add(!!profile.languages?.length, 5)
-	add(!!(profile).Certification?.length, 5)
+	add(!!profile.Certification?.length, 5)
 	// connections only exist on some subtypes
-	add(!!(profile).connections?.length || !!(profile)?.people?.length, 10)
+	add(!!profile.connections?.length || !!profile?.people?.length, 10)
 	return Math.min(100, score)
 }
 
@@ -236,20 +233,11 @@ const PublicProfileView: React.FC = () => {
 	const [userPosts, setUserPosts] = useState<any[]>([])
 
 	const isOwner = user?.id === profileId
-	const mode: Mode = isOwner ? "edit" : "view"
 
 	const openConversation = useMessagingStore((state) => state.openConversation)
 
-	const student = profile?.user_type === "student"
-	const professional = profile?.user_type === "professional"
-	const company = profile?.user_type === "company"
-
 	useEffect(() => {
-		// if (profileId) {
-		// 	if (isOwner) loadCurrentUser()
-		// else
 		loadPublicProfile()
-		// }
 	}, [profileId])
 
 	const loadPublicProfile = async () => {
@@ -283,35 +271,6 @@ const PublicProfileView: React.FC = () => {
 			if (user && user.id !== profileId && !viewRecorded) {
 				await publicProfileService.recordProfileView(profileId)
 				setViewRecorded(true)
-			}
-		} catch (error) {
-			console.error("Error loading public profile:", error)
-		} finally {
-			setLoading(false)
-		}
-	}
-
-	const loadCurrentUser = async () => {
-		if (!user?.id) return
-
-		try {
-			const [profileResult, postsResult] = await Promise.all([profileService.getProfile(user.id), postsService.getPosts()])
-
-			if (profileResult.error) {
-				toast({
-					title: "Error",
-					description: "Failed to load profile or user does not exist",
-					variant: "destructive",
-				})
-				return
-			}
-
-			setProfile(profileResult.data)
-
-			// Filter posts for this user
-			if (postsResult.data) {
-				const filteredPosts = postsResult.data.filter((post: any) => post.author_id === user.id)
-				setUserPosts(filteredPosts)
 			}
 		} catch (error) {
 			console.error("Error loading public profile:", error)
@@ -493,46 +452,6 @@ const PublicProfileView: React.FC = () => {
 		)
 	}
 
-	const portfolioItems = (profile)?.portfolio || []
-	const featuredItems = (profile)?.featured || (profile)?.products || []
-	// unify experience for different profile subtypes
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const experienceItems = (profile)?.experience || (profile)?.experiences || []
-	const certificationItems = (profile)?.certifications || (profile)?.Certification || []
-	// connections only exist on some subtypes
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	const connections = (profile)?.connections || []
-	const people = (profile)?.people || []
-	const following = (profile)?.following || []
-	const interests = (profile)?.interests || []
-	const languages = profile?.languages || []
-	const expertise = company ? profile?.profession || [] : []
-	const skills = !company ? profile?.skills || [] : []
-	const identity = company ? profile?.organization : profile?.full_name
-	const subtitle = company ? `${(profile)?.profession?.[0] || "Profession not set"}${profile?.organization ? ` – ${profile.organization}` : ""}` : student ? `${profile?.education_level || "Level not set"}${profile?.organization ? ` – ${profile.organization}` : ""}` : `${profile?.title || "Title not set"}${profile?.organization ? ` – ${profile.organization}` : ""}`
-
-	const bannerText = company ? `Welcome ${identity || "there"} - Relevance & Visibility has never been easier until now!` : professional ? `Welcome ${identity || "there"} - Ready to connect, grow and lead in Kenya's Built Environment?` : `Welcome ${identity || "there"} - Your journey into the industry starts right here!`
-
-	const completion = profile ? (profile.profile_completion_score ?? calculateProfileCompletion(profile)) : 0
-
-	const sectionOrder = useMemo(
-		() => ({
-			aboutActivity: true,
-			skills: !company,
-			expertise: company,
-			portfolio: !company,
-			featured: company,
-			experience: student || professional,
-			education: student || professional,
-			certifications: professional,
-			languages: true,
-			products: company,
-			milestones: company,
-			locations: company,
-		}),
-		[student, professional, company],
-	)
-
 	if (loading) {
 		return (
 			<div className="flex h-64 items-center justify-center">
@@ -552,498 +471,95 @@ const PublicProfileView: React.FC = () => {
 		)
 	}
 
-	// For student profiles, use ProfileBoard-style layout
-	if (student) {
+	if (profile.profile_visibility === "private") {
 		return (
-			<div className="mx-auto max-w-5xl space-y-6 p-6 md:px-0">
-				{/* Header - matching image format */}
-				<Card>
-					<CardContent className="!mt-1 py-6">
-						<div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
-							{/* Info and Avatar */}
-							<div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:space-x-4 sm:space-y-0 lg:space-x-6">
-								<div className="relative">
-									<Avatar className="h-20 w-20 md:h-24 md:w-24">
-										<AvatarImage src={profile.avatar || undefined} />
-										<AvatarFallback className="bg-yellow-100 text-2xl text-yellow-700">{profile.full_name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
-									</Avatar>
-								</div>
-								<div className="flex-1">
-									<div className="space-y-3">
-										<div className="flex items-start gap-3">
-											<div className="flex-1">
-												<h1 className="mb-1 text-2xl font-bold text-foreground">{profile.full_name || "User"}</h1>
-												<div className="mt-1 flex items-center gap-2">
-													<AccountTypeBadge userType={profile.user_type || "student"} />
-												</div>
-												<p className="mt-2 text-base text-muted-foreground">
-													{profile.education_level || "Level not set"}
-													{profile.organization && <span> - {profile.organization}</span>}
-												</p>
-											</div>
-										</div>
-									</div>
-								</div>
-							</div>
-							{/* Action Buttons */}
-							<div className="flex flex-col items-end gap-4">
-								<div className="flex flex-col justify-end gap-2 sm:flex-row">
-									{!isOwner && renderConnectButtons()}
-									{isOwner && (
-										<Button
-											variant="outline"
-											size="sm"
-											onClick={() => (window.location.href = "/profile")}>
-											<Pencil className="mr-1 h-4 w-4" />
-											Edit Profile
-										</Button>
-									)}
-								</div>
-								{/* Social Links */}
-								<div className="flex flex-wrap items-center justify-end gap-2">
-									<SocialMediaLinks
-										links={profile.social_links || {}}
-										editable={false}
-									/>
-								</div>
-							</div>
-						</div>
-					</CardContent>
-				</Card>
-
-				{/* About & Activity Tabs */}
-				<AboutActivitySection
-					publicProfile={true}
-					profile={profile}
-					userPosts={userPosts}
-				/>
-
-				{/* Skills */}
-				<ProfileSkillsSection profile={profile} />
-
-				{/* Portfolio */}
-				<PortfolioSection
-					profile={profile}
-				/>
-
-				{/* Professional Experience */}
-				<ExperienceSection
-					profile={profile}
-				/>
-
-				{/* Education & Training */}
-				<EducationSection
-					profile={profile}
-				/>
-
-				{/* Licences & Certifications */}
-				<CertificationsSection
-					profile={profile}
-				/>
-			</div>
+			<Card>
+				<CardContent className="p-8 text-center">
+					<h3 className="mb-2 text-lg font-semibold">Profile is Private</h3>
+					<p className="text-muted-foreground">This profile is not public.</p>
+				</CardContent>
+			</Card>
 		)
 	}
 
-	// Original layout for professional and company profiles
 	return (
-		<div className="mx-auto max-w-5xl space-y-6 pb-10">
-			<Card className="overflow-hidden border-primary/20">
-				<div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent px-6 py-5">
-					<p className="text-sm font-medium text-primary">{bannerText}</p>
-				</div>
-				<CardContent className="space-y-4 p-6">
-					<div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-						<div className="flex gap-4">
-							<Avatar className="h-20 w-20 md:h-24 md:w-24">
-								<AvatarImage src={profile.avatar || undefined} />
-								<AvatarFallback className="text-2xl">{identity?.[0]?.toUpperCase() || "U"}</AvatarFallback>
-							</Avatar>
-							<div className="space-y-1">
-								<div className="flex flex-wrap items-center gap-2">
-									<h1 className="text-2xl font-bold leading-tight">{identity}</h1>
-									<Badge
-										variant="outline"
-										className="capitalize">
-										{profile.user_type}
-									</Badge>
-								</div>
-								<p className="text-sm text-muted-foreground">{subtitle}</p>
-								<div className="flex items-center gap-4 text-xs text-muted-foreground">
-									<div className="flex items-center gap-1">
-										<Globe2 className="h-4 w-4" />
-										<span>{profile.profile_visibility === "public" ? "Public profile" : "Private"}</span>
-									</div>
-									{!company && (
-										<div className="flex items-center gap-1">
-											<Briefcase className="h-4 w-4" />
-											<span>{professional ? "Professional" : "Student"}</span>
+		<div className="mx-auto max-w-5xl space-y-6 p-6 md:px-0">
+			{/* Header - matching image format */}
+			<Card>
+				<CardContent className="!mt-1 py-6">
+					<div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
+						{/* Info and Avatar */}
+						<div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:space-x-4 sm:space-y-0 lg:space-x-6">
+							<div className="relative">
+								<Avatar className="h-20 w-20 md:h-24 md:w-24">
+									<AvatarImage src={profile.avatar || undefined} />
+									<AvatarFallback className="bg-yellow-100 text-2xl text-yellow-700">{profile.full_name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
+								</Avatar>
+							</div>
+							<div className="flex-1">
+								<div className="space-y-3">
+									<div className="flex items-start gap-3">
+										<div className="flex-1">
+											<h1 className="mb-1 text-2xl font-bold text-foreground">{profile.full_name || "User"}</h1>
+											<div className="mt-1 flex items-center gap-2">
+												<AccountTypeBadge userType={profile.user_type || "student"} />
+											</div>
+											<p className="mt-2 text-base text-muted-foreground">
+												{profile.education_level || "Level not set"}
+												{profile.organization && <span> - {profile.organization}</span>}
+											</p>
 										</div>
-									)}
+									</div>
 								</div>
 							</div>
 						</div>
-						<div className="flex flex-wrap items-center gap-2">
-							{mode === "edit" ? (
-								<Button
-									variant="outline"
-									size="sm">
-									<Pencil className="mr-1 h-4 w-4" />
-									Edit Profile
-								</Button>
-							) : (
-								renderConnectButtons()
-							)}
-						</div>
-					</div>
-
-					<div className="flex flex-wrap gap-4 text-sm">
-						<div className="flex items-center gap-2">
-							<Badge
-								variant="secondary"
-								className="text-[10px] uppercase">
-								{profile.user_type}
-							</Badge>
-						</div>
-						<div className="text-muted-foreground">
-							<strong>{portfolioItems.length || featuredItems.length}</strong> {company ? "Featured items" : "Portfolio items"}
-						</div>
-						<div className="text-muted-foreground">
-							<strong>{connections.length || people.length || 0}</strong> {company ? "Staff / Followers" : "Connections"}
-						</div>
-					</div>
-
-					<SocialMediaLinks links={profile.social_links || {}} />
-
-					{mode === "edit" && (
-						<div className="space-y-2">
-							<div className="flex items-center justify-between text-sm">
-								<span className="font-medium">Profile completion</span>
-								<span className="text-muted-foreground">{completion}%</span>
+						{/* Action Buttons */}
+						<div className="flex flex-col items-end gap-4">
+							<div className="flex flex-col justify-end gap-2 sm:flex-row">
+								{!isOwner && renderConnectButtons()}
+								{isOwner && (
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => (window.location.href = "/profile")}>
+										<Pencil className="mr-1 h-4 w-4" />
+										Edit Profile
+									</Button>
+								)}
 							</div>
-							<Progress value={completion} />
+							{/* Social Links */}
+							<div className="flex flex-wrap items-center justify-end gap-2">
+								<SocialMediaLinks
+									links={profile.social_links || {}}
+									editable={false}
+								/>
+							</div>
 						</div>
-					)}
+					</div>
 				</CardContent>
 			</Card>
 
-			{sectionOrder.aboutActivity && (
-				<SectionCard
-					title="About & Activity"
-					mode={mode}
-					onEdit={() => toast({ title: "Edit About", description: "Coming soon" })}>
-					<div className="grid gap-6 md:grid-cols-2 md:items-stretch">
-						<div className="space-y-3">
-							<h3 className="text-sm font-semibold">About</h3>
-							<ReadMoreText text={profile.bio || ""} />
-						</div>
-						<div className="space-y-3">
-							<h3 className="text-sm font-semibold">Activity</h3>
-							{(profile)?.activity?.length ? (
-								<ul className="space-y-2 text-sm">
-									{(profile).activity.slice(0, 4).map((item: any, idx: number) => (
-										<li
-											key={idx}
-											className="rounded-md border px-3 py-2">
-											{item.title || "Recent activity"}
-										</li>
-									))}
-								</ul>
-							) : (
-								<p className="text-sm text-muted-foreground">No activity yet.</p>
-							)}
-						</div>
-					</div>
-				</SectionCard>
-			)}
+			{/* About & Activity Tabs */}
+			<AboutActivitySection
+				publicProfile={true}
+				profile={profile}
+				userPosts={userPosts}
+			/>
 
-			{sectionOrder.skills && (
-				<SectionCard
-					title="Skills"
-					mode={mode}
-					onAdd={() => toast({ title: "Add Skill", description: "Coming soon" })}
-					onEdit={() => toast({ title: "Edit Skills", description: "Coming soon" })}>
-					<TagList items={skills} />
-				</SectionCard>
-			)}
+			{/* Skills */}
+			<ProfileSkillsSection profile={profile} />
 
-			{sectionOrder.expertise && (
-				<SectionCard
-					title="Expertise"
-					mode={mode}
-					onAdd={() => toast({ title: "Add Expertise", description: "Coming soon" })}
-					onEdit={() => toast({ title: "Edit Expertise", description: "Coming soon" })}>
-					<TagList items={expertise} />
-				</SectionCard>
-			)}
+			{/* Portfolio */}
+			<PortfolioSection profile={profile} />
 
-			{sectionOrder.portfolio && (
-				<SectionCard
-					title="Portfolio"
-					subTitle={`Portfolio (${portfolioItems.length}/3 items uploaded)`}
-					mode={mode}
-					onAdd={() => toast({ title: "Add Project", description: "Coming soon" })}>
-					<ItemGrid
-						items={portfolioItems}
-						mode={mode}
-						ctaLabel="+ Add Project"
-						onAdd={() => toast({ title: "Add Project", description: "Coming soon" })}
-					/>
-				</SectionCard>
-			)}
+			{/* Professional Experience */}
+			<ExperienceSection profile={profile} />
 
-			{sectionOrder.featured && (
-				<SectionCard
-					title="Featured"
-					subTitle={`Featured (${featuredItems.length}/3 items uploaded)`}
-					mode={mode}
-					onAdd={() => toast({ title: "Add Item", description: "Coming soon" })}>
-					<ItemGrid
-						items={featuredItems}
-						mode={mode}
-						ctaLabel="+ Add Item"
-						onAdd={() => toast({ title: "Add Item", description: "Coming soon" })}
-					/>
-				</SectionCard>
-			)}
+			{/* Education & Training */}
+			<EducationSection profile={profile} />
 
-			{sectionOrder.experience && (
-				<SectionCard
-					title="Professional Experience"
-					optional={student}
-					mode={mode}
-					onAdd={() => toast({ title: "Add Experience", description: "Coming soon" })}
-					onEdit={() => toast({ title: "Edit Experience", description: "Coming soon" })}>
-					{experienceItems?.length ? (
-						<div className="space-y-4">
-							{experienceItems.map((exp: any, index: number) => (
-								<div
-									key={index}
-									className="space-y-1 rounded-lg border p-4">
-									<h4 className="font-semibold">{exp.title || "Role"}</h4>
-									<p className="text-sm text-muted-foreground">{exp.company || exp.organization || "Company not set"}</p>
-									<p className="text-xs text-muted-foreground">
-										{exp.startDate || "—"} - {exp.endDate || "Present"}
-									</p>
-									{exp.description && <p className="text-sm">{exp.description}</p>}
-								</div>
-							))}
-						</div>
-					) : (
-						<p className="text-sm text-muted-foreground">No experience added yet.</p>
-					)}
-				</SectionCard>
-			)}
-
-			{sectionOrder.education && (
-				<SectionCard
-					title="Education & Training"
-					mode={mode}
-					onAdd={() => toast({ title: "Add Education", description: "Coming soon" })}
-					onEdit={() => toast({ title: "Edit Education", description: "Coming soon" })}>
-					{profile.education?.length ? (
-						<div className="space-y-4">
-							{profile.education.map(({ degree, institution, description, endDate, startDate }: Education, index: number) => (
-								<div
-									key={index}
-									className="flex items-start gap-4 rounded-2xl border border-border bg-muted px-5 py-4">
-									<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-										<span className="text-lg font-semibold text-primary">🎓</span>
-									</div>
-									<div className="flex-1 space-y-1">
-										<h4 className="text-base font-semibold">{degree || "Course Title"}</h4>
-										<p className="text-sm text-muted-foreground">{institution || "Institution / School"}</p>
-										<p className="text-xs text-muted-foreground">
-											{startDate || "—"} - {endDate || "Present"}
-										</p>
-										{description && <p className="text-sm">{description}</p>}
-									</div>
-								</div>
-							))}
-						</div>
-					) : (
-						<p className="text-sm text-muted-foreground">No education added yet.</p>
-					)}
-				</SectionCard>
-			)}
-
-			{sectionOrder.certifications && (
-				<SectionCard
-					title="Licenses & Certification"
-					mode={mode}
-					onAdd={() => toast({ title: "Add Certification", description: "Coming soon" })}
-					onEdit={() => toast({ title: "Edit Certification", description: "Coming soon" })}>
-					{certificationItems?.length ? (
-						<div className="space-y-4">
-							{certificationItems.map((cert: any, index: number) => (
-								<div
-									key={index}
-									className="flex items-start gap-4 rounded-2xl border border-border bg-muted px-5 py-4">
-									<div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary/10">
-										<span className="text-lg font-semibold text-primary">🏅</span>
-									</div>
-									<div className="flex-1 space-y-1">
-										<h4 className="text-base font-semibold">{cert.name || cert.title || "License / Certificate"}</h4>
-										<p className="text-sm text-muted-foreground">{cert.issuer || cert.authority || "Issuing Authority"}</p>
-										<p className="text-xs text-muted-foreground">{cert.date || cert.issued || "Time issued"}</p>
-									</div>
-								</div>
-							))}
-						</div>
-					) : (
-						<p className="text-sm text-muted-foreground">No certifications added yet.</p>
-					)}
-				</SectionCard>
-			)}
-
-			<SectionCard
-				title="Languages"
-				mode={mode}
-				onAdd={() => toast({ title: "Add Language", description: "Coming soon" })}
-				onEdit={() => toast({ title: "Edit Languages", description: "Coming soon" })}>
-				{languages?.length ? <TagList items={languages} /> : <p className="text-sm text-muted-foreground">No languages provided.</p>}
-			</SectionCard>
-
-			{/* Connections section is intentionally hidden here to match the student layout design */}
-
-			{company && (
-				<SectionCard
-					title="Staff"
-					mode={mode}>
-					<PreviewList
-						title="Staff"
-						items={people}
-						mode={mode}
-						onMore={() => toast({ title: "View staff", description: "Coming soon" })}
-						onAdd={mode === "edit" ? () => toast({ title: "Add Staff", description: "Coming soon" }) : undefined}
-					/>
-					<Separator className="my-4" />
-					<PreviewList
-						title="Following"
-						items={following}
-						mode={mode}
-						onMore={() => toast({ title: "View following", description: "Coming soon" })}
-						onAdd={mode === "edit" ? () => toast({ title: "Add Following", description: "Coming soon" }) : undefined}
-					/>
-				</SectionCard>
-			)}
-
-			{interests?.length ? (
-				<SectionCard
-					title="Interests"
-					mode={mode}>
-					<TagList items={interests} />
-					{mode === "view" && (
-						<Button
-							size="sm"
-							variant="ghost"
-							className="mt-3"
-							onClick={() => toast({ title: "More interests", description: "Coming soon" })}>
-							<MoreHorizontal className="mr-1 h-4 w-4" />
-							More
-						</Button>
-					)}
-				</SectionCard>
-			) : null}
-
-			{/* Certification Section */}
-			{professional && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Certifications</CardTitle>
-					</CardHeader>
-					{profile.Certification && profile.Certification.length > 0 && (
-						<CardContent className="space-y-4">
-							{profile.education.map((edu: any, index: number) => (
-								<div
-									key={index}
-									className="border-l-2 border-muted pl-4">
-									<h3 className="font-semibold">{edu.degree}</h3>
-									<p className="text-sm text-muted-foreground">{edu.institution}</p>
-									<p className="text-xs text-muted-foreground">
-										{edu.startDate} - {edu.endDate || "Present"}
-									</p>
-									{edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
-								</div>
-							))}
-						</CardContent>
-					)}
-				</Card>
-			)}
-
-			{/* Jobs/Roles Section */}
-			{company && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Roles</CardTitle>
-					</CardHeader>
-					{profile.Certification && profile.Certification.length > 0 && (
-						<CardContent className="space-y-4">
-							{profile.education.map((edu: any, index: number) => (
-								<div
-									key={index}
-									className="border-l-2 border-muted pl-4">
-									<h3 className="font-semibold">{edu.degree}</h3>
-									<p className="text-sm text-muted-foreground">{edu.institution}</p>
-									<p className="text-xs text-muted-foreground">
-										{edu.startDate} - {edu.endDate || "Present"}
-									</p>
-									{edu.description && <p className="mt-2 text-sm">{edu.description}</p>}
-								</div>
-							))}
-						</CardContent>
-					)}
-				</Card>
-			)}
-
-			{/* Connection Preview */}
-			{(student || professional) && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Connection Preview</CardTitle>
-					</CardHeader>
-					<CardContent></CardContent>
-				</Card>
-			)}
-
-			{/* People Preview */}
-			{company && (
-				<Card>
-					<CardHeader>
-						<CardTitle>People</CardTitle>
-					</CardHeader>
-					<CardContent></CardContent>
-				</Card>
-			)}
-
-			{/* Products/Services */}
-			{company && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Products/Services</CardTitle>
-					</CardHeader>
-					<CardContent></CardContent>
-				</Card>
-			)}
-
-			{/* Events */}
-			{company && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Events</CardTitle>
-					</CardHeader>
-					<CardContent></CardContent>
-				</Card>
-			)}
-
-			{/* Life/Culture */}
-			{company && (
-				<Card>
-					<CardHeader>
-						<CardTitle>Life/Culture</CardTitle>
-					</CardHeader>
-					<CardContent></CardContent>
-				</Card>
-			)}
+			{/* Licences & Certifications */}
+			<CertificationsSection profile={profile} />
 		</div>
 	)
 }

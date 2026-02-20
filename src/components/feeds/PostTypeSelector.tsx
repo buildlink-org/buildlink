@@ -1,5 +1,5 @@
 import React from "react"
-import { FileText, Briefcase, Camera, Users } from "lucide-react"
+import { FileText, Briefcase, Camera } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardContent } from "../ui/card"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -16,10 +16,9 @@ interface PostTypeSelectorProps {
 }
 
 const postTypes: PostType[] = [
-	{ id: "update", label: "Share Update", icon: FileText, description: "Share project milestones, insights, or industry thoughts" },
-	{ id: "job", label: "Post Job", icon: Briefcase, description: "Advertise job openings, gigs, or project opportunities" },
-	{ id: "project", label: "Showcase Project", icon: Camera, description: "Display your latest work and achievements" },
-	{ id: "collaboration", label: "Seek Collaboration", icon: Users, description: "Find partners for projects or business ventures" },
+	{ id: "update", label: "Express Yourself", icon: FileText, description: "Share & discuss industry insights & experiences" },
+	{ id: "project", label: "Showcase Project", icon: Camera, description: "Display & highlight your latest and past work" },
+	{ id: "job", label: "Post Opportunity", icon: Briefcase, description: "Advertise gigs, job openings & any other opportunities" },
 ]
 
 const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType, setPostType }) => {

@@ -22,7 +22,7 @@ export type Products = {
 	url?: string
 }
 
-type Experiences = {
+export type Experiences = {
 	title?: string
 	company?: string
 	startDate?: string

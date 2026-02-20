@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Edit, GraduationCap, ChevronDown, ChevronUp } from "lucide-react"
 import EducationEditDialog from "@/components/profile-sections/EducationEditDialog"
 import { Education, UserProfile } from "@/types"
+import ReadMoreText from "@/components/ReadMore"
 
 interface EducationSectionProps {
 	profile: UserProfile
@@ -32,7 +33,6 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 	}
 
 	if (!canEdit && education.length === 0) return null
-	
 	return (
 		<Card className="rounded-lg border border-border shadow-sm">
 			<CardContent className="px-4 py-4">
@@ -65,7 +65,15 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 										<h3 className="font-semibold text-gray-900">{edu.degree || "[Degree/Certificate]"}</h3>
 										<p className="text-gray-600">{edu.institution || "[Institution]"}</p>
 										<p className="text-sm text-gray-500">{edu.year || "[Year]"}</p>
-										{edu.description && <p className="mt-2 text-sm text-gray-700">{edu.description}</p>}
+										{edu.description && (
+											<p className="mt-2 text-sm text-gray-700">
+												{edu.description}
+												{/* <ReadMoreText
+													text={edu.description}
+													maxLength={300}
+												/> */}
+											</p>
+										)}
 									</div>
 								</div>
 							))}

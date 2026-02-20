@@ -8,7 +8,6 @@ import { useState, useEffect } from "react"
 import { PrivacySettingsDialog } from "./PrivacySettingsDialog"
 import { useNavigate } from "react-router-dom"
 import { UserProfile } from "@/types"
-import { useIsAdmin } from "@/hooks/useIsAdmin"
 
 const UserProfileButton = () => {
 	const { user, signOut } = useAuth()
@@ -17,7 +16,6 @@ const UserProfileButton = () => {
 	const [showPrivacySettings, setShowPrivacySettings] = useState(false)
 
 	useEffect(() => {
-
 		if (user) {
 			loadProfile()
 		}
@@ -35,15 +33,16 @@ const UserProfileButton = () => {
 		}
 	}
 
-	if (!user) return (
-		<a href="/auth">
-			<Button
-				variant="cta"
-				size="sm">
-				Log In
-			</Button>
-		</a>
-	)
+	if (!user)
+		return (
+			<a href="/auth">
+				<Button
+					variant="cta"
+					size="sm">
+					Log In
+				</Button>
+			</a>
+		)
 
 	const handleSignOut = async () => {
 		await signOut()

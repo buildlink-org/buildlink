@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Edit, Briefcase, ChevronDown, ChevronUp } from "lucide-react"
 import ExperienceEditDialog from "@/components/profile-sections/ExperienceEditDialog"
 import { UserProfile } from "@/types"
+import ReadMoreText from "@/components/ReadMore"
 
 interface ExperienceSectionProps {
 	profile: UserProfile
@@ -65,7 +66,16 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 										<h3 className="font-semibold text-gray-900">{exp.title || "[Internship/Role]"}</h3>
 										<p className="text-gray-600">{exp.company || "[Organization/Company]"}</p>
 										<p className="text-sm text-gray-500">{exp.duration || exp.timeline || "[Timeline]"}</p>
-										{exp.description && <p className="mt-2 text-sm text-gray-700">{exp.description}</p>}
+
+										{exp.description && (
+											<p className="mt-2 text-sm text-gray-700">
+												{exp.description}
+												{/* <ReadMoreText
+													text={exp.description}
+													maxLength={300}
+												/> */}
+											</p>
+										)}
 									</div>
 								</div>
 							))}

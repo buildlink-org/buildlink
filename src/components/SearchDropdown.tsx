@@ -112,7 +112,7 @@ export default function SearchDropdown() {
 							setOpen(true)
 						}}>
 						<Input
-							placeholder="Search users, skills, or content..."
+							placeholder="Search people, opportunities, skills…"
 							value={query}
 							onChange={(e) => {
 								setQuery(e.target.value)
