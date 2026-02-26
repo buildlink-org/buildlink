@@ -25,21 +25,22 @@ const ExperienceList = ({
   onDelete,
   renderEditing,
 }: ExperienceListProps) => {
+  
   return (
-    <div className="space-y-3 min-h-[100px]">
+    <div className="min-h-[100px] space-y-3">
       {experiences.length > 0 ? (
         experiences.map((exp, index) => (
-          <div key={index} className="p-3 border rounded-md">
+          <div key={index} className="rounded-md border p-3">
             {editingIndex === index ? (
               renderEditing(index)
             ) : (
-              <div className="flex justify-between items-start">
+              <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <h4 className="font-medium">{exp.title}</h4>
                   <p className="text-gray-600">{exp.company}</p>
                   <p className="text-sm text-gray-500">{exp.duration}</p>
                   {exp.description && (
-                    <p className="text-sm text-gray-700 mt-2">{exp.description}</p>
+                    <p className="mt-2 text-sm text-gray-700">{exp.description}</p>
                   )}
                 </div>
                 <div className="flex space-x-1">
@@ -65,7 +66,7 @@ const ExperienceList = ({
           </div>
         ))
       ) : (
-        <p className="text-gray-500 text-sm p-3 border rounded-md">
+        <p className="rounded-md border p-3 text-sm text-gray-500">
           No experience added yet. Add some experience above.
         </p>
       )}

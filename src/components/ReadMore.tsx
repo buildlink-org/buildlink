@@ -6,7 +6,7 @@ export default function ReadMoreText({ text, maxLength = 150 }) {
 	if (!text) return null
 
 	const isLong = text.length > maxLength
-	const displayedText = expanded || !isLong ? text : text.slice(0, maxLength) + "... "
+	const displayedText = expanded || !isLong ? text : text.slice(0, maxLength) + "..."
 
 	return (
 		<div>
@@ -15,8 +15,8 @@ export default function ReadMoreText({ text, maxLength = 150 }) {
 			{isLong && (
 				<button
 					onClick={() => setExpanded(!expanded)}
-					className="font-medium text-primary">
-					{expanded ? " Read less" : "Read more"}
+					className="ml-2 font-medium text-primary">
+					{expanded ? "Read less" : "Read more"}
 				</button>
 			)}
 		</div>

@@ -7,7 +7,7 @@ import { UserProfile } from "@/types"
 
 type Language = {
 	name: string
-	proficiency?: string
+	proficiency: string
 }
 
 interface LanguagesSectionProps {
@@ -46,8 +46,8 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 	}
 
 	return (
-		<Card className="border-0 shadow-sm">
-			<CardContent className="rounded-md px-4 py-4 shadow-md">
+		<Card className="border border-border shadow-sm">
+			<CardContent className="rounded-md px-4 py-4 shadow-sm">
 				<div className="mb-4 flex items-center justify-between">
 					<h2 className="text-lg font-semibold text-gray-800">Languages</h2>
 					<LanguagesEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
@@ -59,7 +59,7 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 
 				<div className="space-y-3">
 					{languages.length === 0 ? (
-						<p className="text-gray-500 italic text-sm">
+						<p className="text-sm italic text-gray-500">
 							No languages added yet. Click edit to showcase the languages you speak.
 						</p>
 					) : (

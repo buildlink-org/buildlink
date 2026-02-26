@@ -40,7 +40,7 @@ const AccountTypeFeatures = ({ userType, className = '' }: AccountTypeFeaturesPr
   }, [userType]);
 
   if (loading) {
-    return <div className="animate-pulse h-32 bg-muted rounded-lg" />;
+    return <div className="h-32 animate-pulse rounded-lg bg-muted" />;
   }
 
   const getTypeTitle = (type: string) => {
@@ -62,8 +62,8 @@ const AccountTypeFeatures = ({ userType, className = '' }: AccountTypeFeaturesPr
     switch (type.toLowerCase()) {
       case 'student':
         return 'Emerging talent, learning & seeking opportunities';
-      case 'graduate':
-        return 'Fresh graduate, early-career stage';
+      // case 'graduate':
+      //   return 'Fresh graduate, early-career stage';
       case 'professional':
         return 'Practicing professional with accreditation/experience';
       case 'company':
@@ -86,22 +86,22 @@ const AccountTypeFeatures = ({ userType, className = '' }: AccountTypeFeaturesPr
       <CardContent>
         <div className="space-y-3">
           {features.map((feature, index) => (
-            <div key={index} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-              <div className="flex-shrink-0 mt-0.5">
+            <div key={index} className="flex items-start gap-3 rounded-lg bg-muted/50 p-3">
+              <div className="mt-0.5 flex-shrink-0">
                 {feature.is_premium ? (
-                  <Crown className="w-4 h-4 text-yellow-500" />
+                  <Crown className="h-4 w-4 text-yellow-500" />
                 ) : (
-                  <Check className="w-4 h-4 text-green-500" />
+                  <Check className="h-4 w-4 text-green-500" />
                 )}
               </div>
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
-                  <span className="font-medium text-sm capitalize">
+                  <span className="text-sm font-medium capitalize">
                     {feature.feature_name.replace(/_/g, ' ')}
                   </span>
                   {feature.is_premium && (
                     <Badge variant="outline" className="text-xs">
-                      <Star className="w-3 h-3 mr-1" />
+                      <Star className="mr-1 h-3 w-3" />
                       Premium
                     </Badge>
                   )}
