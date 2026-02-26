@@ -6,21 +6,11 @@ import { supabase } from "@/integrations/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Plus, Loader2, FolderOpen, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { MoveRight } from "lucide-react"
-import { UserProfile } from "@/types"
-
-type PortfolioItem = {
-	id: string
-	name: string
-	url: string
-	type: string
-	description?: string
-	thumbnailUrl?: string
-}
+import { PortfolioItem, UserProfile } from "@/types"
 
 interface PortfolioSectionProps {
 	profile: UserProfile
-	handleProfileUpdate: () => void
+	handleProfileUpdate?: () => void
 	canEdit?: boolean
 }
 
@@ -33,10 +23,10 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	const { toast } = useToast()
 
 	useEffect(() => {
-		setPortfolioList(Array.isArray((profile as any).portfolio) ? (profile as any).portfolio : [])
-	}, [(profile as any).portfolio])
+		setPortfolioList(Array.isArray(profile.portfolio) ? profile.portfolio : [])
+	}, [profile.portfolio])
 
-	const canEdit = canEditProp !== undefined ? canEditProp : true
+	const canEdit = canEditProp !== undefined ? canEditProp : false
 
 	// Get account-type-specific colors matching ProfileHeader
 	const getColorConfig = () => {
@@ -106,11 +96,11 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 		})
 	}
 
-	if (!portfolioList) return null
+	if (!portfolioList || (!canEdit && portfolioList.length === 0)) return null
 
 	return (
 		<Card className="border-0 shadow-sm">
-			<CardContent className="px-0 py-6">
+			<CardContent className="px-2 py-6">
 				<div className="mb-6 flex flex-wrap items-center justify-between gap-y-2">
 					<div className="flex items-center space-x-2">
 						<h3 className="text-lg font-semibold text-foreground">Portfolio</h3>
@@ -145,15 +135,13 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 						</div>
 						<h4 className="mb-2 text-lg font-medium text-foreground">No projects yet</h4>
 						<p className="mb-6 text-muted-foreground">Showcase your work and achievements</p>
-						{canEdit && (
-							<Button
-								variant="outline"
-								onClick={() => setEditorOpen(true)}
-								disabled={updating}>
-								<Plus className="mr-2 h-4 w-4" />
-								Add your first project
-							</Button>
-						)}
+						<Button
+							variant="outline"
+							onClick={() => setEditorOpen(true)}
+							disabled={updating}>
+							<Plus className="mr-2 h-4 w-4" />
+							Add your first project
+						</Button>
 					</div>
 				) : (
 					<div className="space-y-6">
@@ -161,9 +149,9 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 							{portfolioList.map((item, index) => {
 								// Determine card positioning: middle card (index 1) gets mt-6, others get mb-6
-								const isMiddleCard = index === 1 && portfolioList.length === 3;
-								const cardClasses = isMiddleCard ? "mt-6" : "mb-6";
-								
+								const isMiddleCard = index === 1 && portfolioList.length === 3
+								const cardClasses = isMiddleCard ? "mt-6" : "mb-6"
+
 								return (
 									<div
 										key={item.id}
@@ -179,28 +167,26 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 										{/* Folder-style card with stacked effect */}
 										<div className="relative flex h-full flex-col overflow-visible transition-transform group-hover:scale-105">
 											{/* Top tab bar - darker gray, behind the card */}
-											<div className="absolute -top-1 left-3 right-3 h-5 bg-gray-400 rounded-t-lg z-0 shadow-sm" />
-											
+											<div className="absolute -top-1 left-3 right-3 z-0 h-5 rounded-t-lg bg-gray-400 shadow-sm" />
+
 											{/* Card body - color-coded card in front, overlapping the gray tab */}
 											<div className={`relative flex h-full flex-col rounded-lg ${colorConfig.bgColor} border ${colorConfig.borderColor} shadow-sm z-10 mt-1`}>
-												<div className="flex-1 px-5 pb-5 pt-5 flex flex-col min-h-[160px]">
-												{/* White rectangular field at top with project name */}
-												<div className="w-full rounded-md bg-white px-4 py-3 shadow-sm border border-gray-100 mb-4">
-													<h4 className="font-medium text-base truncate text-gray-900">
-														{item.name}
-													</h4>
-												</div>
-
-												{/* Thumbnail preview if available */}
-												{item.thumbnailUrl && (
-													<div className="w-full h-24 rounded-md overflow-hidden mb-2 bg-gray-100">
-														<img 
-															src={item.thumbnailUrl} 
-															alt={item.name}
-															className="w-full h-full object-cover"
-														/>
+												<div className="flex min-h-[160px] flex-1 flex-col px-5 pb-5 pt-5">
+													{/* White rectangular field at top with project name */}
+													<div className="mb-4 w-full rounded-md border border-border bg-white px-4 py-3 shadow-sm">
+														<h4 className="truncate text-base font-medium text-gray-900">{item.name}</h4>
 													</div>
-												)}
+
+													{/* Thumbnail preview if available */}
+													{item.thumbnailUrl && (
+														<div className="mb-2 h-24 w-full overflow-hidden rounded-md bg-gray-100">
+															<img
+																src={item.thumbnailUrl}
+																alt={item.name}
+																className="h-full w-full object-cover"
+															/>
+														</div>
+													)}
 												</div>
 											</div>
 										</div>
