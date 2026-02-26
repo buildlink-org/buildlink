@@ -5,12 +5,13 @@ import { publicProfileService } from "@/services/publicProfileService";
 import { postsService } from "@/services/postsService";
 import { useToast } from "@/hooks/use-toast";
 import { useStableState } from "@/hooks/useStableState";
+import { UserProfile } from "@/types";
 
 export const useProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { stableCallback } = useStableState();
-  const [profile, setProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<UserProfile>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);

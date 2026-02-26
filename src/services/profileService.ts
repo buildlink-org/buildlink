@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client"
-import { UserProfile } from "@/types"
+import { Experiences, UserProfile } from "@/types"
 
 export const profileService = {
 	async getProfile(userId: string) {
@@ -8,7 +8,7 @@ export const profileService = {
 		return { data, error }
 	},
 
-	async updateProfile(userId: string, updates: UserProfile) {
+	async updateProfile(userId: string, updates: { [bio: string]: string | string[] | UserProfile |Experiences[]}) {
 		const { data, error } = await supabase
 			.from("profiles")
 			.update({
@@ -33,13 +33,13 @@ export const profileService = {
 			return { data: null, error: uploadError }
 		}
 
-		const { data: publicUrlData } = supabase.storage.from("uploads").getPublicUrl(filePath)
+		// const { data: publicUrlData } = supabase.storage.from("uploads").getPublicUrl(filePath)
 	},
 
 	async getStats() {
 		try {
 			// Method 1: Use separate count queries (more reliable)
-			const { count: professionalsCount, error: professionalsError } = await supabase.from("profiles").select("*", { count: "exact" }).in("user_type", [ "professional"])
+			const { count: professionalsCount, error: professionalsError } = await supabase.from("profiles").select("*", { count: "exact" }).in("user_type", ["professional"])
 
 			const { count: studentsCount, error: studentError } = await supabase.from("profiles").select("*", { count: "exact" }).in("user_type", ["student"])
 

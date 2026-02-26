@@ -37,7 +37,7 @@ export const postsService = {
     }
     
     const { data, error } = await query;
-    console.log('Posts query result:', { data, error });
+    
     return { data, error };
   },
   async createPost(post: {

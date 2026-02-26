@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
-import { MessageCircle, Edit, Settings } from "lucide-react"
+import { Edit, Settings } from "lucide-react"
 import ProfileEditDialog from "../ProfileEditDialog"
 import AvatarUploader from "../profile-sections/AvatarUploader"
 import AccountTypeBadge from "../AccountTypeBadge"
@@ -10,6 +10,7 @@ import { useState } from "react"
 import { UserProfile } from "@/types"
 import SocialMediaLinks from "../profile/SocialMediaLinks"
 import SocialLinksEditDialog from "../profile/SocialLinksEditDialog"
+import VerificationBadgeButton from "./VerificationBadges"
 
 interface ProfileHeaderProps {
 	profile: UserProfile
@@ -21,7 +22,7 @@ interface ProfileHeaderProps {
 
 const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRemove, handleProfileUpdate }: ProfileHeaderProps) => {
 	const [showRatingDialog, setShowRatingDialog] = useState(false)
-	
+
 	// Get account-type-specific welcome config
 	const getWelcomeConfig = () => {
 		const userType = profile?.user_type?.toLowerCase() || "student"
@@ -34,7 +35,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				descColor: "text-black-200",
 				iconEmoji: "🎓",
 				title: `Welcome ${profile.full_name || "User"}`,
-				message: "Your journey into the industry starts right here!"
+				message: "Your journey into the industry starts right here!",
 			}
 		} else if (userType === "professional") {
 			return {
@@ -44,7 +45,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				descColor: "text-black-200",
 				iconEmoji: "💼",
 				title: `Welcome ${profile.full_name || "User"}`,
-				message: "Ready to connect, grow, and lead in Kenya's built environment?"
+				message: "Ready to connect, grow, and lead in Kenya's built environment?",
 			}
 		} else if (userType === "company") {
 			return {
@@ -54,7 +55,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				descColor: "text-black-400",
 				iconEmoji: "🪪",
 				title: `Welcome ${profile.organization || profile.full_name || "Your Company"}`,
-				message: "Relevance & Visibility has never been easier until now."
+				message: "Relevance & Visibility has never been easier until now.",
 			}
 		}
 
@@ -66,19 +67,17 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			descColor: "text-black-400",
 			iconEmoji: "🎓",
 			title: `Welcome ${profile.full_name || "User"}`,
-			message: "Your journey into the industry starts right here!"
+			message: "Your journey into the industry starts right here!",
 		}
 	}
-	
+
 	const welcomeConfig = getWelcomeConfig()
-	
+
 	return (
 		<>
 			<Card className={`mt-4 border ${welcomeConfig.borderColor} ${welcomeConfig.bgColor}`}>
 				<CardHeader>
-					<CardTitle className={welcomeConfig.titleColor}>
-						Welcome {profile.user_type === "company" ? (profile.organization || profile.full_name || "Your Company") : (profile.full_name || "User")}!
-					</CardTitle>
+					<CardTitle className={welcomeConfig.titleColor}>Welcome {profile.user_type === "company" ? profile.organization || profile.full_name || "Your Company" : profile.full_name || "User"}!</CardTitle>
 					<CardDescription className={welcomeConfig.descColor}>
 						{welcomeConfig.message} {welcomeConfig.iconEmoji}
 					</CardDescription>
@@ -103,7 +102,10 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 							<div className="space-y-3">
 								<div className="flex items-start gap-3">
 									<div className="flex-1">
-										<h1 className="mb-1 text-2xl font-bold text-foreground">{profile.full_name || "User"}</h1>
+										<div className="flex items-center gap-2">
+											<h1 className="mb-1 text-2xl font-bold text-foreground">{profile.full_name || "User"}</h1>
+											<VerificationBadgeButton profile={profile} />
+										</div>
 										<div className="mt-1 flex items-center gap-2">
 											<AccountTypeBadge userType={profile.user_type || "student"} />
 										</div>
@@ -117,8 +119,8 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 						</div>
 					</div>
 					{/* Action Buttons */}
-					<div className="flex flex-col gap-4 items-end">
-						<div className="flex flex-col gap-2 sm:flex-row justify-end">
+					<div className="flex flex-col items-end gap-4">
+						<div className="flex flex-col justify-end gap-2 sm:flex-row">
 							{/* <Button
 								variant="outline"
 								className="flex-1 sm:flex-none">
@@ -144,9 +146,9 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 								</Button>
 							</ProfileEditDialog>
 						</div>
-						
+
 						{/* Social Links - Below action buttons */}
-						<div className="flex items-center gap-2 flex-wrap justify-end">
+						<div className="flex flex-wrap items-center justify-end gap-2">
 							<SocialLinksEditDialog
 								currentLinks={profile.social_links || {}}
 								onLinksUpdated={handleProfileUpdate}

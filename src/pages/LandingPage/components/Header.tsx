@@ -9,7 +9,7 @@ const Header = () => {
 	const [isMenuOpen, setIsMenuOpen] = useState(false)
 
 	return (
-		<header className="fixed top-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-b">
+		<header className="fixed left-0 right-0 top-0 z-50 border-b bg-background/95 backdrop-blur-sm">
 			<div className="container mx-auto px-6 py-4">
 				<div className="flex items-center justify-between">
 					{/* Logo */}
@@ -17,31 +17,31 @@ const Header = () => {
 						<img
 							src={buildlinkLogo}
 							alt="BuildLink Logo"
-							className="w-auto h-8 object-contain"
+							className="h-8 w-auto object-contain"
 						/>
 						<span className="text-xl font-bold text-primary">BuildLink</span>
 					</div>
 
 					{/* Desktop Navigation */}
-					<nav className="hidden md:flex items-center space-x-8">
+					<nav className="hidden items-center space-x-8 md:flex">
 						<HashLink
 							smooth
-							to="/#home"
-							className="text-foreground hover:text-primary transition-colors">
+							to="/feed"
+							className="text-foreground transition-colors hover:text-primary">
 							{" "}
 							Home
 						</HashLink>
 						<HashLink
 							smooth
 							to="/#features"
-							className="text-foreground hover:text-primary transition-colors">
+							className="text-foreground transition-colors hover:text-primary">
 							{" "}
 							Features
 						</HashLink>
 						<HashLink
 							smooth
 							to="/#process"
-							className="text-foreground hover:text-primary transition-colors">
+							className="text-foreground transition-colors hover:text-primary">
 							{" "}
 							Process
 						</HashLink>
@@ -51,7 +51,7 @@ const Header = () => {
 
 					{/* Mobile Menu Button */}
 					<button
-						className="md:hidden text-foreground hover:text-primary"
+						className="text-foreground hover:text-primary md:hidden"
 						onClick={() => setIsMenuOpen(!isMenuOpen)}>
 						{isMenuOpen ? <X size={24} /> : <Menu size={24} />}
 					</button>
@@ -59,26 +59,26 @@ const Header = () => {
 
 				{/* Mobile Navigation */}
 				{isMenuOpen && (
-					<nav className="md:hidden mt-4 pb-4 border-t">
+					<nav className="mt-4 border-t pb-4 md:hidden">
 						<div className="flex flex-col space-y-4 pt-4">
 							<HashLink
 								smooth
-								to="/#home"
-								className="text-foreground hover:text-primary transition-colors">
+								to="/feed"
+								className="text-foreground transition-colors hover:text-primary">
 								{" "}
 								Home
 							</HashLink>
 							<HashLink
 								smooth
 								to="/#features"
-								className="text-foreground hover:text-primary transition-colors">
+								className="text-foreground transition-colors hover:text-primary">
 								{" "}
 								Features
 							</HashLink>
 							<HashLink
 								smooth
 								to="/#process"
-								className="text-foreground hover:text-primary transition-colors">
+								className="text-foreground transition-colors hover:text-primary">
 								{" "}
 								Process
 							</HashLink>
