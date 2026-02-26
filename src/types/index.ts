@@ -149,3 +149,16 @@ export type Education = {
 }
 
 export type UserProfile = StudentProfile | ProfessionalProfile | CompanyProfile
+
+// types.ts
+export type Notification = {
+  id: string
+  content: string
+  type: string
+  read: boolean
+  created_at: string
+  from_user?: {
+    full_name?: string
+    avatar?: string
+  }
+}

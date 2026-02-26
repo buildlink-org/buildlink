@@ -20,6 +20,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationsService } from '@/services/notificationsService';
 import { useToast } from '@/hooks/use-toast';
+import { useNotificationsStore } from '@/stores/notificationStore';
 
 const notificationCategories = [
   { id: 'all', label: 'All', icon: Bell },
@@ -37,6 +38,12 @@ const EnhancedNotificationsDropdown = () => {
   const [loading, setLoading] = useState(false);
   const [activeCategory, setActiveCategory] = useState('all');
   const [isOpen, setIsOpen] = useState(false);
+
+  const notification = useNotificationsStore((state) => state.notifications)
+  const unreadCounts = useNotificationsStore((state) => state.unreadCount)
+
+  console.log("Current notifications:", notification) // 🔥
+  console.log("Current unread count:", unreadCounts)
 
   useEffect(() => {
     if (user) {

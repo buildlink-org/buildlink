@@ -40,20 +40,7 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 				{/* Center - Search Bar */}
 				<div className="mx-2 hidden max-w-md flex-1 sm:flex lg:mx-4">
 					<SearchDropdown />
-				</div>
-
-				{/*<div className="mx-2 hidden max-w-md flex-1 sm:flex lg:mx-4">
-          <SearchDialog>
-            <div className="relative w-full cursor-pointer">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-muted-foreground" />
-              <Input
-                placeholder="Search posts, mentors, courses..."
-                className="w-full cursor-pointer pl-10"
-                readOnly
-              />
-            </div>
-          </SearchDialog>
-        </div>  /*}
+				</div> 
 
         {/* Right side actions */}
 				<div className="flex items-center space-x-1">

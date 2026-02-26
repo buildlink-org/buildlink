@@ -20,7 +20,7 @@ const DEBOUNCE_MS = 350
 export default function SearchDropdown() {
 	const [activeTab, setActiveTab] = useState("people")
 	const [loading, setLoading] = useState(false)
-	const [open, setOpen] = useState(false)
+	const [open, setOpen] = useState<boolean>(false)
 	const [query, setQuery] = useState("")
 	const inputRef = useRef<HTMLInputElement | null>(null)
 	const [results, setResults] = useState<SearchResultsState>({
@@ -109,18 +109,18 @@ export default function SearchDropdown() {
 							// Ensure first tap focuses input and keeps popover open
 							e.preventDefault()
 							inputRef.current?.focus()
-							setOpen(true)
+							// setOpen(true)
 						}}>
 						<Input
 							placeholder="Search people, opportunities, skills…"
 							value={query}
 							onChange={(e) => {
 								setQuery(e.target.value)
-								setOpen(true)
+								// setOpen(true)
 							}}
-							onFocus={() => setOpen(true)}
+							// onFocus={() => setOpen(true)}
 							ref={inputRef}
-							onClick={() => setOpen(true)}
+							// onClick={() => setOpen(true)}
 							className="pl-9 pr-16"
 						/>
 						<Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
