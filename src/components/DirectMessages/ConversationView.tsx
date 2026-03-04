@@ -10,6 +10,7 @@ import { Send, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { formatTimestamp } from "@/lib/utils"
+import EmojiPickerButton from "../EmojiPicker"
 
 interface ConversationViewProps {
 	otherUserId: string
@@ -112,6 +113,8 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 				description: error.message,
 				variant: "destructive",
 			})
+
+			throw error
 		} else if (data) {
 			addMessageToStore(data)
 			setContent("")
@@ -179,7 +182,12 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 
 			{/* Input Area */}
 			<div className="border-t p-4">
-				<div className="flex gap-2">
+				<div className="flex items-center gap-2">
+					<EmojiPickerButton
+						onSelect={(emoji) => {
+							setContent((prev) => prev + emoji)
+						}}
+					/>
 					<Textarea
 						value={content}
 						onChange={(e) => setContent(e.target.value)}
@@ -197,7 +205,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 						onClick={handleSend}
 						disabled={!content.trim() || sending}
 						size="icon"
-						className="item-center self-end">
+						className="item-center bg-none">
 						{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
 					</Button>
 				</div>

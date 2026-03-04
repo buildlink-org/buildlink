@@ -87,7 +87,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			<CardContent className="!mt-1 px-0 py-6">
 				<div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
 					{/* Info and Avatar */}
-					<div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:space-x-4 sm:space-y-0 lg:space-x-6">
+					<div className="flex gap-4 space-y-4 sm:flex-row sm:items-start sm:space-x-4 sm:space-y-0 lg:space-x-6">
 						<div className="relative">
 							<AvatarUploader
 								avatarUrl={profile.avatar || ""}
@@ -119,8 +119,8 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 						</div>
 					</div>
 					{/* Action Buttons */}
-					<div className="flex flex-col items-end gap-4">
-						<div className="flex flex-col justify-end gap-2 sm:flex-row">
+					<div className="flex flex-row items-center gap-4 md:flex-col md:items-end">
+						<div className="flex flex-row justify-end gap-2">
 							{/* <Button
 								variant="outline"
 								className="flex-1 sm:flex-none">

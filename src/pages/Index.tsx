@@ -11,7 +11,6 @@ import ResponsiveNavigation from "@/components/ResponsiveNavigation"
 import ContentFilters from "@/components/ContentFilters"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import FloatingMessagingWidget from "@/components/DirectMessages/FloatingMessageWidget"
-import { NotificationsListener } from "@/hooks/notificationListener"
 
 interface IndexProps {
 	customContent?: ReactNode
@@ -36,9 +35,6 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 					case "home":
 						navigate("/")
 						break
-					// case "mentorship":
-					//   navigate("/mentorship");
-					//   break;
 					case "post":
 						navigate("/post")
 						break
@@ -80,8 +76,6 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 		switch (activeTab) {
 			case "home":
 				return <HomeFeed activeFilter={activeFilter} />
-			// case "mentorship":
-			//   return <MentorshipHub />;
 			case "post":
 				return <PostCreate />
 			case "skillup":
@@ -112,7 +106,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 						<ResponsiveNavigation loading={loading} />
 					</div>
 				)}
-				<div className={`xl:col-span-7 lg:col-span-9 col-span-12 ${showNavigation ? "md:col-start-4" : ""}`}>
+				<div className={`col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`}>
 					{/* Content Filters */}
 					{shouldShowFilters && (
 						<div className="mb-4">
@@ -129,7 +123,6 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 				</div>
 			</div>
 
-			{user && <NotificationsListener />} 
 			{user && <FloatingMessagingWidget />}
 		</div>
 	)

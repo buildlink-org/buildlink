@@ -310,7 +310,7 @@ const PostCreate = () => {
 						</Button>
 					</div>
 
-					<div className={cn("flex justify-end mt-4 gap-4", isMobile && "mt-2")}>
+					<div className={cn("flex-1 md:flex justify-end mt-4 gap-4", isMobile && "mt-2")}>
 						<Button
 							className={cn("border-primary text-primary hover:bg-primary-800", isMobile && "w-full py-3 text-base")}
 							variant="outline"

@@ -8,7 +8,7 @@ export const profileService = {
 		return { data, error }
 	},
 
-	async updateProfile(userId: string, updates: { [bio: string]: string | string[] | UserProfile |Experiences[]}) {
+	async updateProfile(userId: string, updates: { [bio: string]: string | string[] | UserProfile | Experiences[] }) {
 		const { data, error } = await supabase
 			.from("profiles")
 			.update({
@@ -59,12 +59,6 @@ export const profileService = {
 				console.error("Error counting companies:", companiesError)
 				throw companiesError
 			}
-
-			console.log("Raw counts from Supabase:", {
-				studentsCount,
-				professionalsCount,
-				companiesCount,
-			})
 
 			return {
 				data: {

@@ -5,7 +5,7 @@ const PublicProfile: React.FC = () => {
   return (
     <Index 
       customContent={
-        <div className="container mx-auto py-8">
+        <div className="mx-auto py-8">
           <PublicProfileView />
         </div>
       }

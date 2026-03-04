@@ -69,11 +69,10 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 
 										{exp.description && (
 											<p className="mt-2 text-sm text-gray-700">
-												{exp.description}
-												{/* <ReadMoreText
+												<ReadMoreText
 													text={exp.description}
 													maxLength={300}
-												/> */}
+												/>
 											</p>
 										)}
 									</div>
