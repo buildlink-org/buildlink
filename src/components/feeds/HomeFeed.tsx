@@ -202,7 +202,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 								{isLoadingStats ? (
 									<div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
 								) : (
-									statsData?.data?.studentsCount?.toLocaleString() ?? "0" // Fixed: added toLocaleString
+									(statsData?.data?.studentsCount?.toLocaleString() ?? "0") // Fixed: added toLocaleString
 								)}
 							</div>
 							<div className="text-sm text-primary-foreground/80">Students</div>
@@ -212,7 +212,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 								{isLoadingStats ? (
 									<div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
 								) : (
-									statsData?.data?.professionalsCount?.toLocaleString() ?? "0" // Fixed: added toLocaleString
+									(statsData?.data?.professionalsCount?.toLocaleString() ?? "0") // Fixed: added toLocaleString
 								)}
 							</div>
 							<div className="text-sm text-primary-foreground/80">Professionals</div>
@@ -222,7 +222,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 								{isLoadingStats ? (
 									<div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
 								) : (
-									statsData?.data?.companiesCount?.toLocaleString() ?? "0" // Fixed: added toLocaleString
+									(statsData?.data?.companiesCount?.toLocaleString() ?? "0") // Fixed: added toLocaleString
 								)}
 							</div>
 							<div className="text-sm text-primary-foreground/80">Companies</div>
@@ -247,15 +247,15 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 				</div>
 				<div className="grid grid-cols-3 gap-4">
 					<div className="text-center">
-						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : statsData?.data?.studentsCount?.toLocaleString() ?? "0"}</div>
+						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : (statsData?.data?.studentsCount?.toLocaleString() ?? "0")}</div>
 						<div className="text-sm text-primary-foreground/80">Students</div>
 					</div>
 					<div className="text-center">
-						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : statsData?.data?.professionalsCount?.toLocaleString() ?? "0"}</div>
+						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : (statsData?.data?.professionalsCount?.toLocaleString() ?? "0")}</div>
 						<div className="text-sm text-primary-foreground/80">Professionals</div>
 					</div>
 					<div className="text-center">
-						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : statsData?.data?.companiesCount?.toLocaleString() ?? "0"}</div>
+						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : (statsData?.data?.companiesCount?.toLocaleString() ?? "0")}</div>
 						<div className="text-sm text-primary-foreground/80">Companies</div>
 					</div>
 				</div>
@@ -298,7 +298,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 								onPostUpdated={handlePostUpdated}
 								onPostDeleted={handlePostDeleted}
 								dataSaver={dataSaverMode}
-								priority={index < 2} // First 2 posts get priority loading
+								priority={index < 2} 
 							/>
 						))}
 

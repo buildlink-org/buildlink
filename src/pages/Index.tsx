@@ -35,9 +35,6 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 					case "home":
 						navigate("/")
 						break
-					// case "mentorship":
-					//   navigate("/mentorship");
-					//   break;
 					case "post":
 						navigate("/post")
 						break
@@ -79,14 +76,12 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 		switch (activeTab) {
 			case "home":
 				return <HomeFeed activeFilter={activeFilter} />
-			// case "mentorship":
-			//   return <MentorshipHub />;
 			case "post":
 				return <PostCreate />
 			case "skillup":
 				return <SkillUpFeed activeFilter={activeFilter} />
 			case "profile":
-				return <ProfileBoard /> 
+				return <ProfileBoard />
 			case "publicProfile":
 				return customContent || <ProfileBoard />
 			default:
@@ -96,7 +91,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 
 	const shouldShowFilters = showFilters && (activeTab === "home" || activeTab === "skillup")
 
-		return (
+	return (
 		<div className="min-h-screen bg-background">
 			<TopBar
 				onLogoClick={handleLogoClick}
@@ -111,7 +106,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 						<ResponsiveNavigation loading={loading} />
 					</div>
 				)}
-				<div className={`xl:col-span-7 lg:col-span-9 col-span-12 ${showNavigation ? "md:col-start-4" : ""}`}>
+				<div className={`col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`}>
 					{/* Content Filters */}
 					{shouldShowFilters && (
 						<div className="mb-4">
@@ -127,6 +122,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 					<div className={`transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
 				</div>
 			</div>
+
 			{user && <FloatingMessagingWidget />}
 		</div>
 	)
