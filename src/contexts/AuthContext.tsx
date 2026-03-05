@@ -34,8 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((event, session) => {
-			// Security: Do not log sensitive user information
-			console.log("Auth state changed:", event)
+			// Security: Do not log sensitive user information 
 			setSession(session)
 			setUser(session?.user ?? null)
 			setLoading(false)

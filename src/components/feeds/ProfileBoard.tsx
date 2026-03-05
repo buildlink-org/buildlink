@@ -76,7 +76,7 @@ const ProfileBoard = () => {
 	const userType = profile.user_type?.toLowerCase() || "student"
 
 	return (
-		<div className="mx-auto max-w-5xl space-y-6 p-6 md:px-0">
+		<div className="mx-auto max-w-5xl space-y-6 py-6 md:px-0">
 			{/* Header */}
 			<ProfileHeader
 				profile={profile}

@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Heart, MessageCircle, Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare } from "lucide-react"
+import { Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -41,7 +41,6 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 	const [isDeleting, setIsDeleting] = useState(false)
 	const [isPrefetching, setIsPrefetching] = useState(false)
 
-	
 	// Prefetch post data on hover
 	const handleMouseEnter = async () => {
 		if (!isPrefetching && !dataSaver) {
@@ -112,8 +111,6 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 	}
 
 	const isOwnPost = user && post.author_id === user.id
-
-	
 
 	const handleDownload = () => {
 		const link = document.createElement("a")
@@ -246,8 +243,8 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 								size="sm"
 								onClick={handleLike}
 								disabled={isLiking}
-								className="flex items-center space-x-2 text-muted-foreground hover:text-red-500">
-								<ThumbsUp className={`h-4 w-4 ${isLiked ? "fill-red-500 text-red-500" : ""}`} />
+								className="flex items-center space-x-2 text-muted-foreground hover:text-white">
+								<ThumbsUp className={`h-4 w-4 ${isLiked ? "fill-red-500 hover:fill-white text-red-500" : ""}`} />
 								<span>{post.likes_count}</span>
 							</Button>
 
@@ -255,7 +252,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 								variant="ghost"
 								size="sm"
 								onClick={onComment}
-								className="flex items-center space-x-2 text-muted-foreground hover:text-red-500">
+								className="flex items-center space-x-2 text-muted-foreground hover:text-white">
 								<MessageSquare className="h-4 w-4" />
 								<span>{post.comments_count}</span>
 							</Button>
@@ -264,12 +261,10 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 								variant="ghost"
 								size="sm"
 								onClick={() => setShowShareDialog(true)}
-								className="text-muted-foreground hover:text-red-500">
+								className="text-muted-foreground hover:text-white">
 								<Share2 className="h-4 w-4" />
 							</Button>
 						</div>
-
-						
 					</div>
 				</div>
 			</CardContent>

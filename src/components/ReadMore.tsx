@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import { useState } from "react"
 
 export default function ReadMoreText({ text, maxLength = 150 }) {
 	const [expanded, setExpanded] = useState(false)
@@ -9,8 +9,8 @@ export default function ReadMoreText({ text, maxLength = 150 }) {
 	const displayedText = expanded || !isLong ? text : text.slice(0, maxLength) + "..."
 
 	return (
-		<div>
-			<p style={{ display: "inline" }}>{displayedText}</p>
+		<>
+			{displayedText}
 
 			{isLong && (
 				<button
@@ -19,6 +19,6 @@ export default function ReadMoreText({ text, maxLength = 150 }) {
 					{expanded ? "Read less" : "Read more"}
 				</button>
 			)}
-		</div>
+		</>
 	)
 }

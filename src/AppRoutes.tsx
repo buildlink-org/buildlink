@@ -27,15 +27,7 @@ const AppRoutes = () => (
           <Home />
         </ProtectedRoute>
       } 
-    />
-    {/* <Route 
-      path="/mentorship" 
-      element={
-        <ProtectedRoute>
-          <Mentorship />
-        </ProtectedRoute>
-      } 
-    /> */}
+    /> 
     <Route 
       path="/resource-hub" 
       element={

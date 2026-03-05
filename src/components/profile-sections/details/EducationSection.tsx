@@ -67,11 +67,10 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 										<p className="text-sm text-gray-500">{edu.year || "[Year]"}</p>
 										{edu.description && (
 											<p className="mt-2 text-sm text-gray-700">
-												{edu.description}
-												{/* <ReadMoreText
+												<ReadMoreText
 													text={edu.description}
 													maxLength={300}
-												/> */}
+												/>
 											</p>
 										)}
 									</div>
