@@ -15,10 +15,15 @@ import PublicProfile from "@/pages/PublicProfile";
 import ProfileSettings from "@/pages/ProfileSettings";
 import LandingPage from "./pages/LandingPage";
 import SearchResultsPage from "./pages/SearchResultsPage";
+import PublicRoute from "./components/auth/PublicRoute";
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<LandingPage />} />
+    <Route path="/" element={
+      <PublicRoute>
+      <LandingPage />
+      </PublicRoute>
+      } />
     <Route path="/auth" element={<AuthPage />} />
     <Route 
       path="/feed" 

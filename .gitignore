@@ -26,3 +26,6 @@ credentials.txt
 *.sw?
 .env
 package-lock.json
+
+# Personal notes tracker
+notes.md
