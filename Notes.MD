@@ -69,3 +69,34 @@
 
 -This will fix all errors.
 
+**Problem:**
+link the right processes (sign up & sign in) with the respective buttons on the landing page
+
+**Fix:**
+
+-Use of useParams hook, which will allow us access to dynamic values from URL In react router.
+
+-Currently this is what we have:
+
+    <TabsContent value="signin">
+    //authpage.tsx
+
+     <a href="/auth">
+     //herosection.tsx
+
+
+-We will use useParams to:
+
+1. Extracts parameters directly from the URL
+2. Enables dynamic routing and data display
+3. Commonly used to fetch or show user-specific content
+
+Code:
+
+    const [searchParams] = useSearchParams();
+
+    const tab = searchParams.get("tab");
+
+    defaultValue = tab || "signin"
+
+

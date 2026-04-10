@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Navigate } from "react-router-dom"
+import { Navigate, useSearchParams } from "react-router-dom"
 import { useAuth } from "@/contexts/AuthContext"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import SignInForm from "./SignInForm"
@@ -12,6 +12,11 @@ const AuthPage = () => {
 
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [otpEmail, setOtpEmail] = useState('');
+
+  const [searchParams] = useSearchParams();
+
+  const tab = searchParams.get("tab");
+
 
   // open modal
   const showOtpModal = (email: string) => {
@@ -50,7 +55,7 @@ const AuthPage = () => {
 				<Header />
 				<div className="w-full max-w-md">
 					<Tabs
-						defaultValue="signin"
+						defaultValue={tab || "signin"}
 						className="w-full">
 						<TabsList className="grid w-full grid-cols-2">
 							<TabsTrigger value="signin">Sign In</TabsTrigger>
