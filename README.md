@@ -1,73 +1,81 @@
-# Welcome to your Lovable project
+```markdown
+# Buildlink
 
-## Project info
+A professional networking and learning platform connecting students, mentors, and companies. Built with React, TypeScript, and Supabase.
 
-**URL**: https://lovable.dev/projects/856068cb-5aaa-48b4-9b84-05aba8007ba3
+## Tech Stack
 
-## How can I edit this code?
+- **Vite** — build tool and dev server
+- **React + TypeScript** — UI framework
+- **Tailwind CSS** — utility-first styling
+- **shadcn-ui** — component library
+- **Supabase** — backend, auth, and database
+- **Bun** — package manager
 
-There are several ways of editing your application.
+## Project Structure
 
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/856068cb-5aaa-48b4-9b84-05aba8007ba3) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+    ```
+src/
+├── components/
+│   ├── admin/            # Admin-only views and controls
+│   ├── auth/             # Login, signup, auth guards
+│   ├── DirectMessages/   # DM/chat functionality
+│   ├── feeds/            # Post feed and content
+│   ├── notifications/    # Notification components
+│   ├── profile/          # User profile views
+│   ├── profile-sections/ # Modular profile sections
+│   ├── ui/               # Base shadcn-ui components
+│   └── *.tsx             # Shared/global components
+├── contexts/
+│   ├── AuthContext.tsx        # Auth state across the app
+│   └── DataSaverContext.tsx   # Data saver mode state
+├── hooks/              # Custom React hooks
+├── integrations/
+│   └── supabase/       # Supabase client and type definitions
+├── lib/                # Utility functions and validation schemas
+├── pages/              # Route-level page components
+├── services/           # API and business logic calls
+├── stores/             # Global state stores
+├── types/              # Shared TypeScript types
+├── App.tsx
+├── AppRoutes.tsx       # Route definitions
+└── main.tsx            # App entry point
 ```
 
-**Edit a file directly in GitHub**
+## User Roles
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The app supports multiple account types — **Student**, **Professional/Mentor**, and **Company** — each with their own dashboard and feature set.
 
-**Use GitHub Codespaces**
+## Getting Started
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+# Clone the repository
+git clone <YOUR_GIT_URL>
+cd buildlink
 
-## What technologies are used for this project?
+# Install dependencies
+bun install
 
-This project is built with:
+# Set up environment variables
+cp .env.example .env
+# Fill in your Supabase URL and anon key in .env
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Start the development server
+bun run dev
+```
 
-## How can I deploy this project?
+## Environment Variables
 
-Simply open [Lovable](https://lovable.dev/projects/856068cb-5aaa-48b4-9b84-05aba8007ba3) and click on Share -> Publish.
+```
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-## Can I connect a custom domain to my Lovable project?
+## Key Conventions
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+- Components are colocated by feature inside `src/components/`
+- Shared/reusable UI primitives live in `src/components/ui/`
+- All Supabase queries go through `src/services/` or `src/integrations/supabase/`
+- Custom hooks live in `src/hooks/` — check here before writing new data-fetching logic
+- Validation schemas are centralized in `src/lib/validationSchemas.ts`
+```
