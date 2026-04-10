@@ -84,7 +84,7 @@ const Header = () => {
 							</HashLink>
 
 							<div className="flex flex-col space-y-2 pt-4">
-								<a href="/auth">
+								<a href="/auth?tab=signin">
 									<Button
 										variant="cta"
 										size="sm"
