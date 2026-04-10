@@ -1,4 +1,3 @@
-```markdown
 # Buildlink
 
 A professional networking and learning platform connecting students, mentors, and companies. Built with React, TypeScript, and Supabase.
