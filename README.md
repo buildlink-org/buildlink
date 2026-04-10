@@ -14,31 +14,31 @@ A professional networking and learning platform connecting students, mentors, an
 ## Project Structure
 
     ```
-src/
-├── components/
-│   ├── admin/            # Admin-only views and controls
-│   ├── auth/             # Login, signup, auth guards
-│   ├── DirectMessages/   # DM/chat functionality
-│   ├── feeds/            # Post feed and content
-│   ├── notifications/    # Notification components
-│   ├── profile/          # User profile views
-│   ├── profile-sections/ # Modular profile sections
-│   ├── ui/               # Base shadcn-ui components
-│   └── *.tsx             # Shared/global components
-├── contexts/
-│   ├── AuthContext.tsx        # Auth state across the app
-│   └── DataSaverContext.tsx   # Data saver mode state
-├── hooks/              # Custom React hooks
-├── integrations/
-│   └── supabase/       # Supabase client and type definitions
-├── lib/                # Utility functions and validation schemas
-├── pages/              # Route-level page components
-├── services/           # API and business logic calls
-├── stores/             # Global state stores
-├── types/              # Shared TypeScript types
-├── App.tsx
-├── AppRoutes.tsx       # Route definitions
-└── main.tsx            # App entry point
+    src/
+    ├── components/
+    │   ├── admin/            # Admin-only views and controls
+    │   ├── auth/             # Login, signup, auth guards
+    │   ├── DirectMessages/   # DM/chat functionality
+    │   ├── feeds/            # Post feed and content
+    │   ├── notifications/    # Notification components
+    │   ├── profile/          # User profile views
+    │   ├── profile-sections/ # Modular profile sections
+    │   ├── ui/               # Base shadcn-ui components
+    │   └── *.tsx             # Shared/global components
+    ├── contexts/
+    │   ├── AuthContext.tsx        # Auth state across the app
+    │   └── DataSaverContext.tsx   # Data saver mode state
+    ├── hooks/              # Custom React hooks
+    ├── integrations/
+    │   └── supabase/       # Supabase client and type definitions
+    ├── lib/                # Utility functions and validation schemas
+    ├── pages/              # Route-level page components
+    ├── services/           # API and business logic calls
+    ├── stores/             # Global state stores
+    ├── types/              # Shared TypeScript types
+    ├── App.tsx
+    ├── AppRoutes.tsx       # Route definitions
+    └── main.tsx            # App entry point
 ```
 
 ## User Roles
