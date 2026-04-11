@@ -11,7 +11,7 @@ export const useProfile = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { stableCallback } = useStableState();
-  const [profile, setProfile] = useState<UserProfile>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [userPosts, setUserPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -52,7 +52,7 @@ export const useProfile = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, profileService, postsService]);
 
   useEffect(() => {
     if (user) {
@@ -73,29 +73,47 @@ export const useProfile = () => {
   }, [user]);
 
   const handleAvatarChange = stableCallback(async (croppedFile: File) => {
-    if (!user) return;
-    setUploading(true);
-    try {
-      const { data, error } = await profileService.uploadAvatar(user.id, croppedFile);
-      if (error) throw error;
-      if (data) {
-        setProfile((prev: any) => ({ ...prev, avatar: data.avatar || "" }));
-        toast({
-          title: "Success",
-          description: "Avatar uploaded successfully!",
-        });
-      }
-    } catch (error) {
-      console.error("Error uploading avatar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to upload avatar",
-        variant: "destructive",
+  if (!user) return;
+
+  setUploading(true);
+
+  try {
+    const { data, error } = await profileService.uploadAvatar(user.id, croppedFile);
+    if (error) throw error;
+
+    if (data?.avatar) {
+      
+      setProfile((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          avatar: data.avatar,
+        };
       });
-    } finally {
-      setUploading(false);
+
+      
+      // await loadUserData(true);
+
+      toast({
+        title: "Success",
+        description: "Avatar uploaded successfully!",
+      });
     }
-  }, [user]);
+
+  } catch (error) {
+    console.error("Error uploading avatar:", error);
+
+    toast({
+      title: "Error",
+      description: "Failed to upload avatar",
+      variant: "destructive",
+    });
+
+  } finally {
+    setUploading(false);
+  }
+}, [user]);
 
   const handleAvatarRemove = stableCallback(async () => {
     if (!user) return;
