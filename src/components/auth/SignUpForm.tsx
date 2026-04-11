@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast"
 import { signUpSchema } from "@/lib/validationSchemas"
 import { z } from "zod"
 import { Eye, EyeOff, ArrowRight } from "lucide-react"
+import {studentProfessionOptions, companyProfessionOptions, companyYearsActive, studentEducationLevel } from '@/lib/signUpData';
 
 // STUDENTS & PROFESSIONALS: Account Type, Email, Password, Confirm Password, Full Name, Profession, Education Level, Skills,
 // COMPANIES: Account Type, Company Email, Password, Confirm Password, Company Name, Profession, Years Active, Expertise
@@ -170,23 +171,19 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 					}
 					break
 
-				case 6: // Education Level / Years Active
-					if (form.userType === "company") {
-						if (!form.yearsActive.trim()) {
-							setErrors({ yearsActive: "Enter some value" })
-							return false
-						}
-						if (isNaN(Number(form.yearsActive)) || Number(form.yearsActive) < 0) {
-							setErrors({ yearsActive: "Please enter a valid number" })
-							return false
-						}
-					} else {
-						if (!form.educationLevel) {
-							setErrors({ educationLevel: "Please select an education level" })
-							return false
-						}
+				case 6: 
+				if (form.userType === "company") {
+					if (!form.yearsActive) {
+					setErrors({ yearsActive: "Please select years active" })
+					return false
 					}
-					break
+				} else {
+					if (!form.educationLevel) {
+					setErrors({ educationLevel: "Please select an education level" })
+					return false
+					}
+				}
+				break
 
 				case 7: // Skills / Expertise
 					if (form.userType === "company") {
@@ -420,75 +417,74 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		</div>,
 
 		// 5 — PROFESSION
-		<div key="profession">
-			<Label>Profession</Label>
-			<Select
-				value={form.profession}
-				onValueChange={(v) => {
-					update("profession", v)
-					// next();
-					setStep(6)
-				}}>
-				<SelectTrigger className={errors.profession ? "border-red-500" : ""}>
-					<SelectValue placeholder="Select profession" />
-				</SelectTrigger>
-				<SelectContent>
-					<SelectItem value="architecture">Architecture</SelectItem>
-					<SelectItem value="interior-design">Interior Design</SelectItem>
-					<SelectItem value="quantity-surveying">Quantity Surveying</SelectItem>
-					<SelectItem value="civil-engineering">Civil Engineering</SelectItem>
-					<SelectItem value="mep-engineering">MEP Engineering</SelectItem>
-					<SelectItem value="project-management">Project Management</SelectItem>
-					<SelectItem value="project-finance">Project Finance</SelectItem>
-					<SelectItem value="construction-supplies">Construction & Supplies</SelectItem>
-					<SelectItem value="health-safety">Health & Safety</SelectItem>
-					<SelectItem value="real-estate-development">Real Estate Development</SelectItem>
-					<SelectItem value="urban-planning">Urban Planning</SelectItem>
-					<SelectItem value="governance-policy">Governance & Policy</SelectItem>
-					<SelectItem value="advocacy-awareness">Advocacy & Awareness</SelectItem>
-				</SelectContent>
-			</Select>
-			<ErrorMessage field="profession" />
-		</div>,
-
+		// 5 — PROFESSION
+<div key="profession">
+		<Label>Profession</Label>
+		<Select
+			value={form.profession}
+			onValueChange={(v) => {
+			update("profession", v)
+			setStep(6)
+			}}>
+			<SelectTrigger className={errors.profession ? "border-red-500" : ""}>
+			<SelectValue placeholder="Select profession" />
+			</SelectTrigger>
+			<SelectContent>
+			{(form.userType === "company" ? companyProfessionOptions : studentProfessionOptions).map((option) => (
+				<SelectItem key={option.value} value={option.value}>
+				{option.label}
+				</SelectItem>
+			))}
+			</SelectContent>
+		</Select>
+		<ErrorMessage field="profession" />
+</div>,
 		// 6 — EDUCATION LEVEL OR YEARS ACTIVE
 		form.userType === "company" ? (
-			<div key="years">
-				<Label>Years Active</Label>
-				<Input
-					ref={inputRef}
-					type="number"
-					value={form.yearsActive}
-					onChange={(e) => update("yearsActive", e.target.value)}
-					placeholder="e.g. 10"
-					onKeyDown={(e) => e.key === "Enter" && next()}
-					className={errors.yearsActive ? "border-red-500" : ""}
-				/>
-				<ErrorMessage field="yearsActive" />
-			</div>
-		) : (
-			<div key="education">
-				<Label>Education Level</Label>
-				<Select
-					value={form.educationLevel}
-					onValueChange={(v) => {
-						update("educationLevel", v)
-						// next();
-						setStep(7)
-					}}>
-					<SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
-						<SelectValue placeholder="Select level" />
-					</SelectTrigger>
-					<SelectContent>
-						<SelectItem value="diploma">Diploma</SelectItem>
-						<SelectItem value="bachelors">Bachelor's Degree</SelectItem>
-						<SelectItem value="masters">Master's Degree</SelectItem>
-						<SelectItem value="phd">PhD</SelectItem>
-					</SelectContent>
-				</Select>
-				<ErrorMessage field="educationLevel" />
-			</div>
-		),
+	<div key="years">
+		<Label>Years Active</Label>
+		<Select
+		value={form.yearsActive}
+		onValueChange={(v) => {
+			update("yearsActive", v)
+			setStep(7)
+		}}>
+		<SelectTrigger className={errors.yearsActive ? "border-red-500" : ""}>
+			<SelectValue placeholder="Select years active" />
+		</SelectTrigger>
+		<SelectContent>
+			{companyYearsActive.map((range) => (
+			<SelectItem key={range} value={range}>
+				{range}
+			</SelectItem>
+			))}
+		</SelectContent>
+		</Select>
+		<ErrorMessage field="yearsActive" />
+	</div>
+	) : (
+	<div key="education">
+		<Label>Education Level</Label>
+		<Select
+		value={form.educationLevel}
+		onValueChange={(v) => {
+			update("educationLevel", v)
+			setStep(7)
+		}}>
+		<SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
+			<SelectValue placeholder="Select level" />
+		</SelectTrigger>
+		<SelectContent>
+			{studentEducationLevel.map((level) => (
+			<SelectItem key={level} value={level}>
+				{level}
+			</SelectItem>
+			))}
+		</SelectContent>
+		</Select>
+		<ErrorMessage field="educationLevel" />
+	</div>
+),
 
 		// 7 — SKILLS OR EXPERTISE
 		form.userType === "company" ? (
