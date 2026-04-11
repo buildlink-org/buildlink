@@ -27,13 +27,31 @@ export const profileService = {
 		const fileName = `${userId}-${Math.random()}.${fileExt}`
 		const filePath = `avatars/${fileName}`
 
-		const { data: uploadData, error: uploadError } = await supabase.storage.from("uploads").upload(filePath, file)
+
+		const { data: uploadData, error: uploadError } = await supabase.storage.from("uploads").upload(filePath, file, {upsert: true})
 
 		if (uploadError) {
 			return { data: null, error: uploadError }
 		}
 
-		// const { data: publicUrlData } = supabase.storage.from("uploads").getPublicUrl(filePath)
+		const { data: publicUrlData } = supabase.storage.from("uploads").getPublicUrl(filePath)
+		const publicUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
+
+		const { error: updateError } = await supabase
+			.from("profiles")
+			.update({ avatar: publicUrl })
+			.eq("id", userId);
+
+			if (updateError) {
+			return { data: null, error: updateError };
+		}
+
+		return {
+			data: { avatar: publicUrl },
+			error: null,
+		};
+
+
 	},
 
 	async getStats() {
