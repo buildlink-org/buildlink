@@ -33,6 +33,16 @@ const PublicProfileView: React.FC = () => {
 	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected")
 	const [userPosts, setUserPosts] = useState<any[]>([])
 
+	const isCompanyProfile = profile?.user_type === "company"
+	const connectLabel = isCompanyProfile ? "Follow" : "Connect"
+
+
+	const labels = {
+	connect: isCompanyProfile ? "Follow" : "Connect",
+	pending: isCompanyProfile ? "Following" : "Pending",
+	accept: isCompanyProfile ? "Follow Back" : "Accept",
+	}
+
 	const isOwner = user?.id === profileId
 
 	const openConversation = useMessagingStore((state) => state.openConversation)
@@ -217,7 +227,7 @@ const PublicProfileView: React.FC = () => {
 					<Button
 						variant="outline"
 						disabled>
-						Connected
+						{labels.connect}
 					</Button>
 					{messageButton}
 				</>
@@ -227,7 +237,9 @@ const PublicProfileView: React.FC = () => {
 		if (connectionStatus === "pending_outgoing") {
 			return (
 				<>
-					<Button disabled>Pending</Button>
+					<Button disabled>
+						{isCompanyProfile ? "Following" : "Pending"}
+					</Button>
 					{messageButton}
 				</>
 			)
@@ -236,7 +248,9 @@ const PublicProfileView: React.FC = () => {
 		if (connectionStatus === "pending_incoming") {
 			return (
 				<>
-					<Button onClick={handleAccept}>Accept</Button>
+					<Button onClick={handleAccept}>
+						{isCompanyProfile ? "Follow Back" : "Accept"}
+					</Button>
 					{messageButton}
 				</>
 			)
@@ -246,7 +260,7 @@ const PublicProfileView: React.FC = () => {
 			<>
 				<Button onClick={handleConnect}>
 					<UserPlus className="mr-2 h-4 w-4" />
-					Connect
+					{connectLabel}
 				</Button>
 				{messageButton}
 			</>

@@ -136,14 +136,16 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 					<div className="flex items-center space-x-3">
 						<Avatar
 							className="h-10 w-10 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20"
-							onClick={handleProfileClick}>
+							onClick={() => navigate(`/profile/${post.author_id}`)}
+							>
 							<AvatarImage src={post.profiles?.avatar || post.user?.avatar_url} />
 							<AvatarFallback>{(post.profiles?.full_name || post.user?.full_name)?.charAt(0) || "U"}</AvatarFallback>
 						</Avatar>
 						<div>
 							<p
 								className="cursor-pointer text-sm font-semibold transition-colors hover:text-primary"
-								onClick={handleProfileClick}>
+								onClick={() => navigate(`/profile/${post.author_id}`)}
+								>
 								{post.profiles?.full_name || post.user?.full_name || "Anonymous User"}
 							</p>
 							<div className="flex flex-col justify-start text-xs text-muted-foreground md:flex-row md:space-x-2">
