@@ -37,10 +37,13 @@ export const profileService = {
 		const { data: publicUrlData } = supabase.storage.from("uploads").getPublicUrl(filePath)
 		const publicUrl = `${publicUrlData.publicUrl}?t=${Date.now()}`;
 
+    	//saving to database
 		const { error: updateError } = await supabase
 			.from("profiles")
 			.update({ avatar: publicUrl })
-			.eq("id", userId);
+			.eq("id", userId)
+			.select()
+    		.single();
 
 			if (updateError) {
 			return { data: null, error: updateError };
