@@ -93,7 +93,7 @@ export const useProfile = () => {
       });
 
       
-      // await loadUserData(true);
+      await loadUserData(true);
 
       toast({
         title: "Success",
@@ -115,29 +115,46 @@ export const useProfile = () => {
   }
 }, [user]);
 
-  const handleAvatarRemove = stableCallback(async () => {
-    if (!user) return;
-    setUploading(true);
-    try {
-      const updatedProfile = { ...profile, avatar: "" };
-      const { error } = await profileService.updateProfile(user.id, updatedProfile);
-      if (error) throw error;
-      setProfile(updatedProfile);
-      toast({
-        title: "Photo removed",
-        description: "Your profile photo has been removed.",
-      });
-    } catch (error) {
-      console.error("Error removing avatar:", error);
-      toast({
-        title: "Error",
-        description: "Failed to remove profile photo",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
-  }, [user, profile]);
+const handleAvatarRemove = stableCallback(async () => {
+  if (!user) return;
+
+  setUploading(true);
+
+  try {
+    //Only update avatar field
+    const { error } = await profileService.updateProfile(user.id, {
+      avatar: "",
+    });
+
+    if (error) throw error;
+
+    //Update local state safely
+    setProfile((prev) => {
+      if (!prev) return prev;
+      return { ...prev, avatar: "" };
+    });
+
+    //Fix stale UI everywhere
+    await loadUserData(true);
+
+    toast({
+      title: "Photo removed",
+      description: "Your profile photo has been removed.",
+    });
+
+  } catch (error) {
+    console.error("Error removing avatar:", error);
+
+    toast({
+      title: "Error",
+      description: "Failed to remove profile photo",
+      variant: "destructive",
+    });
+
+  } finally {
+    setUploading(false);
+  }
+}, [user, loadUserData]);
 
   return {
     profile,
