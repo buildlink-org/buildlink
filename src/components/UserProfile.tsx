@@ -4,6 +4,7 @@ import { Card, CardContent } from "./ui/card"
 import { Building2, Calendar, Users, MessageCircle } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { profileService } from "@/services/profileService"
+import { connectionsService } from "@/services/connectionsService"
 import { useState, useEffect } from "react"
 
 interface UserProfileProps {
@@ -11,10 +12,21 @@ interface UserProfileProps {
 	onClose: () => void
 }
 
+type ConnectionStatus =
+	| "not_connected"
+	| "pending_outgoing"
+	| "pending_incoming"
+	| "connected"
+	| "self"
+
 const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 	const { user } = useAuth()
 	const [profile, setProfile] = useState<any>(null)
 	const [loading, setLoading] = useState(true)
+
+	const [connectionStatus, setConnectionStatus] =
+		useState<ConnectionStatus>("not_connected")
+	const [connectionRow, setConnectionRow] = useState<any | null>(null)
 
 	useEffect(() => {
 		loadProfile()
@@ -31,11 +43,111 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 			if (error) throw error
 
 			setProfile(data)
+
+			// ✅ Sync connection logic
+			if (!user?.id || !targetId) {
+				setConnectionStatus("not_connected")
+				return
+			}
+
+			if (user.id === targetId) {
+				setConnectionStatus("self")
+				return
+			}
+
+			const { data: connData } =
+				await connectionsService.getConnectionStatus(user.id, targetId)
+
+			if (!connData) {
+				setConnectionStatus("not_connected")
+				return
+			}
+
+			setConnectionRow(connData)
+
+			if (connData.status === "accepted") {
+				setConnectionStatus("connected")
+			} else if (connData.status === "pending") {
+				if (connData.user_id === user.id) {
+					setConnectionStatus("pending_outgoing")
+				} else {
+					setConnectionStatus("pending_incoming")
+				}
+			}
 		} catch (error) {
 			console.error("Error loading profile:", error)
 		} finally {
 			setLoading(false)
 		}
+	}
+
+	// ✅ Actions
+	const handleConnect = async () => {
+		if (!user?.id || !profile?.id) return
+
+		const { data } = await connectionsService.connect(user.id, profile.id)
+
+		if (data) {
+			setConnectionRow(data)
+
+			// ✅ Instant UX update for follow
+			setConnectionStatus("pending_outgoing")
+		}
+	}
+
+	const handleAccept = async () => {
+		if (!connectionRow?.id) return
+
+		const { data } = await connectionsService.acceptRequest(connectionRow.id)
+
+		if (data) {
+			setConnectionRow(data)
+			setConnectionStatus("connected")
+		}
+	}
+
+	// ✅ Company detection
+	const isCompany = profile?.user_type === "company"
+
+	// ✅ FINAL BUTTON LOGIC (FIXED)
+	const renderConnectButton = () => {
+		if (connectionStatus === "self") return null
+
+		// Connected
+		if (connectionStatus === "connected") {
+			return (
+				<Button disabled className="flex-1">
+					<Users className="mr-1 h-4 w-4" />
+					{isCompany ? "Following" : "Connected"}
+				</Button>
+			)
+		}
+
+		// Pending outgoing (Follow = Following)
+		if (connectionStatus === "pending_outgoing") {
+			return (
+				<Button disabled className="flex-1">
+					{isCompany ? "Following" : "Pending"}
+				</Button>
+			)
+		}
+
+		// Pending incoming
+		if (connectionStatus === "pending_incoming") {
+			return (
+				<Button onClick={handleAccept} className="flex-1">
+					{isCompany ? "Follow Back" : "Accept"}
+				</Button>
+			)
+		}
+
+		// Not connected
+		return (
+			<Button onClick={handleConnect} className="flex-1">
+				<Users className="mr-1 h-4 w-4" />
+				{isCompany ? "Follow" : "Connect"}
+			</Button>
+		)
 	}
 
 	if (loading) {
@@ -57,9 +169,7 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 				<Card className="w-full max-w-md">
 					<CardContent className="p-6 text-center">
 						<p className="text-gray-600">Profile not found</p>
-						<Button
-							onClick={onClose}
-							className="mt-4">
+						<Button onClick={onClose} className="mt-4">
 							Close
 						</Button>
 					</CardContent>
@@ -84,15 +194,18 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 								</AvatarFallback>
 							</Avatar>
 							<div>
-								<h2 className="text-xl font-bold text-gray-900">{profile.full_name || "User"}</h2>
-								<p className="text-gray-600">{profile.profession || "Professional"}</p>
-								<p className="text-sm text-gray-500">{profile.organization || "Organization"}</p>
+								<h2 className="text-xl font-bold text-gray-900">
+									{profile.full_name || "User"}
+								</h2>
+								<p className="text-gray-600">
+									{profile.profession || "Professional"}
+								</p>
+								<p className="text-sm text-gray-500">
+									{profile.organization || "Organization"}
+								</p>
 							</div>
 						</div>
-						<Button
-							variant="ghost"
-							size="sm"
-							onClick={onClose}>
+						<Button variant="ghost" size="sm" onClick={onClose}>
 							×
 						</Button>
 					</div>
@@ -111,13 +224,9 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 					</div>
 
 					<div className="flex space-x-2">
-						<Button className="flex-1">
-							<Users className="mr-1 h-4 w-4" />
-							Connect
-						</Button>
-						<Button
-							variant="outline"
-							className="flex-1">
+						{renderConnectButton()}
+
+						<Button variant="outline" className="flex-1">
 							<MessageCircle className="mr-1 h-4 w-4" />
 							Message
 						</Button>
