@@ -172,9 +172,12 @@ const PublicProfileView: React.FC = () => {
 
 		setConnectionRow(data)
 		setConnectionStatus("pending_outgoing")
+
 		toast({
 			title: "Success",
-			description: "Connection request sent!",
+			description: isCompanyProfile
+				? `You're now following ${profile?.full_name || "this company"}`
+				: "Connection request sent!",
 		})
 	}
 
@@ -194,6 +197,40 @@ const PublicProfileView: React.FC = () => {
 		setConnectionRow(data)
 		setConnectionStatus("connected")
 		toast({ title: "Success", description: "Connection accepted." })
+
+		toast({
+				title: "Success",
+				description: isCompanyProfile
+					? `You have followed ${profile?.full_name}`
+					:`You and ${profile?.full_name} are now connected`,
+			})
+	}
+	
+	const handleDisconnect = async () => {
+		if (!connectionRow?.id) return
+
+		try {
+			const { error } = await connectionsService.removeConnection(connectionRow.id)
+
+			if (error) throw error
+
+			setConnectionRow(null)
+			setConnectionStatus("not_connected")
+
+			toast({
+				title: "Success",
+				description: isCompanyProfile
+					? `You have unfollowed ${profile?.full_name}`
+					: "Connection removed",
+			})
+		} catch (error) {
+			console.error("Error removing connection:", error)
+			toast({
+				title: "Error",
+				description: "Failed to update connection.",
+				variant: "destructive",
+			})
+		}
 	}
 
 	const renderConnectButtons = () => {
@@ -226,8 +263,9 @@ const PublicProfileView: React.FC = () => {
 				<>
 					<Button
 						variant="outline"
-						disabled>
-						{labels.connect}
+						onClick={handleDisconnect}
+						title={isCompanyProfile ? "Unfollow" : "Disconnect"}>
+						{isCompanyProfile ? "Following" : "Connected"}
 					</Button>
 					{messageButton}
 				</>
