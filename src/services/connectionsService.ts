@@ -32,5 +32,20 @@ export const connectionsService = {
       )
       .maybeSingle();
     return { data, error };
-  }
-};
+  },
+  async removeConnection(connectionId: string){
+	try {
+		const { error } = await supabase
+			.from("connections")
+			.delete()
+			.eq("id", connectionId)
+
+		if (error) throw error
+
+		return { success: true }
+	} catch (error) {
+		console.error("Error removing connection:", error)
+		return { error }
+	}
+}
+}
