@@ -133,7 +133,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 			onMouseEnter={handleMouseEnter}>
 			<CardHeader className="pb-3">
 				<div className="flex items-start justify-between">
-					<div className="flex items-center space-x-3">
+					<div className="capitalize flex items-center space-x-3">
 						<Avatar
 							className="h-10 w-10 cursor-pointer transition-all hover:ring-2 hover:ring-primary/20"
 							onClick={() => navigate(`/profile/${post.author_id}`)}
