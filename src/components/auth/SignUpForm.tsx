@@ -9,10 +9,8 @@ import { useToast } from "@/hooks/use-toast"
 import { signUpSchema } from "@/lib/validationSchemas"
 import { z } from "zod"
 import { Eye, EyeOff, ArrowRight } from "lucide-react"
-import {studentProfessionOptions, companyProfessionOptions, companyYearsActive, studentEducationLevel } from '@/lib/signUpData';
-
-// STUDENTS & PROFESSIONALS: Account Type, Email, Password, Confirm Password, Full Name, Profession, Education Level, Skills,
-// COMPANIES: Account Type, Company Email, Password, Confirm Password, Company Name, Profession, Years Active, Expertise
+import { studentProfessionOptions, companyProfessionOptions, companyYearsActive, studentEducationLevel, skillsByProfession, expertiseByProfession } from '@/lib/signUpData'
+import SkillsAutocomplete from "./SkillsAutocomplete"
 
 interface SignUpFormProps {
 	showOtpModal: (email: string) => void
@@ -27,7 +25,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 	const [showPassword, setShowPassword] = useState(false)
 	const [step, setStep] = useState(0)
 
-	// form data
 	const [form, setForm] = useState({
 		userType: "",
 		email: "",
@@ -36,23 +33,21 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		fullName: "",
 		profession: "",
 		educationLevel: "",
-		skills: "",
+		skills: [] as string[],
 		companyName: "",
 		yearsActive: "",
-		expertise: "",
+		expertise: [] as string[],
 	})
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const inputRef = useRef<HTMLInputElement | null>(null)
 
-	// Auto-focus on slide change
 	useEffect(() => {
 		if (step > 0 && inputRef.current) {
 			inputRef.current.focus()
 		}
 	}, [step])
 
-	// restore form data from local storage
 	useEffect(() => {
 		const storedForm = localStorage.getItem(STORAGE_KEY)
 		if (storedForm) {
@@ -60,7 +55,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		}
 	}, [])
 
-	// save form data to local storage
 	useEffect(() => {
 		localStorage.setItem(STORAGE_KEY, JSON.stringify(form))
 	}, [form])
@@ -70,7 +64,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 			...prevForm,
 			[field]: value,
 		}))
-		// Clear error for this field when user types
 		if (errors[field]) {
 			setErrors((prev) => {
 				const newErrors = { ...prev }
@@ -80,148 +73,114 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		}
 	}
 
-	// slide to slide validation
 	const validateCurrentStep = (): boolean => {
-		setErrors({})
+        setErrors({})
 
-		try {
-			switch (step) {
-				case 0: // Account Type
-					if (!form.userType.trim()) {
-						setErrors({ userType: "Please select an account type" })
-						return false
-					}
-					break
+        try {
+            switch (step) {
+                case 0:
+                    if (!form.userType.trim()) {
+                        setErrors({ userType: "Please select an account type" })
+                        return false
+                    }
+                    break
 
-				case 1:
-					{
-						// Email
-						// baseSchema.shape.email.parse(form.email);
-						const emailValue = form.email.trim()
-						if (!emailValue) {
-							setErrors({ email: "Email is required" })
-							return false
-						}
-						// Basic email validation regex
-						const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-						if (!emailRegex.test(emailValue)) {
-							setErrors({ email: "Invalid email address" })
-							return false
-						}
-						if (emailValue.length > 255) {
-							setErrors({ email: "Email must be less than 255 characters" })
-							return false
-						}
-					}
-					break
+                case 1: {
+                    const emailValue = form.email.trim()
+                    if (!emailValue || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
+                        setErrors({ email: "Invalid email address" })
+                        return false
+                    }
+                    break
+                }
 
-				case 2: // Password
-					// baseSchema.shape.password.parse(form.password);
-					if (!form.password) {
-						setErrors({ password: "Password is required" })
-						return false
-					}
-					if (form.password.length < 6) {
-						setErrors({ password: "Password must be at least 6 characters" })
-						return false
-					}
-					if (form.password.length > 128) {
-						setErrors({ password: "Password must be less than 128 characters" })
-						return false
-					}
-					break
+                case 2:
+                    if (!form.password || form.password.length < 6) {
+                        setErrors({ password: "Password must be at least 6 characters" })
+                        return false
+                    }
+                    break
 
-				case 3: // Confirm Password
-					if (form.confirmPassword !== form.password) {
-						setErrors({ confirmPassword: "Passwords do not match" })
-						return false
-					}
-					if (!form.confirmPassword) {
-						setErrors({ confirmPassword: "Please confirm your password" })
-						return false
-					}
-					break
+                case 3:
+                    if (form.confirmPassword !== form.password) {
+                        setErrors({ confirmPassword: "Passwords do not match" })
+                        return false
+                    }
+                    break
 
-				case 4: // Full Name / Company Name
-					if (form.userType === "company") {
-						if (!form.companyName.trim()) {
-							setErrors({ companyName: "Company name is required" })
-							return false
-						}
-						if (form.companyName.trim().length < 2) {
-							setErrors({ companyName: "Company name must be at least 2 characters" })
-							return false
-						}
-					} else {
-						if (!form.fullName.trim()) {
-							setErrors({ fullName: "Full name is required" })
-							return false
-						}
-						if (form.fullName.trim().length < 2) {
-							setErrors({ fullName: "Full name must be at least 2 characters" })
-							return false
-						}
-					}
-					break
+                case 4:
+                    if (form.userType === "company") {
+                        if (!form.companyName.trim()) {
+                            setErrors({ companyName: "Company name is required" })
+                            return false
+                        }
+                    } else {
+                        if (!form.fullName.trim()) {
+                            setErrors({ fullName: "Full name is required" })
+                            return false
+                        }
+                    }
+                    break
 
-				case 5: // Profession
-					if (!form.profession) {
-						setErrors({ profession: "Please select a profession" })
-						return false
-					}
-					break
+                case 5:
+                    if (!form.profession) {
+                        setErrors({ profession: "Please select a profession" })
+                        return false
+                    }
+                    break
 
-				case 6: 
-				if (form.userType === "company") {
-					if (!form.yearsActive) {
-					setErrors({ yearsActive: "Please select years active" })
-					return false
-					}
-				} else {
-					if (!form.educationLevel) {
-					setErrors({ educationLevel: "Please select an education level" })
-					return false
-					}
-				}
-				break
+                case 6:
+                    if (form.userType === "company") {
+                        if (!form.yearsActive) {
+                            setErrors({ yearsActive: "Please select years active" })
+                            return false
+                        }
+                    } else {
+                        if (!form.educationLevel) {
+                            setErrors({ educationLevel: "Please select an education level" })
+                            return false
+                        }
+                    }
+                    break
 
-				case 7: // Skills / Expertise
-					if (form.userType === "company") {
-						if (!form.expertise.trim()) {
-							setErrors({ expertise: "Include at least 1 expertise" })
-							return false
-						}
-					} else {
-						if (!form.skills.trim()) {
-							setErrors({ skills: "Add at least 1 skill" })
-							return false
-						}
-					}
-					break
+                case 7:
+                    if (form.userType === "company") {
+                        if (form.expertise.length === 0) {
+                            setErrors({ expertise: "Include at least 1 expertise" })
+                            return false
+                        }
+                        if (form.expertise.length > 5) {
+                            setErrors({ expertise: "Maximum 5 expertise allowed" })
+                            return false
+                        }
+                    } else {
+                        if (form.skills.length === 0) {
+                            setErrors({ skills: "Add at least 1 skill" })
+                            return false
+                        }
+                        if (form.skills.length > 5) {
+                            setErrors({ skills: "Maximum 5 skills allowed" })
+                            return false
+                        }
+                    }
+                    break
 
-				default:
-					return true
-			}
-			return true
-		} catch (error) {
-			if (error instanceof z.ZodError) {
-				const fieldError = error.errors[0]
-				const fieldName = fieldError.path[0] as string
-				setErrors({ [fieldName]: fieldError.message })
-				return false
-			}
-			return false
-		}
-	}
+                default:
+                    return true
+            }
+            return true
+        } catch (error) {
+            console.error(error);
+            return false;
+        }
+    };
 
-	// slide navigation
-	const next = () => {
-		if (!validateCurrentStep()) {
-			return
-		}
-		setStep(step + 1)
-		const transition = setTimeout(() => setStep(step + 1), 300)
-	}
+    const next = () => {
+        if (validateCurrentStep()) {
+            setStep((prev) => prev + 1);
+        }
+    }; 
+	
 
 	const back = () => setStep(step - 1)
 
@@ -255,7 +214,9 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 
 			const validatedData = signUpSchema.parse(rawData)
 
-			const supabaseSkills = validatedData.userType === "company" ? form.expertise.split(",").map((s) => s.trim()) : form.skills.split(",").map((s) => s.trim())
+			const supabaseSkills = validatedData.userType === "company"
+				? form.expertise
+				: form.skills
 
 			const { data, error } = await signUp(validatedData.email, validatedData.password, {
 				full_name: validatedData.fullName,
@@ -289,7 +250,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 			}
 		} catch (err) {
 			if (err instanceof z.ZodError) {
-				// Zod schema errors
 				toast({
 					title: "Validation Error",
 					description: err.errors[0].message,
@@ -307,18 +267,15 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		}
 	}
 
-	// Error display component
 	const ErrorMessage = ({ field }: { field: string }) => {
 		return errors[field] ? <p className="mt-1 text-sm text-red-500">{errors[field]}</p> : null
 	}
 
-	// slides
 	const slides = [
 		// 0 — ACCOUNT TYPE
 		<div key="type">
 			<Label>Account Type</Label>
 			<Select
-				// ref={step === 1 ? inputRef : null}
 				value={form.userType}
 				onValueChange={(v) => {
 					update("userType", v)
@@ -344,7 +301,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 				type="email"
 				value={form.email}
 				onChange={(e) => update("email", e.target.value)}
-				// change placeholder based on userType
 				placeholder={form.userType === "company" ? "Enter company email" : "Enter your email"}
 				onKeyDown={(e) => e.key === "Enter" && next()}
 				className={errors.email ? "border-red-500" : ""}
@@ -377,7 +333,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 			<ErrorMessage field="password" />
 		</div>,
 
-		// 3 - CONFIRM PASSWORD
+		// 3 — CONFIRM PASSWORD
 		<div key="confirm-password">
 			<Label>Confirm Password</Label>
 			<div className="relative">
@@ -402,7 +358,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 			<ErrorMessage field="confirmPassword" />
 		</div>,
 
-		// 4 — NAME (OR COMPANY NAME)
+		// 4 — NAME OR COMPANY NAME
 		<div key="name">
 			<Label>{form.userType === "company" ? "Company Name" : "Full Name"}</Label>
 			<Input
@@ -417,99 +373,97 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		</div>,
 
 		// 5 — PROFESSION
-		// 5 — PROFESSION
-<div key="profession">
-		<Label>Profession</Label>
-		<Select
-			value={form.profession}
-			onValueChange={(v) => {
-			update("profession", v)
-			setStep(6)
-			}}>
-			<SelectTrigger className={errors.profession ? "border-red-500" : ""}>
-			<SelectValue placeholder="Select profession" />
-			</SelectTrigger>
-			<SelectContent>
-			{(form.userType === "company" ? companyProfessionOptions : studentProfessionOptions).map((option) => (
-				<SelectItem key={option.value} value={option.value}>
-				{option.label}
-				</SelectItem>
-			))}
-			</SelectContent>
-		</Select>
-		<ErrorMessage field="profession" />
-</div>,
+		<div key="profession">
+			<Label>Profession</Label>
+			<Select
+				value={form.profession}
+				onValueChange={(v) => {
+					update("profession", v)
+					setStep(6)
+				}}>
+				<SelectTrigger className={errors.profession ? "border-red-500" : ""}>
+					<SelectValue placeholder="Select profession" />
+				</SelectTrigger>
+				<SelectContent>
+					{(form.userType === "company" ? companyProfessionOptions : studentProfessionOptions).map((option) => (
+						<SelectItem key={option.value} value={option.value}>
+							{option.label}
+						</SelectItem>
+					))}
+				</SelectContent>
+			</Select>
+			<ErrorMessage field="profession" />
+		</div>,
+
 		// 6 — EDUCATION LEVEL OR YEARS ACTIVE
 		form.userType === "company" ? (
-	<div key="years">
-		<Label>Years Active</Label>
-		<Select
-		value={form.yearsActive}
-		onValueChange={(v) => {
-			update("yearsActive", v)
-			setStep(7)
-		}}>
-		<SelectTrigger className={errors.yearsActive ? "border-red-500" : ""}>
-			<SelectValue placeholder="Select years active" />
-		</SelectTrigger>
-		<SelectContent>
-			{companyYearsActive.map((range) => (
-			<SelectItem key={range} value={range}>
-				{range}
-			</SelectItem>
-			))}
-		</SelectContent>
-		</Select>
-		<ErrorMessage field="yearsActive" />
-	</div>
-	) : (
-	<div key="education">
-		<Label>Education Level</Label>
-		<Select
-		value={form.educationLevel}
-		onValueChange={(v) => {
-			update("educationLevel", v)
-			setStep(7)
-		}}>
-		<SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
-			<SelectValue placeholder="Select level" />
-		</SelectTrigger>
-		<SelectContent>
-			{studentEducationLevel.map((level) => (
-			<SelectItem key={level} value={level}>
-				{level}
-			</SelectItem>
-			))}
-		</SelectContent>
-		</Select>
-		<ErrorMessage field="educationLevel" />
-	</div>
-),
+			<div key="years">
+				<Label>Years Active</Label>
+				<Select
+					value={form.yearsActive}
+					onValueChange={(v) => {
+						update("yearsActive", v)
+						setStep(7)
+					}}>
+					<SelectTrigger className={errors.yearsActive ? "border-red-500" : ""}>
+						<SelectValue placeholder="Select years active" />
+					</SelectTrigger>
+					<SelectContent>
+						{companyYearsActive.map((range) => (
+							<SelectItem key={range} value={range}>
+								{range}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<ErrorMessage field="yearsActive" />
+			</div>
+		) : (
+			<div key="education">
+				<Label>Education Level</Label>
+				<Select
+					value={form.educationLevel}
+					onValueChange={(v) => {
+						update("educationLevel", v)
+						setStep(7)
+					}}>
+					<SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
+						<SelectValue placeholder="Select level" />
+					</SelectTrigger>
+					<SelectContent>
+						{studentEducationLevel.map((level) => (
+							<SelectItem key={level} value={level}>
+								{level}
+							</SelectItem>
+						))}
+					</SelectContent>
+				</Select>
+				<ErrorMessage field="educationLevel" />
+			</div>
+		),
 
 		// 7 — SKILLS OR EXPERTISE
 		form.userType === "company" ? (
 			<div key="expertise">
-				<Label>Expertise (comma separated)</Label>
-				<Input
-					ref={inputRef}
-					value={form.expertise}
-					onChange={(e) => update("expertise", e.target.value)}
-					placeholder="e.g. manufacturing, logistics"
-					onKeyDown={(e) => e.key === "Enter" && next()}
-					className={errors.expertise ? "border-red-500" : ""}
+				<Label>Expertise</Label>
+				<SkillsAutocomplete
+					options={expertiseByProfession[form.profession] || []}
+					selected={form.expertise}
+					onChange={(values) => setForm((prev) => ({ ...prev, expertise: values }))}
+					max={5}
+					placeholder="Search or type expertise..."
 				/>
 				<ErrorMessage field="expertise" />
 			</div>
 		) : (
 			<div key="skills">
-				<Label>Skills (comma separated)</Label>
-				<Input
-					ref={inputRef}
-					value={form.skills}
-					onChange={(e) => update("skills", e.target.value)}
-					placeholder="e.g. AutoCAD, BIM, Revit"
-					onKeyDown={(e) => e.key === "Enter" && next()}
-					className={errors.skills ? "border-red-500" : ""}
+				<Label>Skills</Label>
+				<SkillsAutocomplete
+					options={skillsByProfession[form.profession] || []}
+					selected={form.skills}
+					onChange={(values) => setForm((prev) => ({ ...prev, skills: values }))}
+					max={5}
+					placeholder="Search or type a skill..."
 				/>
 				<ErrorMessage field="skills" />
 			</div>
@@ -519,102 +473,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 	const isFinal = step === slides.length - 1
 
 	return (
-		// <Card>
-		//   <CardHeader>
-		//     <CardTitle>Create account</CardTitle>
-		//     <CardDescription>
-		//       Join our learning community today
-		//     </CardDescription>
-		//   </CardHeader>
-		//   <CardContent>
-		//     <form onSubmit={handleSignUp} className="space-y-4">
-		//       <div className="space-y-2">
-		//         <Label htmlFor="signup-name">Full Name</Label>
-		//         <Input
-		//           id="signup-name"
-		//           name="fullName"
-		//           type="text"
-		//           placeholder="Enter your full name"
-		//           required
-		//         />
-		//       </div>
-		//       <div className="space-y-2">
-		//         <Label htmlFor="signup-email">Email</Label>
-		//         <Input
-		//           id="signup-email"
-		//           name="email"
-		//           type="email"
-		//           placeholder="Enter your email"
-		//           required
-		//         />
-		//       </div>
-		//       <div className="space-y-2">
-		//         <Label htmlFor="signup-password">Password</Label>
-		//           <div className="relative">
-		//             <Input
-		//               id="signup-password"
-		//               name="password"
-		//               type={showPassword ? 'text' : 'password'}
-		//               placeholder="Create a password"
-		//               required
-		//               minLength={6}
-		//               className="pr-10"
-		//             />
-		//               <Button
-		//                 type="button"
-		//                 variant="link"
-		//                 size="sm"
-		//                 className="absolute right-1 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-		//                 onClick={() => setShowPassword(!showPassword)}
-		//               >
-		//                 {showPassword ? <EyeOff /> : <Eye/>}
-		//               </Button>
-		//         </div>
-		//       </div>
-		//       <div className="space-y-2">
-		//         <Label htmlFor="signup-usertype">Account Type</Label>
-		//         <Select name="userType" required>
-		//           <SelectTrigger>
-		//             <SelectValue placeholder="Select account type" />
-		//           </SelectTrigger>
-		//           <SelectContent>
-		//             <SelectItem value="student">Student</SelectItem>
-		//             {/* <SelectItem value="graduate">Graduate</SelectItem> */}
-		//             <SelectItem value="professional">Professional</SelectItem>
-		//             <SelectItem value="company">Company</SelectItem>
-		//           </SelectContent>
-		//         </Select>
-		//       </div>
-		//       <div className="space-y-2">
-		//         <Label htmlFor="signup-profession">Profession</Label>
-		//         <Select name="profession" required>
-		//           <SelectTrigger>
-		//             <SelectValue placeholder="Select your profession" />
-		//           </SelectTrigger>
-		//           <SelectContent>
-		//             <SelectItem value="architecture">Architecture</SelectItem>
-		//             <SelectItem value="interior-design">Interior Design</SelectItem>
-		//             <SelectItem value="quantity-surveying">Quantity Surveying</SelectItem>
-		//             <SelectItem value="civil-engineering">Civil Engineering</SelectItem>
-		//             <SelectItem value="mep-engineering">MEP Engineering</SelectItem>
-		//             <SelectItem value="project-management">Project Management</SelectItem>
-		//             <SelectItem value="project-finance">Project Finance</SelectItem>
-		//             <SelectItem value="construction-supplies">Construction & Supplies</SelectItem>
-		//             <SelectItem value="health-safety">Health & Safety</SelectItem>
-		//             <SelectItem value="real-estate-development">Real Estate Development</SelectItem>
-		//             <SelectItem value="urban-planning">Urban Planning</SelectItem>
-		//             <SelectItem value="governance-policy">Governance & Policy</SelectItem>
-		//             <SelectItem value="advocacy-awareness">Advocacy & Awareness</SelectItem>
-		//           </SelectContent>
-		//         </Select>
-		//       </div>
-		//       <Button type="submit" className="w-full" disabled={isLoading}>
-		//         {isLoading ? 'Creating account...' : 'Create Account'}
-		//       </Button>
-		//     </form>
-		//   </CardContent>
-		// </Card>
-
 		<Card>
 			<CardHeader>
 				<CardTitle>Create account</CardTitle>
@@ -622,7 +480,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 			</CardHeader>
 			<CardContent>
 				<div className="space-y-6">
-					{/* PROGRESS INDICATOR */}
 					<div className="flex items-center justify-center gap-3">
 						{slides.map((_, i) => (
 							<div
@@ -636,29 +493,15 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 						))}
 					</div>
 
-					{/* SLIDE CONTENT */}
 					<div>{slides[step]}</div>
 
-					{/* NAVIGATION */}
 					<div className="flex justify-end pt-4">
-						{/* {step > 0 ? (
-              <Button variant="ghost" onClick={back}>
-                <ArrowLeft className="mr-2" /> Back
-              </Button>
-            ) : (
-              <div />
-            )} */}
-
 						{!isFinal ? (
-							<Button
-								onClick={next}
-								variant="default">
+							<Button onClick={next} variant="default">
 								Next <ArrowRight className="ml-2" />
 							</Button>
 						) : (
-							<Button
-								onClick={handleSignUp}
-								disabled={isLoading}>
+							<Button onClick={handleSignUp} disabled={isLoading}>
 								{isLoading ? "Creating Account..." : "Finish"}
 							</Button>
 						)}
