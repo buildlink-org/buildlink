@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera, X } from "lucide-react";
 import AvatarCropDialog from "./AvatarCropDialog";
+import { supabase } from "@/lib/supabase";
 
 interface AvatarUploaderProps {
   avatarUrl: string;
