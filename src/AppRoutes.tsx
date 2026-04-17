@@ -95,6 +95,9 @@ const AppRoutes = () => (
         <SearchResultsPage />
       }
     />
+     
+
+    
     <Route path="*" element={<NotFound />} />
   </Routes>
 );

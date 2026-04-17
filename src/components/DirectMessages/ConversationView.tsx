@@ -18,14 +18,18 @@ interface ConversationViewProps {
 	otherUserAvatar?: string
 }
 
-type ConversationItem = ({ type: "message" } & Message) | { type: "separator"; id: string; dateLabel: string }
+type ConversationItem =
+	| ({ type: "message" } & Message)
+	| { type: "separator"; id: string; dateLabel: string }
 
-// Process messages and add date separators
+//Add date separators
 const addDateSeparators = (messages: Message[]): ConversationItem[] => {
 	const items: ConversationItem[] = []
 	let lastDate: string | null = null
 
-	const sortedMessages = [...messages].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime())
+	const sortedMessages = [...messages].sort(
+		(a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+	)
 
 	sortedMessages.forEach((msg, index) => {
 		const messageDate = new Date(msg.created_at)
@@ -46,11 +50,18 @@ const addDateSeparators = (messages: Message[]): ConversationItem[] => {
 	return items
 }
 
-const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherUserName, otherUserAvatar }) => {
+const ConversationView: React.FC<ConversationViewProps> = ({
+	otherUserId,
+	otherUserName,
+	otherUserAvatar,
+}) => {
 	const { user } = useAuth()
 	const { toast } = useToast()
-	const messages = useMessagingStore((state) => state.messagesByUserId[otherUserId]) ?? []
-	const loading = useMessagingStore((state) => state.loadingStatus[otherUserId] || false)
+
+	const messages =
+		useMessagingStore((state) => state.messagesByUserId[otherUserId]) ?? []
+	const loading =
+		useMessagingStore((state) => state.loadingStatus[otherUserId] || false)
 	const fetchMessages = useMessagingStore((state) => state.fetchMessages)
 	const addMessageToStore = useMessagingStore((state) => state.addMessage)
 
@@ -59,39 +70,23 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 	const scrollAreaRef = useRef<HTMLDivElement>(null)
 	const bottomRef = useRef<HTMLDivElement>(null)
 
-	const conversationItems = React.useMemo(() => addDateSeparators(messages), [messages])
+	//Capitalize name safely
+	const formattedName =
+		otherUserName
+			? otherUserName.charAt(0).toUpperCase() + otherUserName.slice(1)
+			: "User"
+
+	const conversationItems = React.useMemo(
+		() => addDateSeparators(messages),
+		[messages]
+	)
 
 	useEffect(() => {
 		if (!user || !otherUserId) return
-
 		fetchMessages(user.id, otherUserId)
-
-		// Real-time subscription here
-		//    const channel = supabase
-		//     .channel('messages')
-		//     .on(
-		//       'postgres_changes',
-		//       {
-		//         event: 'INSERT',
-		//         schema: 'public',
-		//         table: 'direct_messages',
-		//         filter: `recipient_id=eq.${user.id}`,
-		//       },
-		//       (payload) => {
-		//         if (payload.new.sender_id === otherUserId) {
-		//           setMessages((msgs) => [...msgs, payload.new as Message]);
-		//         }
-		//       }
-		//     )
-		//     .subscribe();
-
-		//   return () => {
-		//     supabase.removeChannel(channel);
-		//   };
 	}, [user, otherUserId, fetchMessages])
 
 	useEffect(() => {
-		// Scroll to bottom when messages change
 		bottomRef.current?.scrollIntoView({ behavior: "smooth" })
 	}, [messages.length])
 
@@ -99,13 +94,12 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 		if (!user || !content.trim() || sending) return
 
 		setSending(true)
-		const newMessageData = {
+
+		const { data, error } = await directMessagesService.sendMessage({
 			sender_id: user.id,
 			recipient_id: otherUserId,
 			content: content.trim(),
-		}
-
-		const { data, error } = await directMessagesService.sendMessage(newMessageData)
+		})
 
 		if (error) {
 			toast({
@@ -113,12 +107,15 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 				description: error.message,
 				variant: "destructive",
 			})
+			setSending(false)
+			return
+		}
 
-			throw error
-		} else if (data) {
+		if (data) {
 			addMessageToStore(data)
 			setContent("")
 		}
+
 		setSending(false)
 	}
 
@@ -132,40 +129,70 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 
 	return (
 		<div className="flex h-full flex-col">
-			{/* Messages Area */}
-			<ScrollArea
-				ref={scrollAreaRef}
-				className="flex-1 px-2 py-4">
+			{/* Messages */}
+			<ScrollArea ref={scrollAreaRef} className="flex-1 px-2 py-4">
 				<div className="space-y-4">
-					{messages.length === 0 && conversationItems.length === 0 ? (
+					{messages.length === 0 ? (
 						<div className="py-8 text-center text-muted-foreground">
 							<p>No messages yet. Say hi! 👋</p>
 						</div>
 					) : (
 						conversationItems.map((item) => {
-							// render the seperator
 							if (item.type === "separator") {
 								return (
-									<div
-										key={item.id}
-										className="my-4 flex justify-center">
-										<span className="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground shadow-sm">{item.dateLabel}</span>
+									<div key={item.id} className="my-4 flex justify-center">
+										<span className="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground shadow-sm">
+											{item.dateLabel}
+										</span>
 									</div>
 								)
 							}
+
 							const msg = item
 							const isOwnMessage = msg.sender_id === user?.id
+
 							return (
 								<div
 									key={msg.id}
-									className={cn("flex gap-2", isOwnMessage ? "flex-row-reverse" : "flex-row")}>
+									className={cn(
+										"flex gap-2",
+										isOwnMessage ? "flex-row-reverse" : "flex-row"
+									)}
+								>
 									<Avatar className="h-8 w-8">
-										<AvatarImage src={isOwnMessage ? user?.user_metadata?.avatar : otherUserAvatar} />
-										<AvatarFallback>{isOwnMessage ? user?.user_metadata?.full_name?.[0] || "Y" : otherUserName?.[0] || "U"}</AvatarFallback>
+										<AvatarImage
+											src={
+												isOwnMessage
+													? user?.user_metadata?.avatar
+													: otherUserAvatar
+											}
+										/>
+										<AvatarFallback>
+											{isOwnMessage
+												? user?.user_metadata?.full_name?.[0] || "Y"
+												: formattedName[0]}
+										</AvatarFallback>
 									</Avatar>
-									<div className={cn("max-w-[70%] rounded-lg px-4 py-2", isOwnMessage ? "bg-primary text-primary-foreground" : "bg-muted")}>
-										<p className="whitespace-pre-wrap break-words text-sm">{msg.content}</p>
-										<p className={cn("text-[9px] mt-[-1px]", isOwnMessage ? "text-primary-foreground/70" : "text-muted-foreground")}>
+
+									<div
+										className={cn(
+											"max-w-[70%] rounded-lg px-4 py-2",
+											isOwnMessage
+												? "bg-primary text-primary-foreground"
+												: "bg-muted"
+										)}
+									>
+										<p className="whitespace-pre-wrap break-words text-sm">
+											{msg.content}
+										</p>
+										<p
+											className={cn(
+												"text-[9px] mt-[-1px]",
+												isOwnMessage
+													? "text-primary-foreground/70"
+													: "text-muted-foreground"
+											)}
+										>
 											{new Date(msg.created_at).toLocaleTimeString([], {
 												hour: "2-digit",
 												minute: "2-digit",
@@ -180,14 +207,13 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 				</div>
 			</ScrollArea>
 
-			{/* Input Area */}
+			{/* Input */}
 			<div className="border-t p-4">
 				<div className="flex items-center gap-2">
 					<EmojiPickerButton
-						onSelect={(emoji) => {
-							setContent((prev) => prev + emoji)
-						}}
+						onSelect={(emoji) => setContent((prev) => prev + emoji)}
 					/>
+
 					<Textarea
 						value={content}
 						onChange={(e) => setContent(e.target.value)}
@@ -201,12 +227,18 @@ const ConversationView: React.FC<ConversationViewProps> = ({ otherUserId, otherU
 						className="min-h-[60px] resize-none"
 						disabled={sending}
 					/>
+
 					<Button
 						onClick={handleSend}
 						disabled={!content.trim() || sending}
 						size="icon"
-						className="item-center bg-none">
-						{sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+						className="flex items-center justify-center"
+					>
+						{sending ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Send className="h-4 w-4" />
+						)}
 					</Button>
 				</div>
 			</div>
