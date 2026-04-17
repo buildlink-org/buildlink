@@ -145,12 +145,12 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 
   return (
     <ScrollArea className="h-full">
-      <div className="">
+      <div className="p-2 space-y-1">
         {users.map((u, index) => (
           <div key={u.id}>
           <button
             onClick={() => onSelectUser(u)}
-            className="w-full px-4 py-2 flex items-center gap-2 text-left"
+            className="w-full px-4 py-3 flex items-center gap-3 text-left hover:bg-gray-100 transition rounded-lg"
           >
             <Avatar className="h-10 w-10">
               <AvatarImage src={u.avatar} alt={u.name} />
@@ -162,13 +162,13 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
-              <div className="flex">
+            <div className="flex items-center justify-between">
                 <p className="font-semibold text-sm truncate">{u.name || 'Unknown User'}</p>
-                <span className="text-[9px] text-muted-foreground ml-auto pl-2 flex-shrink-0">
+                <span className="text-[10px] text-muted-foreground">
                 {getLastMessageTimestamp(u.id)}
               </span>
                 </div>
-              <p className="text-xs text-muted-foreground">{getLastMessageSnippet(u.id)}</p>
+              <p className="text-xs text-muted-foreground truncate">{getLastMessageSnippet(u.id)}</p>
             </div>            
           </button>
           { /* message list seperator */}
