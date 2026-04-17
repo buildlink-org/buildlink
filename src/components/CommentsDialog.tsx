@@ -120,25 +120,43 @@ const CommentsDialog = ({ isOpen, onClose, postId }: CommentsDialogProps) => {
 							<div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
 						</div>
 					) : comments.length > 0 ? (
-						comments.map((comment) => (
-							<div
-								key={comment.id}
-								className="flex space-x-3">
-								<Avatar className="h-8 w-8">
-									<AvatarImage src={comment.profiles?.avatar} />
-									<AvatarFallback>{comment.profiles?.full_name?.charAt(0) || "U"}</AvatarFallback>
-								</Avatar>
-								<div className="flex-1">
-									<div className="bg-gray-50 rounded-lg p-3">
-										<div className="flex items-center space-x-2 mb-1">
-											<span className="font-medium text-sm">{comment.profiles?.full_name}</span>
-											<span className="text-xs text-gray-500">{formatDistanceToNow(new Date(comment.created_at))} ago</span>
-										</div>
-										<p className="text-sm">{comment.content}</p>
-									</div>
-								</div>
-							</div>
-						))
+						comments.map((comment) => {
+	const author = comment.profiles || {}
+
+	return (
+		<div
+			key={comment.id}
+			className="flex space-x-3"
+		>
+			<Avatar className="h-8 w-8">
+				<AvatarImage src={author.avatar || undefined} />
+				<AvatarFallback>
+					{author.full_name?.charAt(0)?.toUpperCase() || "U"}
+				</AvatarFallback>
+			</Avatar>
+
+			<div className="flex-1">
+				<div className="bg-gray-50 rounded-lg p-3">
+					<div className="flex items-center justify-between mb-1">
+						<span className="font-medium text-sm">
+							{author.full_name || "Unknown User"}
+						</span>
+
+						<span className="text-xs text-gray-500">
+							{comment.created_at
+								? formatDistanceToNow(new Date(comment.created_at)) + " ago"
+								: ""}
+						</span>
+					</div>
+
+					<p className="text-sm">
+						{comment.content || ""}
+					</p>
+				</div>
+			</div>
+		</div>
+	)
+})
 					) : (
 						<p className="text-center text-gray-500 py-8">No comments yet. Be the first to comment!</p>
 					)}

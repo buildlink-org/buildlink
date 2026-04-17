@@ -9,6 +9,7 @@ import { NotificationService } from "@/services/notificationService"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import NotificationPreferences from "./NotificationPreferences"
+import { useCommentsStore } from "@/stores/commentsStore"
 
 interface Notification {
 	id: string
@@ -18,6 +19,7 @@ interface Notification {
 	content: string
 	read: boolean
 	created_at: string
+	post_id?: string 
 	from_user?: {
 		full_name: string
 		avatar: string
@@ -31,6 +33,7 @@ const EnhancedNotificationCenter: React.FC = () => {
 	const [loading, setLoading] = useState(true)
 	const [activeCategory, setActiveCategory] = useState("all")
 	const [showPreferences, setShowPreferences] = useState(false)
+	const openComments = useCommentsStore((state) => state.openComments)
 
 	useEffect(() => {
 		if (user) {
@@ -217,7 +220,13 @@ const EnhancedNotificationCenter: React.FC = () => {
 								<div
 									key={notification.id}
 									className={`p-3 rounded-lg border cursor-pointer transition-colors ${notification.read ? "bg-background border-border" : "bg-accent border-accent-foreground/20"}`}
-									onClick={() => !notification.read && markAsRead(notification.id)}>
+									onClick={async () => {
+										if (!notification.read) {
+											await markAsRead(notification.id)
+										}
+									}}
+								>
+
 									<div className="flex items-start justify-between">
 										<div className="flex-1">
 											<div className="mb-1 flex items-center gap-2">
