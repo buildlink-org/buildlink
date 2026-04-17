@@ -38,6 +38,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		yearsActive: "",
 		expertise: [] as string[],
 	})
+console.log({form});
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const inputRef = useRef<HTMLInputElement | null>(null)
@@ -87,6 +88,8 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 
                 case 1: {
                     const emailValue = form.email.trim()
+					console.log({emailValue});
+					
                     if (!emailValue || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
                         setErrors({ email: "Invalid email address" })
                         return false
