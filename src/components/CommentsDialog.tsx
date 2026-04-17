@@ -121,31 +121,42 @@ const CommentsDialog = ({ isOpen, onClose, postId }: CommentsDialogProps) => {
 						</div>
 					) : comments.length > 0 ? (
 						comments.map((comment) => {
-							const author = comment.profiles || {}
+	const author = comment.profiles || {}
 
-							return (
-								<div
-									key={comment.id}
-									className="flex space-x-3">
-									<Avatar className="h-8 w-8">
-										<AvatarImage src={author.avatar || undefined} />
-										<AvatarFallback>{author.full_name?.charAt(0)?.toUpperCase() || "U"}</AvatarFallback>
-									</Avatar>
+	return (
+		<div
+			key={comment.id}
+			className="flex space-x-3"
+		>
+			<Avatar className="h-8 w-8">
+				<AvatarImage src={author.avatar || undefined} />
+				<AvatarFallback>
+					{author.full_name?.charAt(0)?.toUpperCase() || "U"}
+				</AvatarFallback>
+			</Avatar>
 
-									<div className="flex-1">
-										<div className="rounded-lg bg-gray-50 p-3">
-											<div className="mb-1 flex items-center justify-between">
-												<span className="text-sm font-medium">{author.full_name || "Unknown User"}</span>
+			<div className="flex-1">
+				<div className="bg-gray-50 rounded-lg p-3">
+					<div className="flex items-center justify-between mb-1">
+						<span className="font-medium text-sm">
+							{author.full_name || "Unknown User"}
+						</span>
 
-												<span className="text-xs text-gray-500">{comment.created_at ? formatDistanceToNow(new Date(comment.created_at)) + " ago" : ""}</span>
-											</div>
+						<span className="text-xs text-gray-500">
+							{comment.created_at
+								? formatDistanceToNow(new Date(comment.created_at)) + " ago"
+								: ""}
+						</span>
+					</div>
 
-											<p className="text-sm">{comment.content || ""}</p>
-										</div>
-									</div>
-								</div>
-							)
-						})
+					<p className="text-sm">
+						{comment.content || ""}
+					</p>
+				</div>
+			</div>
+		</div>
+	)
+})
 					) : (
 						<p className="py-8 text-center text-gray-500">No comments yet. Be the first to comment!</p>
 					)}

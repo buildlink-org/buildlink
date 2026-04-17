@@ -4,15 +4,16 @@ import CommentsDialog from "@/components/CommentsDialog"
 
 const CommentsModal = () => {
 	const { isOpen, postId, closeComments } = useCommentsStore()
+	console.log("Modal state:", { isOpen, postId })
 
 	return (
 		<Dialog open={isOpen} onOpenChange={closeComments}>
-			<DialogContent className="max-h-[80vh] max-w-2xl p-0">
+			<DialogContent className="max-w-2xl max-h-[80vh] p-0">
 				<DialogHeader>
 					<DialogTitle>Comments</DialogTitle>
 				</DialogHeader>
 
-				{postId && <CommentsDialog postId={postId} isOpen={isOpen} />}
+				{postId && <CommentsDialog postId={postId} />}
 			</DialogContent>
 		</Dialog>
 	)

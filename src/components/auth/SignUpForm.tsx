@@ -88,8 +88,6 @@ console.log({form});
 
                 case 1: {
                     const emailValue = form.email.trim()
-					console.log({emailValue});
-					
                     if (!emailValue || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
                         setErrors({ email: "Invalid email address" })
                         return false
