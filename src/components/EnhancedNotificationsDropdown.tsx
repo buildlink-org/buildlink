@@ -127,10 +127,10 @@ const EnhancedNotificationsDropdown = () => {
 		case "like": {
 			const postId = n.post_id || n.entity_id || n.target_id
 
-			if (!postId) {
-				console.warn("Missing postId in notification:", n)
-				return
-			}
+			//if (!postId) {
+				//console.warn("Missing postId in notification:", n)
+				//return
+			//}
 
 			openComments(postId)
 			break
