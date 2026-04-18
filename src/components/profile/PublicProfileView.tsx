@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useCallback } from "react"
 import { useParams } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -11,6 +11,7 @@ import { UserProfile } from "@/types"
 import { connectionsService } from "@/services/connectionsService"
 import { postsService } from "@/services/postsService"
 import { useMessagingStore } from "@/stores/messagingStore"
+
 import AccountTypeBadge from "../AccountTypeBadge"
 import AboutActivitySection from "../profile-sections/details/AboutActivitySection"
 import CertificationsSection from "../profile-sections/details/CertificationsSection"
@@ -20,401 +21,362 @@ import PortfolioSection from "../profile-sections/details/PortfolioSection"
 import ProfileSkillsSection from "../profile-sections/details/ProfileSkillsSection"
 import SocialMediaLinks from "./SocialMediaLinks"
 
-type ConnectionStatus = "not_connected" | "pending_outgoing" | "pending_incoming" | "connected" | "self"
+type ConnectionStatus =
+  | "not_connected"
+  | "pending_outgoing"
+  | "pending_incoming"
+  | "connected"
+  | "self"
 
 const PublicProfileView: React.FC = () => {
-	const { profileId } = useParams<{ profileId: string }>()
-	const { user } = useAuth()
-	const { toast } = useToast()
-	const [profile, setProfile] = useState<UserProfile | null>()
-	const [loading, setLoading] = useState(true)
-	const [viewRecorded, setViewRecorded] = useState(false)
-	const [connectionRow, setConnectionRow] = useState<any | null>(null)
-	const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>("not_connected")
-	const [userPosts, setUserPosts] = useState<any[]>([])
+  const { profileId } = useParams<{ profileId: string }>()
+  const { user } = useAuth()
+  const { toast } = useToast()
 
-	const isCompanyProfile = profile?.user_type === "company"
-	const connectLabel = isCompanyProfile ? "Follow" : "Connect"
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [connectionRow, setConnectionRow] = useState<any | null>(null)
+  const [connectionStatus, setConnectionStatus] =
+    useState<ConnectionStatus>("not_connected")
+  const [userPosts, setUserPosts] = useState<any[]>([])
+
+  const openConversation = useMessagingStore(
+    (state) => state.openConversation
+  )
+
+  const isOwner = user?.id === profileId
+  const isCompanyProfile = profile?.user_type === "company"
+  const connectLabel = isCompanyProfile ? "Follow" : "Connect"
+
+ 
+  // LOAD PROFILE
+  const loadPublicProfile = useCallback(async () => {
+    if (!profileId) return
+
+    setLoading(true)
+
+    try {
+      const { data, error } =
+        await publicProfileService.getPublicProfile(profileId, user?.id)
+
+      if (error || !data) throw error
+
+      setProfile(data)
+
+      const postsResult = await postsService.getPosts()
+      if (postsResult.data) {
+        setUserPosts(
+          postsResult.data.filter(
+            (post: any) => post.author_id === profileId
+          )
+        )
+      }
+    } catch (err) {
+      toast({
+        title: "Error",
+        description: "Failed to load profile",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }, [profileId, user, toast])
+
+  useEffect(() => {
+    loadPublicProfile()
+  }, [loadPublicProfile])
+
+  
+  // CONNECTION STATUS
+  
+  useEffect(() => {
+    const fetchConnectionStatus = async () => {
+      if (!user?.id || !profileId) return
+
+      if (user.id === profileId) {
+        setConnectionStatus("self")
+        return
+      }
+
+      const { data } = await connectionsService.getConnectionStatus(
+        user.id,
+        profileId
+      )
+
+      if (!data) {
+        setConnectionStatus("not_connected")
+        return
+      }
+
+      setConnectionRow(data)
+
+      if (data.status === "accepted") {
+        setConnectionStatus("connected")
+      } else if (data.status === "pending") {
+        setConnectionStatus(
+          data.user_id === user.id
+            ? "pending_outgoing"
+            : "pending_incoming"
+        )
+      }
+    }
+
+    fetchConnectionStatus()
+  }, [user, profileId])
+
+  // ACTIONS
+  const handleConnect = async () => {
+    if (!user?.id || !profileId) return
+
+    const { data, error } = await connectionsService.connect(
+      user.id,
+      profileId
+    )
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to connect",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setConnectionRow(data)
+    setConnectionStatus("pending_outgoing")
+
+    toast({
+      title: "Success",
+      description: "Connection request sent",
+    })
+  }
+
+  const handleAccept = async () => {
+    if (!connectionRow?.id) return
+
+    const { error } = await connectionsService.acceptRequest(
+      connectionRow.id
+    )
+
+    if (error) return
+
+    setConnectionStatus("connected")
+
+    toast({
+      title: "Connected",
+      description: `You are now connected with ${profile?.full_name}`,
+    })
+  }
+
+  const handleCancelOrDecline = async () => {
+    if (!connectionRow?.id) return
+
+    try {
+      const { error } = await connectionsService.removeConnection(
+        connectionRow.id
+      )
+
+      if (error) throw error
+
+      setConnectionRow(null)
+      setConnectionStatus("not_connected")
+
+      toast({
+        title: "Success",
+        description:
+          connectionStatus === "pending_outgoing"
+            ? "Request cancelled"
+            : "Request declined",
+      })
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update connection",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDisconnect = async () => {
+    if (!connectionRow?.id) return
+
+    const confirmed = window.confirm(
+      isCompanyProfile
+        ? `Are you sure you want to unfollow ${profile?.full_name}?`
+        : `Are you sure you want to disconnect from ${profile?.full_name}?`
+    )
+
+    if (!confirmed) return
+
+    try {
+      const { error } = await connectionsService.removeConnection(
+        connectionRow.id
+      )
+
+      if (error) throw error
+
+      setConnectionRow(null)
+      setConnectionStatus("not_connected")
+
+      toast({
+        title: "Success",
+        description: isCompanyProfile
+          ? "Unfollowed successfully"
+          : "Disconnected successfully",
+      })
+    } catch {
+      toast({
+        title: "Error",
+        description: "Failed to update connection",
+        variant: "destructive",
+      })
+    }
+  }
 
 
-	const labels = {
-	connect: isCompanyProfile ? "Follow" : "Connect",
-	pending: isCompanyProfile ? "Following" : "Pending",
-	accept: isCompanyProfile ? "Follow Back" : "Accept",
-	}
+  // BUTTONS
+  const renderButtons = () => {
+    if (!user || connectionStatus === "self") return null
 
-	const isOwner = user?.id === profileId
+    const messageBtn = (
+      <Button
+        variant="outline"
+        disabled={connectionStatus !== "connected"}
+        onClick={() =>
+          openConversation?.(
+            profileId!,
+            profile?.full_name,
+            profile?.avatar
+          )
+        }
+      >
+        <MessageCircle className="mr-2 h-4 w-4" />
+        Message
+      </Button>
+    )
 
-	const openConversation = useMessagingStore((state) => state.openConversation)
+    if (connectionStatus === "connected") {
+      return (
+        <>
+          <Button variant="outline" onClick={handleDisconnect}>
+            {isCompanyProfile ? "Following" : "Connected"}
+          </Button>
+          {messageBtn}
+        </>
+      )
+    }
 
-	useEffect(() => {
-		loadPublicProfile()
-	}, [profileId])
+    if (connectionStatus === "pending_outgoing") {
+      return (
+        <>
+          <Button variant="outline" onClick={handleCancelOrDecline}>
+            Cancel Request
+          </Button>
+          {messageBtn}
+        </>
+      )
+    }
 
-	const loadPublicProfile = async () => {
-		if (!profileId) return
+    if (connectionStatus === "pending_incoming") {
+      return (
+        <>
+          <Button onClick={handleAccept}>Accept</Button>
+          <Button variant="outline" onClick={handleCancelOrDecline}>
+            Decline
+          </Button>
+          {messageBtn}
+        </>
+      )
+    }
 
-		try {
-			const { data, error } = await publicProfileService.getPublicProfile(profileId, user?.id)
+    return (
+      <>
+        <Button onClick={handleConnect}>
+          <UserPlus className="mr-2 h-4 w-4" />
+          {connectLabel}
+        </Button>
+        {messageBtn}
+      </>
+    )
+  }
 
-			if (error) {
-				toast({
-					title: "Error",
-					description: "Failed to load profile or profile is not public",
-					variant: "destructive",
-				})
-				return
-			}
 
-			setProfile(data)
+  // UI
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+      </div>
+    )
+  }
 
-			// Load posts for this user
-			try {
-				const postsResult = await postsService.getPosts()
-				if (postsResult.data) {
-					const filteredPosts = postsResult.data.filter((post: any) => post.author_id === profileId)
-					setUserPosts(filteredPosts)
-				}
-			} catch (error) {
-				console.error("Error loading posts:", error)
-			}
+  if (!profile) return null
 
-			if (user && user.id !== profileId && !viewRecorded) {
-				await publicProfileService.recordProfileView(profileId)
-				setViewRecorded(true)
-			}
-		} catch (error) {
-			console.error("Error loading public profile:", error)
-		} finally {
-			setLoading(false)
-		}
-	}
+  return (
+    <div className="mx-auto max-w-5xl space-y-6">
+      <Card>
+        <CardContent className="py-6">
+          <div className="flex justify-between gap-6">
+            <div className="flex gap-4">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={profile.avatar || undefined} />
+                <AvatarFallback>
+                  {profile.full_name?.[0]?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
 
-	useEffect(() => {
-		const fetchConnectionStatus = async () => {
-			if (!user?.id || !profileId) {
-				setConnectionStatus("not_connected")
-				setConnectionRow(null)
-				return
-			}
+              <div>
+                <h1 className="text-2xl font-bold capitalize">
+                  {profile.full_name}
+                </h1>
 
-			if (user.id === profileId) {
-				setConnectionStatus("self")
-				setConnectionRow(null)
-				return
-			}
+                <AccountTypeBadge
+                  userType={profile.user_type || "student"}
+                />
 
-			const { data, error } = await connectionsService.getConnectionStatus(user.id, profileId)
+                <p className="text-muted-foreground mt-2">
+                  {profile.education_level}
+                </p>
+              </div>
+            </div>
 
-			if (error) {
-				console.error("Error fetching connection status:", error)
-				setConnectionStatus("not_connected")
-				setConnectionRow(null)
-				return
-			}
+            <div className="flex flex-col items-end gap-3">
+              <div className="flex gap-2">
+                {isOwner ? (
+                  <Button
+                    variant="outline"
+                    onClick={() => (window.location.href = "/profile")}
+                  >
+                    <Pencil className="mr-1 h-4 w-4" />
+                    Edit
+                  </Button>
+                ) : (
+                  renderButtons()
+                )}
+              </div>
 
-			if (!data) {
-				setConnectionStatus("not_connected")
-				setConnectionRow(null)
-				return
-			}
+              <SocialMediaLinks
+                links={profile.social_links || {}}
+                editable={false}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-			setConnectionRow(data)
+      <AboutActivitySection
+        publicProfile
+        profile={profile}
+        userPosts={userPosts}
+      />
 
-			if (data.status === "accepted") {
-				setConnectionStatus("connected")
-			} else if (data.status === "pending") {
-				if (data.user_id === user.id) {
-					setConnectionStatus("pending_outgoing")
-				} else if (data.connected_user_id === user.id) {
-					setConnectionStatus("pending_incoming")
-				} else {
-					setConnectionStatus("not_connected")
-				}
-			} else {
-				setConnectionStatus("not_connected")
-			}
-		}
-
-		fetchConnectionStatus()
-	}, [user, profileId])
-
-	const handleConnect = async () => {
-		if (!user?.id || !profileId) {
-			toast({
-				title: "Error",
-				description: "You must be logged in to send connection requests.",
-				variant: "destructive",
-			})
-			return
-		}
-
-		if (connectionStatus === "pending_outgoing" || connectionStatus === "connected") {
-			toast({
-				title: "Info",
-				description: "Connection request already sent or already connected.",
-				variant: "default",
-			})
-			return
-		}
-
-		const { data, error } = await connectionsService.connect(user.id, profileId)
-
-		if (error) {
-			toast({
-				title: "Error",
-				description: "Failed to send connection request.",
-				variant: "destructive",
-			})
-			console.error("Error sending connection request:", error)
-			return
-		}
-
-		setConnectionRow(data)
-		setConnectionStatus("pending_outgoing")
-
-		toast({
-			title: "Success",
-			description: isCompanyProfile
-				? `You're now following ${profile?.full_name || "this company"}`
-				: "Connection request sent!",
-		})
-	}
-
-	const handleAccept = async () => {
-		if (!connectionRow?.id) {
-			toast({ title: "Error", description: "No connection request to accept.", variant: "destructive" })
-			return
-		}
-
-		const { data, error } = await connectionsService.acceptRequest(connectionRow.id)
-		if (error) {
-			console.error("Error accepting request:", error)
-			toast({ title: "Error", description: "Failed to accept request.", variant: "destructive" })
-			return
-		}
-
-		setConnectionRow(data)
-		setConnectionStatus("connected")
-		toast({ title: "Success", description: "Connection accepted." })
-
-		toast({
-				title: "Success",
-				description: isCompanyProfile
-					? `You have followed ${profile?.full_name}`
-					:`You and ${profile?.full_name} are now connected`,
-			})
-	}
-	
-	const handleDisconnect = async () => {
-		if (!connectionRow?.id) return
-
-		try {
-			const { error } = await connectionsService.removeConnection(connectionRow.id)
-
-			if (error) throw error
-
-			setConnectionRow(null)
-			setConnectionStatus("not_connected")
-
-			toast({
-				title: "Success",
-				description: isCompanyProfile
-					? `You have unfollowed ${profile?.full_name}`
-					: "Connection removed",
-			})
-		} catch (error) {
-			console.error("Error removing connection:", error)
-			toast({
-				title: "Error",
-				description: "Failed to update connection.",
-				variant: "destructive",
-			})
-		}
-	}
-
-	const renderConnectButtons = () => {
-		if (!user || connectionStatus === "self") return null
-
-		const messageButton = (
-			<Button
-				variant="outline"
-				onClick={() => {
-					if (connectionStatus !== "connected") {
-						toast({ title: "Info", description: "Connect first to send messages", variant: "default" })
-						return
-					}
-					if (openConversation) {
-						openConversation(profileId!, profile?.full_name, profile?.avatar)
-					} else {
-						toast({ title: "Info", description: "Messaging coming soon!", variant: "default" })
-					}
-				}}
-				className={connectionStatus !== "connected" ? "opacity-60 cursor-not-allowed" : ""}
-				title={connectionStatus !== "connected" ? "Connect first to send messages" : ""}
-				disabled={connectionStatus !== "connected"}>
-				<MessageCircle className="mr-2 h-4 w-4" />
-				Message
-			</Button>
-		)
-
-		if (connectionStatus === "connected") {
-			return (
-				<>
-					<Button
-						variant="outline"
-						onClick={handleDisconnect}
-						title={isCompanyProfile ? "Unfollow" : "Disconnect"}>
-						{isCompanyProfile ? "Following" : "Connected"}
-					</Button>
-					{messageButton}
-				</>
-			)
-		}
-
-		if (connectionStatus === "pending_outgoing") {
-			return (
-				<>
-					<Button disabled>
-						{isCompanyProfile ? "Following" : "Pending"}
-					</Button>
-					{messageButton}
-				</>
-			)
-		}
-
-		if (connectionStatus === "pending_incoming") {
-			return (
-				<>
-					<Button onClick={handleAccept}>
-						{isCompanyProfile ? "Follow Back" : "Accept"}
-					</Button>
-					{messageButton}
-				</>
-			)
-		}
-
-		return (
-			<>
-				<Button onClick={handleConnect}>
-					<UserPlus className="mr-2 h-4 w-4" />
-					{connectLabel}
-				</Button>
-				{messageButton}
-			</>
-		)
-	}
-
-	if (loading) {
-		return (
-			<div className="flex h-64 items-center justify-center">
-				<div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary"></div>
-			</div>
-		)
-	}
-
-	if (!profile) {
-		return (
-			<Card>
-				<CardContent className="p-8 text-center">
-					<h3 className="mb-2 text-lg font-semibold">Profile Not Found</h3>
-					<p className="text-muted-foreground">This profile doesn't exist or is not public.</p>
-				</CardContent>
-			</Card>
-		)
-	}
-
-	if (profile.profile_visibility === "private") {
-		return (
-			<Card>
-				<CardContent className="p-8 text-center">
-					<h3 className="mb-2 text-lg font-semibold">Profile is Private</h3>
-					<p className="text-muted-foreground">This profile is not public.</p>
-				</CardContent>
-			</Card>
-		)
-	}
-
-	return (
-		<div className="mx-auto max-w-5xl space-y-6 md:px-0">
-			{/* Header - matching image format */}
-			<Card>
-				<CardContent className="!mt-1 py-6">
-					<div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
-						{/* Info and Avatar */}
-						<div className="flex flex-col space-y-4 sm:flex-row sm:items-start sm:space-x-4 sm:space-y-0 lg:space-x-6">
-							<div className="relative">
-								<Avatar className="h-20 w-20 md:h-24 md:w-24">
-									<AvatarImage src={profile.avatar || undefined} />
-									<AvatarFallback className="bg-yellow-100 text-2xl text-yellow-700">{profile.full_name?.[0]?.toUpperCase() || "U"}</AvatarFallback>
-								</Avatar>
-							</div>
-							<div className="flex-1">
-								<div className="space-y-3">
-									<div className="flex items-start gap-3">
-										<div className="flex-1">
-											<h1 className="capitalize mb-1 text-2xl font-bold text-foreground">{profile.full_name || "User"}</h1>
-											<div className="mt-1 flex items-center gap-2">
-												<AccountTypeBadge userType={profile.user_type || "student"} />
-											</div>
-											<p className="mt-2 text-base text-muted-foreground">
-												{profile.education_level || "Level not set"}
-												{profile.organization && <span> - {profile.organization}</span>}
-											</p>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-						{/* Action Buttons */}
-						<div className="flex flex-col items-end gap-4">
-							<div className="flex justify-between gap-2 sm:flex-row sm:justify-end">
-								{!isOwner && renderConnectButtons()}
-								{isOwner && (
-									<Button
-										variant="outline"
-										size="sm"
-										onClick={() => (window.location.href = "/profile")}>
-										<Pencil className="mr-1 h-4 w-4" />
-										Edit Profile
-									</Button>
-								)}
-							</div>
-							{/* Social Links */}
-							<div className="flex flex-wrap items-center justify-end gap-2">
-								<SocialMediaLinks
-									links={profile.social_links || {}}
-									editable={false}
-								/>
-							</div>
-						</div>
-					</div>
-				</CardContent>
-			</Card>
-
-			{/* About & Activity Tabs */}
-			<AboutActivitySection
-				publicProfile={true}
-				profile={profile}
-				userPosts={userPosts}
-			/>
-
-			{/* Skills */}
-			<ProfileSkillsSection profile={profile} />
-
-			{/* Portfolio */}
-			<PortfolioSection profile={profile} />
-
-			{/* Professional Experience */}
-			<ExperienceSection profile={profile} />
-
-			{/* Education & Training */}
-			<EducationSection profile={profile} />
-
-			{/* Licences & Certifications */}
-			<CertificationsSection profile={profile} />
-		</div>
-	)
+      <ProfileSkillsSection profile={profile} />
+      <PortfolioSection profile={profile} />
+      <ExperienceSection profile={profile} />
+      <EducationSection profile={profile} />
+      <CertificationsSection profile={profile} />
+    </div>
+  )
 }
 
 export default PublicProfileView
