@@ -48,7 +48,7 @@ const PublicProfileView: React.FC = () => {
   const isCompanyProfile = profile?.user_type === "company"
   const connectLabel = isCompanyProfile ? "Follow" : "Connect"
 
- 
+  
   // LOAD PROFILE
   const loadPublicProfile = useCallback(async () => {
     if (!profileId) return
@@ -71,7 +71,7 @@ const PublicProfileView: React.FC = () => {
           )
         )
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load profile",
@@ -88,7 +88,6 @@ const PublicProfileView: React.FC = () => {
 
   
   // CONNECTION STATUS
-  
   useEffect(() => {
     const fetchConnectionStatus = async () => {
       if (!user?.id || !profileId) return
@@ -124,6 +123,25 @@ const PublicProfileView: React.FC = () => {
     fetchConnectionStatus()
   }, [user, profileId])
 
+ 
+  // CONFIRM HELPER
+  const confirmAction = (type: string) => {
+    if (!profile) return false
+
+    const name = profile.full_name || "this user"
+
+    const messages = {
+      cancel: `Cancel connection request to ${name}?`,
+      decline: `Decline connection request from ${name}?`,
+      disconnect: isCompanyProfile
+        ? `Unfollow ${name}?`
+        : `Disconnect from ${name}?`,
+    }
+
+    return window.confirm(messages[type])
+  }
+
+ 
   // ACTIONS
   const handleConnect = async () => {
     if (!user?.id || !profileId) return
@@ -134,30 +152,20 @@ const PublicProfileView: React.FC = () => {
     )
 
     if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to connect",
-        variant: "destructive",
-      })
+      toast({ title: "Error", description: "Failed to connect", variant: "destructive" })
       return
     }
 
     setConnectionRow(data)
     setConnectionStatus("pending_outgoing")
 
-    toast({
-      title: "Success",
-      description: "Connection request sent",
-    })
+    toast({ title: "Success", description: "Connection request sent" })
   }
 
   const handleAccept = async () => {
     if (!connectionRow?.id) return
 
-    const { error } = await connectionsService.acceptRequest(
-      connectionRow.id
-    )
-
+    const { error } = await connectionsService.acceptRequest(connectionRow.id)
     if (error) return
 
     setConnectionStatus("connected")
@@ -171,12 +179,13 @@ const PublicProfileView: React.FC = () => {
   const handleCancelOrDecline = async () => {
     if (!connectionRow?.id) return
 
-    try {
-      const { error } = await connectionsService.removeConnection(
-        connectionRow.id
-      )
+    const actionType =
+      connectionStatus === "pending_outgoing" ? "cancel" : "decline"
 
-      if (error) throw error
+    if (!confirmAction(actionType)) return
+
+    try {
+      await connectionsService.removeConnection(connectionRow.id)
 
       setConnectionRow(null)
       setConnectionStatus("not_connected")
@@ -184,7 +193,7 @@ const PublicProfileView: React.FC = () => {
       toast({
         title: "Success",
         description:
-          connectionStatus === "pending_outgoing"
+          actionType === "cancel"
             ? "Request cancelled"
             : "Request declined",
       })
@@ -200,20 +209,10 @@ const PublicProfileView: React.FC = () => {
   const handleDisconnect = async () => {
     if (!connectionRow?.id) return
 
-    const confirmed = window.confirm(
-      isCompanyProfile
-        ? `Are you sure you want to unfollow ${profile?.full_name}?`
-        : `Are you sure you want to disconnect from ${profile?.full_name}?`
-    )
-
-    if (!confirmed) return
+    if (!confirmAction("disconnect")) return
 
     try {
-      const { error } = await connectionsService.removeConnection(
-        connectionRow.id
-      )
-
-      if (error) throw error
+      await connectionsService.removeConnection(connectionRow.id)
 
       setConnectionRow(null)
       setConnectionStatus("not_connected")
@@ -233,8 +232,9 @@ const PublicProfileView: React.FC = () => {
     }
   }
 
-
+  
   // BUTTONS
+ 
   const renderButtons = () => {
     if (!user || connectionStatus === "self") return null
 
@@ -300,7 +300,7 @@ const PublicProfileView: React.FC = () => {
     )
   }
 
-
+ 
   // UI
   if (loading) {
     return (
