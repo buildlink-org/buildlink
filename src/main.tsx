@@ -15,7 +15,7 @@ if ("serviceWorker" in navigator) {
 						newWorker.addEventListener("statechange", () => {
 							if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
 								// New update available
-								console.log("New content is available; please refresh.")
+								// console.log("New content is available; please refresh.")
 							}
 						})
 					}

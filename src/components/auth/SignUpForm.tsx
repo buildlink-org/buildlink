@@ -38,6 +38,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		yearsActive: "",
 		expertise: [] as string[],
 	})
+console.log({form});
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const inputRef = useRef<HTMLInputElement | null>(null)
