@@ -6,7 +6,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { DataSaverProvider } from "@/contexts/DataSaverContext";
 import AppRoutes from "./AppRoutes";
-import CommentsModal from "@/components/comments/CommentsModal";
 
 
 const queryClient = new QueryClient({
@@ -31,8 +30,7 @@ const App = () => (
 					<Toaster />
 					<Sonner />
 					<BrowserRouter>
-						<AppRoutes />
-						<CommentsModal />
+						<AppRoutes />	
 					</BrowserRouter>
 				</TooltipProvider>
 			</DataSaverProvider>
