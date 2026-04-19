@@ -80,7 +80,7 @@ const SkillsAutocomplete = ({ options, selected, onChange, max = 5, placeholder 
                         placeholder={placeholder}
                     />
                     
-                    {/* THE FIX: We hide it with CSS instead of destroying the component */}
+                    
                     <div className={`absolute top-full left-0 w-full z-50 mt-1 bg-popover border rounded-md shadow-md ${open ? "block" : "hidden"}`}>
                         <CommandList className="max-h-60 overflow-y-auto">
                             {/* Only show "Add custom" if they typed something */}
@@ -93,12 +93,17 @@ const SkillsAutocomplete = ({ options, selected, onChange, max = 5, placeholder 
                             )}
                             <CommandGroup>
                                 {filtered.map((option) => (
-                                <CommandItem
-                                    key={option}
-                                    onSelect={() => addSkill(option)}
-                                    className="cursor-pointer">
-                                    {option}
-                                </CommandItem>
+                                    <CommandItem
+                                        key={option}
+                                        // This ensures the click "sticks" even when the input is empty
+                                        onMouseDown={(e) => {
+                                            e.preventDefault(); 
+                                            addSkill(option);
+                                        }}
+                                        className="cursor-pointer"
+                                    >
+                                        {option}
+                                    </CommandItem>
                                 ))}
                             </CommandGroup>
                         </CommandList>
