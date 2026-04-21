@@ -130,7 +130,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 	return (
 		<div className="flex h-full flex-col">
 			{/* Messages */}
-			<ScrollArea ref={scrollAreaRef} className="flex-1 px-2 py-4">
+			<ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-4 bg-[#efeae2]">
 				<div className="space-y-4">
 					{messages.length === 0 ? (
 						<div className="py-8 text-center text-muted-foreground">
@@ -159,7 +159,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 										isOwnMessage ? "flex-row-reverse" : "flex-row"
 									)}
 								>
-									<Avatar className="h-8 w-8">
+									<Avatar className="h-7 w-7 mt-auto">
 										<AvatarImage
 											src={
 												isOwnMessage

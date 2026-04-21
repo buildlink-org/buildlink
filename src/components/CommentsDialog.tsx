@@ -36,7 +36,7 @@ const CommentsDialog = ({ isOpen, onClose, postId }: CommentsDialogProps) => {
 			if (error) throw error
 			setComments(data || [])
 		} catch (error) {
-			console.error("Error loading comments:", error)
+			//console.error("Error loading comments:", error)
 			toast({
 				title: "Error",
 				description: "Failed to load comments",
@@ -67,7 +67,7 @@ const CommentsDialog = ({ isOpen, onClose, postId }: CommentsDialogProps) => {
 				description: "Comment added successfully",
 			})
 		} catch (error) {
-			console.error("Error creating comment:", error)
+			//console.error("Error creating comment:", error)
 			toast({
 				title: "Error",
 				description: "Failed to add comment",
