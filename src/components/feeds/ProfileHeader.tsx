@@ -29,30 +29,30 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 
 		if (userType === "student") {
 			return {
-				bgColor: "bg-yellow-100",
+				bgColor: "bg-yellow-100 dark:bg-yellow-950",
 				borderColor: "border-yellow-50",
-				titleColor: "text-black-200",
-				descColor: "text-black-200",
+				titleColor: "text-foreground",
+				descColor: "text-muted-foreground",		
 				iconEmoji: "🎓",
 				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Your journey into the industry starts right here!",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-[#FFCBA4]",
+				bgColor: "bg-orange-100 dark:bg-orange-950",
 				borderColor: "bg-[#FFCBA4]",
-				titleColor: "text-black-200",
-				descColor: "text-black-200",
+				titleColor: "text-foreground",
+				descColor: "text-muted-foreground",
 				iconEmoji: "💼",
 				title: `Welcome ${profile.full_name || "User"}`,
 				message: "Ready to connect, grow, and lead in Kenya's built environment?",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-green-200",
+				bgColor: "bg-green-100 dark:bg-green-950",
 				borderColor: "bg-green-200",
-				titleColor: "text-black-200",
-				descColor: "text-black-400",
+				titleColor: "text-foreground",
+				descColor: "text-muted-foreground",
 				iconEmoji: "🪪",
 				title: `Welcome ${profile.organization || profile.full_name || "Your Company"}`,
 				message: "Relevance & Visibility has never been easier until now.",

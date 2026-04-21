@@ -11,17 +11,17 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
-				bgColor: "bg-yellow-100",
+				bgColor: "bg-yellow-100 dark:bg-yellow-950",
 				borderColor: "border-yellow-50",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-[#FFCBA4]",
+				bgColor: "bg-orange-100 dark:bg-orange-950",
 				borderColor: "border-[#FFCBA4]",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-green-200",
+				bgColor: "bg-green-100 dark:bg-green-950",
 				borderColor: "border-green-200",
 			}
 		}
@@ -38,41 +38,36 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 		<Card className="border border-border bg-card shadow-sm">
 			<CardContent className="p-0">
 				<Tabs
-					defaultValue="about"
-					className={`${colorConfig.bgColor} w-full rounded-lg`}>
-					<div className="border-b border-border">
-						<TabsList className="flex h-auto w-full border-0 bg-transparent p-0">
-							<TabsTrigger
-								value="about"
-								className={`flex-1 rounded-tl-lg border border-b-0 border-transparent bg-transparent bg-white px-6 py-3 text-foreground/80 data-[state=active]:bg-transparent data-[state=active]:text-foreground`}>
-								About
-							</TabsTrigger>
-							<TabsTrigger
-								value="activity"
-								className="flex-1 border border-b-0 border-transparent bg-transparent bg-white px-6 py-3 text-foreground/80 data-[state=active]:bg-transparent data-[state=active]:text-foreground">
-								Activity
-							</TabsTrigger>
-						</TabsList>
-					</div>
-
-					<TabsContent
+				defaultValue="about"
+				className="w-full rounded-lg">
+				<div className="border-b border-border">
+					<TabsList className="flex h-auto w-full border-0 bg-transparent p-0">
+					<TabsTrigger
 						value="about"
-						className="mt-0 p-4">
-						<ProfileAbout
-							profile={profile}
-							publicProfile={publicProfile}
-							handleProfileUpdate={handleProfileUpdate}
-						/>
-					</TabsContent>
-					<TabsContent
+						className="flex-1 rounded-tl-lg bg-muted px-6 py-3 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground">
+						About
+					</TabsTrigger>
+					<TabsTrigger
 						value="activity"
-						className="mt-0 p-4">
-						<ProfileActivity
-							userPosts={userPosts}
-							noCard={true}
-						/>
-					</TabsContent>
-				</Tabs>
+						className="flex-1 rounded-tr-lg bg-muted px-6 py-3 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground">
+						Activity
+					</TabsTrigger>
+					</TabsList>
+				</div>
+				<TabsContent value="about" className="mt-0 p-4">
+					<ProfileAbout
+					profile={profile}
+					publicProfile={publicProfile}
+					handleProfileUpdate={handleProfileUpdate}
+					/>
+				</TabsContent>
+				<TabsContent value="activity" className="mt-0 p-4">
+					<ProfileActivity
+					userPosts={userPosts}
+					noCard={true}
+					/>
+				</TabsContent>
+			</Tabs>
 			</CardContent>
 		</Card>
 	)

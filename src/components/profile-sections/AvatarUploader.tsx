@@ -61,9 +61,9 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
           <AvatarFallback 
             className={!avatarUrl ? (() => {
               const type = userType?.toLowerCase();
-              if (type === "student") return "bg-yellow-100 text-black-900";
-              if (type === "professional") return "bg-[#FFCBA4] text-black-900";
-              if (type === "company") return "bg-green-200 text-black-900";
+              if (type === "student") return "bg-yellow-100 text-black-900 dark:bg-yellow-950";
+              if (type === "professional") return "bg-[#FFCBA4] text-black-900 dark:bg-orange-950";
+              if (type === "company") return "bg-green-200 text-black-900 dark:bg-green-950";
               return "bg-gradient-to-r from-blue-50 to-indigo-50 text-foreground" ;
             })() : ""}
           >

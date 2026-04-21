@@ -303,14 +303,17 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 						))}
 
 						{/* Infinite scroll trigger */}
+					
 						{hasMore && (
 							<div
-								ref={observerRef}
+								ref={(node) => {
+									if (node) observerRef(node);
+								}} 
 								className="flex justify-center py-8">
 								{postsLoading ? <SkeletonPostCard /> : <div className="text-sm text-muted-foreground">Loading more posts...</div>}
 							</div>
 						)}
-
+						
 						{!hasMore && posts.length > 0 && (
 							<div className="py-8 text-center text-muted-foreground">
 								<p className="text-sm">You've reached the end! 🎉</p>
