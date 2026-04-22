@@ -125,21 +125,23 @@ const PublicProfileView: React.FC = () => {
 
  
   // CONFIRM HELPER
-  const confirmAction = (type: string) => {
-    if (!profile) return false
+ /*
+const confirmAction = (type: string) => {
+  if (!profile) return false
 
-    const name = profile.full_name || "this user"
+  const name = profile.full_name || "this user"
 
-    const messages = {
-      cancel: `Cancel connection request to ${name}?`,
-      decline: `Decline connection request from ${name}?`,
-      disconnect: isCompanyProfile
-        ? `Unfollow ${name}?`
-        : `Disconnect from ${name}?`,
-    }
-
-    return window.confirm(messages[type])
+  const messages = {
+    cancel: `Cancel connection request to ${name}?`,
+    decline: `Decline connection request from ${name}?`,
+    disconnect: isCompanyProfile
+      ? `Unfollow ${name}?`
+      : `Disconnect from ${name}?`,
   }
+
+  return window.confirm(messages[type])
+}
+*/
 
  
   // ACTIONS
@@ -182,7 +184,7 @@ const PublicProfileView: React.FC = () => {
     const actionType =
       connectionStatus === "pending_outgoing" ? "cancel" : "decline"
 
-    if (!confirmAction(actionType)) return
+    //if (!confirmAction(actionType)) return
 
     try {
       await connectionsService.removeConnection(connectionRow.id)
@@ -209,7 +211,7 @@ const PublicProfileView: React.FC = () => {
   const handleDisconnect = async () => {
     if (!connectionRow?.id) return
 
-    if (!confirmAction("disconnect")) return
+    //if (!confirmAction("disconnect")) return
 
     try {
       await connectionsService.removeConnection(connectionRow.id)
@@ -233,8 +235,7 @@ const PublicProfileView: React.FC = () => {
   }
 
   
-  // BUTTONS
- 
+  // BUTTONS 
   const renderButtons = () => {
     if (!user || connectionStatus === "self") return null
 
@@ -313,12 +314,12 @@ const PublicProfileView: React.FC = () => {
   if (!profile) return null
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+     <div className="mx-auto max-w-5xl space-y-6 px-2 sm:px-4">
       <Card>
         <CardContent className="py-6">
-          <div className="flex justify-between gap-6">
-            <div className="flex gap-4">
-              <Avatar className="h-24 w-24">
+           <div className="flex flex-col gap-6 md:flex-row md:justify-between">
+             <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start text-center sm:text-left">
+              <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
                 <AvatarImage src={profile.avatar || undefined} />
                 <AvatarFallback>
                   {profile.full_name?.[0]?.toUpperCase()}
@@ -340,8 +341,8 @@ const PublicProfileView: React.FC = () => {
               </div>
             </div>
 
-            <div className="flex flex-col items-end gap-3">
-              <div className="flex gap-2">
+            <div className="flex flex-col items-center md:items-end gap-3">
+              <div className="flex flex-wrap justify-center md:justify-end gap-2 w-full">
                 {isOwner ? (
                   <Button
                     variant="outline"
