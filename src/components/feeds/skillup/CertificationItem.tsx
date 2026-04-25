@@ -21,7 +21,7 @@ const CertificationItem = ({ certification }: CertificationItemProps) => {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h3 className="font-medium text-gray-800 mb-1">{certification.title}</h3>
+            <h3 className="font-medium text-gray-800 dark:text-gray-400 mb-1">{certification.title}</h3>
             <p className="text-sm text-gray-600">{certification.provider}</p>
             <p className="text-xs text-gray-500">Duration: {certification.duration}</p>
           </div>

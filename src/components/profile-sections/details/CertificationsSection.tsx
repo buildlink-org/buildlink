@@ -22,14 +22,14 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 	const hasMore = certifications.length > defaultLimit
 
 	const userType = profile.user_type?.toLowerCase() || "student"
-	let iconBg = "bg-yellow-100"
-	let iconText = "text-yellow-700"
+	let iconBg = "bg-yellow-100 dark:bg-yellow-950"
+	let iconText = "text-yellow-700 dark:text-yellow-200"
 	if (userType === "professional") {
-		iconBg = "bg-orange-100"
-		iconText = "text-orange-700"
+		iconBg = "bg-orange-100 dark:bg-orange-950"
+		iconText = "text-orange-700 dark:text-orange-300"
 	} else if (userType === "company") {
-		iconBg = "bg-green-100"
-		iconText = "text-green-700"
+		iconBg = "bg-green-100 dark:bg-green-950"
+		iconText = "text-green-700 dark:text-green-400"
 	}
 
 	if (!canEdit && certifications.length === 0) return null
@@ -37,7 +37,7 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 		<Card className="rounded-lg border border-border shadow-sm">
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-gray-800">Licence & Certifications</h2>
+					<h2 className="text-lg font-semibold text-foreground">Licence & Certifications</h2>
 					{canEdit && (
 						<CertificationsEditDialog
 							currentProfile={profile}
@@ -62,11 +62,11 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 										<Award className={`h-6 w-6 ${iconText}`} />
 									</div>
 									<div className="min-w-0 flex-1">
-										<h3 className="font-semibold text-gray-900">{cert.name || "[Certification Name]"}</h3>
-										<p className="text-gray-600">{cert.issuer || "[Issuing Organization]"}</p>
-										<p className="text-sm text-gray-500">{cert.date || "[Date]"}</p>
+										<h3 className="font-semibold text-foreground">{cert.name || "[Certification Name]"}</h3>
+										<p className="text-muted-foreground">{cert.issuer || "[Issuing Organization]"}</p>
+										<p className="text-sm text-muted-foreground">{cert.date || "[Date]"}</p>
 										{cert.credential_id && (
-											<p className="text-xs text-gray-500">Credential ID: {cert.credential_id}
+											<p className="text-xs text-muted-foreground">Credential ID: {cert.credential_id}
 												{/* <ReadMoreText
 													text={`Credential ID: ${cert.credential_id}`}
 													maxLength={300}
@@ -96,7 +96,7 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 							)}
 						</>
 					) : (
-						<p className="text-gray-500">No certifications added yet. Click edit to add your certifications.</p>
+						<p className="text-muted-foreground">No certifications added yet. Click edit to add your certifications.</p>
 					)}
 				</div>
 			</CardContent>

@@ -27,9 +27,9 @@ const ProfessionalBodiesCard = () => {
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {professionalBodies.map((body, index) => (
-            <div key={index} className="flex items-center space-x-2 p-3 bg-gray-50 rounded-lg">
+            <div key={index} className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
               <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-700">{body.name}</span>
+              <span className="text-sm font-medium text-foreground">{body.name}</span>
               {body.verified && (
                 <Badge variant="secondary" className="text-xs">Verified</Badge>
               )}
