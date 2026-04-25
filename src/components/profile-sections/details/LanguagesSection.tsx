@@ -49,7 +49,7 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 		<Card className="border border-border shadow-sm">
 			<CardContent className="rounded-md px-4 py-4 shadow-sm">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-gray-800">Languages</h2>
+					<h2 className="text-lg font-semibold text-foreground">Languages</h2>
 					<LanguagesEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
 						<Button variant="ghost" size="sm" className="px-2" type="button" aria-label="Edit languages">
 							<Edit className="h-4 w-4" />
@@ -59,7 +59,7 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 
 				<div className="space-y-3">
 					{languages.length === 0 ? (
-						<p className="text-sm italic text-gray-500">
+						<p className="text-sm italic text-muted-foreground">
 							No languages added yet. Click edit to showcase the languages you speak.
 						</p>
 					) : (

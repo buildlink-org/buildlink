@@ -17,7 +17,7 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 
 	const renderAboutContent = () => {
 		if (!profile.bio) {
-			return <div className="italic text-gray-500">No professional summary available yet. Click edit to add your story and let others know about your journey, expertise, and career aspirations.</div>
+			return <div className="italic text-muted-foreground">No professional summary available yet. Click edit to add your story and let others know about your journey, expertise, and career aspirations.</div>
 		}
 
 		const characterLimit = 220
@@ -26,7 +26,7 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 
 		return (
 			<div className="space-y-3">
-				<div className="whitespace-pre-wrap break-words leading-relaxed text-gray-700">{displayText}</div>
+				<div className="whitespace-pre-wrap break-words leading-relaxed text-foreground">{displayText}</div>
 				{shouldTruncate && (
 					<Button
 						variant="ghost"
@@ -43,7 +43,7 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 	const content = (
 		<div className="flex flex-1 flex-col">
 			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-lg font-semibold text-gray-800">About</h2>
+				<h2 className="text-lg font-semibold text-foreground">About</h2>
 				{!publicProfile && (
 					<AboutEditDialog
 						currentProfile={profile}

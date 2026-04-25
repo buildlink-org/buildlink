@@ -44,7 +44,7 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 
 			setProfile(data)
 
-			// ✅ Sync connection logic
+			// Sync connection logic
 			if (!user?.id || !targetId) {
 				setConnectionStatus("not_connected")
 				return
@@ -81,7 +81,7 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 		}
 	}
 
-	// ✅ Actions
+	// Actions
 	const handleConnect = async () => {
 		if (!user?.id || !profile?.id) return
 
@@ -90,7 +90,7 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 		if (data) {
 			setConnectionRow(data)
 
-			// ✅ Instant UX update for follow
+			// Instant UX update for follow
 			setConnectionStatus("pending_outgoing")
 		}
 	}
@@ -106,10 +106,10 @@ const UserProfile = ({ userId, onClose }: UserProfileProps) => {
 		}
 	}
 
-	// ✅ Company detection
+	// Company detection
 	const isCompany = profile?.user_type === "company"
 
-	// ✅ FINAL BUTTON LOGIC (FIXED)
+	// FINAL BUTTON LOGIC (FIXED)
 	const renderConnectButton = () => {
 		if (connectionStatus === "self") return null
 

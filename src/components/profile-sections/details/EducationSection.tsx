@@ -22,22 +22,22 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 	const hasMore = education.length > defaultLimit
 
 	const userType = profile.user_type?.toLowerCase() || "student"
-	let iconBg = "bg-yellow-100"
-	let iconText = "text-yellow-700"
-	if (userType === "professional") {
-		iconBg = "bg-orange-100"
-		iconText = "text-orange-700"
-	} else if (userType === "company") {
-		iconBg = "bg-green-100"
-		iconText = "text-green-700"
-	}
+		let iconBg = "bg-yellow-100 dark:bg-yellow-950"
+		let iconText = "text-yellow-700 dark:text-yellow-200"
+		if (userType === "professional") {
+		iconBg = "bg-orange-100 dark:bg-orange-950"
+		iconText = "text-orange-700 dark:text-orange-300"
+		} else if (userType === "company") {
+		iconBg = "bg-green-100 dark:bg-green-950"
+		iconText = "text-green-700 dark:text-green-400"
+		}
 
 	if (!canEdit && education.length === 0) return null
 	return (
 		<Card className="rounded-lg border border-border shadow-sm">
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-gray-800">Education & Training</h2>
+					<h2 className="text-lg font-semibold text-foreground">Education & Training</h2>
 					{canEdit && (
 						<EducationEditDialog
 							currentProfile={profile}
@@ -62,11 +62,11 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 										<GraduationCap className={`h-6 w-6 ${iconText}`} />
 									</div>
 									<div className="min-w-0 flex-1">
-										<h3 className="font-semibold text-gray-900">{edu.degree || "[Degree/Certificate]"}</h3>
-										<p className="text-gray-600">{edu.institution || "[Institution]"}</p>
-										<p className="text-sm text-gray-500">{edu.year || "[Year]"}</p>
+										<h3 className="font-semibold text-foreground">{edu.degree || "[Degree/Certificate]"}</h3>
+										<p className="text-muted-foreground">{edu.institution || "[Institution]"}</p>
+										<p className="text-sm text-muted-foreground">{edu.year || "[Year]"}</p>
 										{edu.description && (
-											<p className="mt-2 text-sm text-gray-700">
+											<p className="mt-2 text-sm text-muted-foreground">
 												<ReadMoreText
 													text={edu.description}
 													maxLength={300}
@@ -96,7 +96,7 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 							)}
 						</>
 					) : (
-						<p className="text-gray-500">No education added yet. Click edit to add your educational background.</p>
+						<p className="text-muted-foreground">No education added yet. Click edit to add your educational background.</p>
 					)}
 				</div>
 			</CardContent>

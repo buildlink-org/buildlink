@@ -37,13 +37,14 @@ const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType
 								key={type.id}
 								onClick={() => setPostType(type.id)}
 								type="button"
-								className={cn("p-4 rounded-lg border-2 text-left transition-all flex-1 focus:outline-none focus:ring-2 focus:ring-primary", postType === type.id ? "border-primary bg-primary-50" : "border-gray-200 hover:border-primary-300")}
+								className={cn("p-4 rounded-lg border-2 text-left transition-all flex-1 focus:outline-none focus:ring-2 focus:ring-primary", postType === type.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/50")}
+
 								style={isMobile ? { minHeight: 56, minWidth: 0 } : {}}>
 								<div className="flex items-start space-x-3">
-									<Icon className={cn("h-6 w-6 mt-1", postType === type.id ? "text-primary" : "text-gray-600")} />
+									<Icon className={cn("h-6 w-6 mt-1", postType === type.id ? "text-primary" : "text-muted-foreground")} />
 									<div>
-										<h3 className={cn("font-medium", postType === type.id ? "text-primary" : "text-gray-800")}>{type.label}</h3>
-										<p className="text-sm text-gray-600">{type.description}</p>
+										<h3 className={cn("font-medium", postType === type.id ? "text-primary" : "text-foreground")}>{type.label}</h3>
+										<p className="text-sm text-muted-foreground">{type.description}</p>
 									</div>
 								</div>
 							</button>

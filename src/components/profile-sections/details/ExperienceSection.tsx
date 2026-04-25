@@ -38,7 +38,7 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 		<Card className="rounded-lg border border-border shadow-sm">
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-gray-800">Professional Experience (optional)</h2>
+					<h2 className="text-lg font-semibold text-foreground">Professional Experience (optional)</h2>
 					{canEdit && (
 						<ExperienceEditDialog
 							currentProfile={profile}
@@ -98,7 +98,7 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 							)}
 						</>
 					) : (
-						<p className="text-gray-500">No experience added yet. Click edit to add your work experience.</p>
+						<p className="text-muted-foreground">No experience added yet. Click edit to add your work experience.</p>
 					)}
 				</div>
 			</CardContent>
