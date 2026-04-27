@@ -22,14 +22,14 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 	const hasMore = education.length > defaultLimit
 
 	const userType = profile.user_type?.toLowerCase() || "student"
-		let iconBg = "bg-student-100 dark:bg-yellow-950"
-		let iconText = "text-student-700 dark:text-yellow-200"
+		let iconBg = "bg-yellow-100 dark:bg-yellow-950"
+		let iconText = "text-yellow-700 dark:text-yellow-200"
 		if (userType === "professional") {
-		iconBg = "bg-professional-100 dark:bg-orange-950"
-		iconText = "text-professional-700 dark:text-orange-300"
+		iconBg = "bg-orange-100 dark:bg-orange-950"
+		iconText = "text-orange-700 dark:text-orange-300"
 		} else if (userType === "company") {
-		iconBg = "bg-company-100 dark:bg-green-950"
-		iconText = "text-company-700 dark:text-green-400"
+		iconBg = "bg-green-100 dark:bg-green-950"
+		iconText = "text-green-700 dark:text-green-400"
 		}
 
 	if (!canEdit && education.length === 0) return null

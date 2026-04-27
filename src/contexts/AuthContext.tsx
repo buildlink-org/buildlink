@@ -6,7 +6,7 @@ interface AuthContextType {
 	user: User | null
 	session: Session | null
 	loading: boolean
-	signUp: (email: string, password: string, userData?: any) => Promise<{ error: any }>
+	signUp: (email: string, password: string, userData?: any) => Promise<{data:any, error: any }>
 	signIn: (email: string, password: string) => Promise<{ error: any }>
 	signOut: () => Promise<void>
 	resetPassword: (email: string) => Promise<{ error: any }>
@@ -21,6 +21,7 @@ export const useAuth = () => {
 	if (!context) {
 		throw new Error("useAuth must be used within an AuthProvider")
 	}
+	
 	return context
 }
 

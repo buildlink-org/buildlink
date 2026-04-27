@@ -38,7 +38,6 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		yearsActive: "",
 		expertise: [] as string[],
 	})
-console.log({form});
 
 	const [errors, setErrors] = useState<Record<string, string>>({})
 	const inputRef = useRef<HTMLInputElement | null>(null)
@@ -219,7 +218,7 @@ console.log({form});
 				? form.expertise
 				: form.skills
 
-			const { data, error } = await signUp(validatedData.email, validatedData.password, {
+			const { data,error } = await signUp(validatedData.email, validatedData.password, {
 				full_name: validatedData.fullName,
 				user_type: validatedData.userType,
 				profession: validatedData.profession,

@@ -37,19 +37,28 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 
 		if (userType === "student") {
 			return {
-				...baseConfig,
+				bgColor: "bg-yellow-100 dark:bg-yellow-950",
+				borderColor: "border-yellow-50",
+				titleColor: "text-foreground",
+				descColor: "text-muted-foreground",		
 				iconEmoji: "🎓",
 				message: "Your journey into the industry starts right here!",
 			}
 		} else if (userType === "professional") {
 			return {
-				...baseConfig,
+				bgColor: "bg-orange-100 dark:bg-orange-950",
+				borderColor: "bg-[#FFCBA4]",
+				titleColor: "text-foreground",
+				descColor: "text-muted-foreground",
 				iconEmoji: "💼",
 				message: "Ready to connect, grow, and lead in Kenya's built environment?",
 			}
 		} else if (userType === "company") {
 			return {
-				...baseConfig,
+				bgColor: "bg-green-100 dark:bg-green-950",
+				borderColor: "bg-green-200",
+				titleColor: "text-foreground",
+				descColor: "text-muted-foreground",
 				iconEmoji: "🪪",
 				message: "Relevance & Visibility has never been easier until now.",
 			}
