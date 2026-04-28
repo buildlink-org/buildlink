@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -7,125 +7,178 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/contexts/AuthContext"
 
 interface RecipientInputProps {
-	onStartChat: (user) => void
+  onStartChat: (user: UserListItem) => void
 }
 
 interface UserListItem {
-	id: string
-	name?: string
-	avatar?: string
+  id: string
+  name?: string
+  avatar?: string
 }
 
 export default function RecipientInput({ onStartChat }: RecipientInputProps) {
-	const [query, setQuery] = useState("")
-	const {
-		user: { id: currentUserId },
-	} = useAuth()
-	const [results, setResults] = useState([])
-	const [selectedUser, setSelectedUser] = useState(null)
-	const [loading, setLoading] = useState(false)
-	const [open, setOpen] = useState(false)
-	const [creating, setCreating] = useState(false)
-	const [click, setClick] = useState(false)
-	const [chat, setChat] = useState(false)
+  const { user } = useAuth()
+  const currentUserId = user?.id
 
-	// 🔥 Debounce search
-	useEffect(() => {
-		const timeout = setTimeout(() => {
-			if (!query.trim()) {
-				setResults([])
-				return
-			}
-			fetchUsers(query)
-		}, 300)
+  const [query, setQuery] = useState("")
+  const [results, setResults] = useState<UserListItem[]>([])
+  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [open, setOpen] = useState(false)
+  const [creating, setCreating] = useState(false)
 
-		return () => clearTimeout(timeout)
-	}, [query])
+  const wrapperRef = useRef<HTMLDivElement>(null)
 
-	const handleSelectUser = (user: UserListItem) => {
-		setSelectedUser(user)
-	}
+  // ✅ Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
 
-	const fetchUsers = async (search: string) => {
-		setLoading(true)
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
 
-		const { data, error } = await supabase.from("profiles").select("id, full_name, avatar").ilike("full_name", `%${search}%`).neq("id", currentUserId).limit(10)
+  // ✅ Debounced search
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!query.trim()) {
+        setResults([])
+        return
+      }
+      fetchUsers(query)
+    }, 300)
 
-		if (!error && data) {
-			setResults(data)
-			setOpen(true)
-		}
+    return () => clearTimeout(timeout)
+  }, [query])
 
-		setLoading(false)
-	}
+  const fetchUsers = async (search: string) => {
+    if (!currentUserId) return
 
-	const handleStart = async () => {
-		if (!selectedUser) return
-		setCreating(true)
+    setLoading(true)
 
-		await onStartChat(selectedUser)
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar")
+      .ilike("full_name", `%${search}%`)
+      .neq("id", currentUserId)
+      .limit(10)
 
-		setCreating(false)
-	}
+    if (!error && data) {
+      setResults(
+        data.map((u) => ({
+          id: u.id,
+          name: u.full_name,
+          avatar: u.avatar,
+        }))
+      )
+      setOpen(true)
+    }
 
-	console.log({ selectedUser, query,open })
+    setLoading(false)
+  }
 
-	return (
-		<div className="flex w-full flex-col gap-4 p-2">
-			<div className="relative w-full">
-				<Input
-					placeholder="Search user..."
-					value={query}
-					onChange={(e) => {
-						setQuery(e.target.value)
-						// setSelectedUser(null)
-						setClick(false)
-					}}
-					onFocus={() => query && setOpen(true)}
-					// onBlur={() => setOpen(false)}
-				/>
+  const handleSelectUser = (user: UserListItem) => {
+    setSelectedUser(user)
+    setQuery(user.name || "")
+    setOpen(false)
+  }
 
-				{open && !click && (
-					<div className="absolute left-0 right-0 z-[99999] mt-2 rounded-lg border bg-background shadow-md">
-						{loading && <div className="m-2 mx-auto h-4 w-4 animate-spin rounded-full border-b-2 border-primary" />}
+  const handleStart = async () => {
+    if (!selectedUser) return
 
-						{!loading && results.length === 0 && <div className="p-3 text-sm text-muted-foreground">No users found</div>}
+    setCreating(true)
+    await onStartChat(selectedUser)
+    setCreating(false)
+  }
 
-						{!loading &&
-							results.map(({ id, full_name, avatar }) => (
-								<button
-									key={id}
-									onClick={() => {
-										setSelectedUser({
-											id,
-											name: full_name || undefined,
-											avatar: avatar || undefined,
-										})
+  return (
+    <div ref={wrapperRef} className="flex w-full flex-col gap-4 p-2">
+      
+      {/* SEARCH INPUT */}
+      <div className="relative w-full">
+        <Input
+          placeholder="Search connections..."
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value)
+            setSelectedUser(null)
+          }}
+          onFocus={() => query && setOpen(true)}
+        />
 
-										setQuery(full_name)
-										setOpen(false)
-										setClick(true)
-									}}
-									className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-muted">
-									<Avatar className="h-8 w-8">
-										<AvatarImage src={avatar ?? ""} />
-										<AvatarFallback>{full_name[0].toUpperCase()}</AvatarFallback>
-									</Avatar>
+        {/* DROPDOWN */}
+        {open && (
+          <div className="absolute left-0 right-0 z-50 mt-2 max-h-60 overflow-y-auto rounded-lg border bg-background shadow-lg">
+            
+            {/* LOADING */}
+            {loading && (
+              <div className="flex justify-center p-3">
+                <Loader2 className="h-4 w-4 animate-spin" />
+              </div>
+            )}
 
-									<span className="text-sm font-medium">{full_name}</span>
-								</button>
-							))}
-					</div>
-				)}
-			</div>
+            {/* EMPTY */}
+            {!loading && results.length === 0 && (
+              <div className="p-3 text-sm text-muted-foreground">
+                No users found
+              </div>
+            )}
 
-			{/* 🔥 Start Chat Button */}
-			<Button
-				disabled={!selectedUser || creating}
-				onClick={handleStart}
-				className="w-full">
-				{creating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Chat"}
-			</Button>
-		</div>
-	)
+            {/* RESULTS */}
+            {!loading &&
+              results.map((user) => (
+                <button
+                  key={user.id}
+                  onClick={() => handleSelectUser(user)}
+                  className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-muted"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.avatar ?? ""} />
+                    <AvatarFallback>
+                      {user.name?.[0]?.toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+
+                  <span className="text-sm font-medium">
+                    {user.name}
+                  </span>
+                </button>
+              ))}
+          </div>
+        )}
+      </div>
+
+      {/* SELECTED USER PREVIEW */}
+      {selectedUser && (
+        <div className="flex items-center gap-3 rounded-md border p-2 bg-muted/40">
+          <Avatar className="h-8 w-8">
+            <AvatarImage src={selectedUser.avatar ?? ""} />
+            <AvatarFallback>
+              {selectedUser.name?.[0] || "U"}
+            </AvatarFallback>
+          </Avatar>
+
+          <span className="text-sm font-medium">
+            {selectedUser.name}
+          </span>
+        </div>
+      )}
+
+      {/* START CHAT */}
+      <Button
+        disabled={!selectedUser || creating}
+        onClick={handleStart}
+        className="w-full"
+      >
+        {creating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          "Start Chat"
+        )}
+      </Button>
+    </div>
+  )
 }

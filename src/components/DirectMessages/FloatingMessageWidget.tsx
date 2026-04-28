@@ -30,24 +30,41 @@ const FloatingMessagingWidget: React.FC = () => {
   const [isOpen, setIsOpen] = useState(!!recipientId)
   const [isMinimized, setIsMinimized] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
-  const [activeTab, setActiveTab] = useState<"inbox" | "chat">("inbox")
+  const [activeTab, setActiveTab] = useState<"inbox" | "chat">("chat")
+  const [animate, setAnimate] = useState(false)
 
   const unreadCount = 0
 
-  //Prevent background scroll
+  // 🔒 Prevent background scroll (no jump)
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = "hidden"
+      const scrollY = window.scrollY
+      document.body.style.position = "fixed"
+      document.body.style.top = `-${scrollY}px`
+      document.body.style.width = "100%"
     } else {
-      document.body.style.overflow = "auto"
+      const scrollY = document.body.style.top
+      document.body.style.position = ""
+      document.body.style.top = ""
+      window.scrollTo(0, parseInt(scrollY || "0") * -1)
     }
 
     return () => {
-      document.body.style.overflow = "auto"
+      document.body.style.position = ""
+      document.body.style.top = ""
     }
   }, [isOpen])
 
-  //Open externally triggered chat
+  // ✨ Animate modal
+  useEffect(() => {
+    if (isOpen) {
+      setTimeout(() => setAnimate(true), 10)
+    } else {
+      setAnimate(false)
+    }
+  }, [isOpen])
+
+  // 📩 External open
   useEffect(() => {
     if (recipientId) {
       setIsOpen(true)
@@ -60,15 +77,16 @@ const FloatingMessagingWidget: React.FC = () => {
     }
   }, [recipientId, recipientName, recipientAvatar])
 
-  const handleOpen = () => {
-    setIsOpen(true)
-  }
+  const handleOpen = () => setIsOpen(true)
 
   const handleClose = () => {
-    setIsOpen(false)
-    setSelectedUser(null)
-    setActiveTab("inbox")
-    clearRecipient()
+    setAnimate(false)
+    setTimeout(() => {
+      setIsOpen(false)
+      setSelectedUser(null)
+      setActiveTab("inbox")
+      clearRecipient()
+    }, 200)
   }
 
   const handleBack = () => {
@@ -88,7 +106,7 @@ const FloatingMessagingWidget: React.FC = () => {
       {!isOpen && (
         <button
           onClick={handleOpen}
-          className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition"
+          className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-all duration-200"
         >
           <MessageSquare className="h-6 w-6" />
           {unreadCount > 0 && (
@@ -105,22 +123,27 @@ const FloatingMessagingWidget: React.FC = () => {
 
           {/* BACKDROP */}
           <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm opacity-100 transition-opacity duration-300"
+            className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
+              animate ? "opacity-100" : "opacity-0"
+            }`}
             onClick={handleClose}
           />
 
           {/* MODAL CONTENT */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative bg-[#f0f2f5] border rounded-2xl shadow-2xl transform transition-all duration-300 ${
+            className={`relative bg-[#f0f2f5] border rounded-2xl shadow-2xl transform transition-all duration-300 w-full max-w-md mx-2 ${
               isMinimized
-                ? "h-12 w-72 scale-95 opacity-90"
-                : "h-[600px] w-[420px] scale-100 opacity-100"
+                ? "h-12 scale-95 opacity-90"
+                : "h-[85vh] max-h-[600px]"
+            } ${
+              animate
+                ? "scale-100 opacity-100 translate-y-0"
+                : "scale-95 opacity-0 translate-y-4"
             }`}
           >
             {/* HEADER */}
             <div className="flex items-center justify-between px-3 py-2 bg-white border-b rounded-t-2xl">
-              
               <div className="flex items-center gap-2 flex-1">
                 {selectedUser && (
                   <Button variant="ghost" size="icon" onClick={handleBack}>
@@ -136,6 +159,7 @@ const FloatingMessagingWidget: React.FC = () => {
                         {selectedUser.name?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
+
                     <div className="flex flex-col leading-tight">
                       <span className="text-sm font-semibold">
                         {selectedUser.name}
@@ -183,7 +207,7 @@ const FloatingMessagingWidget: React.FC = () => {
               <div className="flex bg-white border-b">
                 <button
                   onClick={() => setActiveTab("inbox")}
-                  className={`flex-1 py-2 text-sm font-semibold ${
+                  className={`flex-1 py-2 text-sm font-semibold transition ${
                     activeTab === "inbox"
                       ? "border-b-2 border-primary text-primary bg-muted/40"
                       : "text-muted-foreground"
@@ -194,7 +218,7 @@ const FloatingMessagingWidget: React.FC = () => {
 
                 <button
                   onClick={() => setActiveTab("chat")}
-                  className={`flex-1 py-2 text-sm ${
+                  className={`flex-1 py-2 text-sm transition ${
                     activeTab === "chat"
                       ? "border-b-2 border-primary text-primary"
                       : "text-muted-foreground"
@@ -207,14 +231,14 @@ const FloatingMessagingWidget: React.FC = () => {
 
             {/* CONTENT */}
             {!isMinimized && (
-              <div className="h-[calc(600px-110px)] overflow-hidden">
+              <div className="h-[calc(100%-110px)] overflow-hidden">
 
                 {/* INBOX */}
                 {activeTab === "inbox" && !selectedUser && (
                   <ConversationsList onSelectUser={handleSelectUser} />
                 )}
 
-                {/* CHAT */}
+                {/* NEW CHAT */}
                 {activeTab === "chat" && !selectedUser && (
                   <RecipientInput
                     onStartChat={(user) => {
