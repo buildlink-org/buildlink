@@ -94,13 +94,21 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
     setCreating(false)
   }
 
-  return (
-    <div ref={wrapperRef} className="flex w-full flex-col gap-4 p-2">
-      
-      {/* SEARCH INPUT */}
-      <div className="relative w-full">
+ return (
+  <div ref={wrapperRef} className="flex flex-col gap-4 p-4">
+
+    {/* TITLE */}
+    <h2 className="text-center text-lg font-semibold">
+      Create New Message
+    </h2>
+
+    {/* RECIPIENT */}
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium">Recipient</label>
+
+      <div className="relative">
         <Input
-          placeholder="Search connections..."
+          placeholder="Search user..."
           value={query}
           onChange={(e) => {
             setQuery(e.target.value)
@@ -111,74 +119,84 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
 
         {/* DROPDOWN */}
         {open && (
-          <div className="absolute left-0 right-0 z-50 mt-2 max-h-60 overflow-y-auto rounded-lg border bg-background shadow-lg">
+          <div className="absolute left-0 right-0 z-50 mt-1 max-h-52 overflow-y-auto rounded-md border bg-white shadow-md">
             
-            {/* LOADING */}
             {loading && (
               <div className="flex justify-center p-3">
                 <Loader2 className="h-4 w-4 animate-spin" />
               </div>
             )}
 
-            {/* EMPTY */}
             {!loading && results.length === 0 && (
               <div className="p-3 text-sm text-muted-foreground">
                 No users found
               </div>
             )}
 
-            {/* RESULTS */}
             {!loading &&
               results.map((user) => (
                 <button
                   key={user.id}
                   onClick={() => handleSelectUser(user)}
-                  className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-muted"
+                  className="flex w-full items-center gap-3 p-3 hover:bg-muted text-left"
                 >
-                  <Avatar className="h-8 w-8">
+                  <Avatar className="h-7 w-7">
                     <AvatarImage src={user.avatar ?? ""} />
                     <AvatarFallback>
-                      {user.name?.[0]?.toUpperCase() || "U"}
+                      {user.name?.[0] || "U"}
                     </AvatarFallback>
                   </Avatar>
 
-                  <span className="text-sm font-medium">
-                    {user.name}
-                  </span>
+                  <span className="text-sm">{user.name}</span>
                 </button>
               ))}
           </div>
         )}
       </div>
-
-      {/* SELECTED USER PREVIEW */}
-      {selectedUser && (
-        <div className="flex items-center gap-3 rounded-md border p-2 bg-muted/40">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={selectedUser.avatar ?? ""} />
-            <AvatarFallback>
-              {selectedUser.name?.[0] || "U"}
-            </AvatarFallback>
-          </Avatar>
-
-          <span className="text-sm font-medium">
-            {selectedUser.name}
-          </span>
-        </div>
-      )}
-
-      {/* START CHAT */}
-      <Button
-        disabled={!selectedUser || creating}
-        onClick={handleStart}
-        className="w-full"
-      >
-        {creating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          "Start Chat"
-        )}
-      </Button>
     </div>
-  )
+
+    {/* MESSAGE */}
+    <div className="flex flex-col gap-1">
+      <label className="text-sm font-medium">Message</label>
+
+      <textarea
+        className="min-h-[120px] w-full resize-none rounded-md border p-3 text-sm outline-none focus:ring-2 focus:ring-primary"
+        placeholder="Type your message..."
+      />
+    </div>
+
+    {/* ACTIONS */}
+    <div className="flex items-center justify-between pt-2">
+
+      {/* LEFT: ATTACH */}
+      <button className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white">
+        +
+      </button>
+
+      {/* RIGHT: BUTTONS */}
+      <div className="flex items-center gap-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setQuery("")
+            setSelectedUser(null)
+          }}
+        >
+          Cancel
+        </Button>
+
+        <Button
+          disabled={!selectedUser}
+          onClick={handleStart}
+        >
+          {creating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            "Send"
+          )}
+        </Button>
+      </div>
+    </div>
+  </div>
+)
 }

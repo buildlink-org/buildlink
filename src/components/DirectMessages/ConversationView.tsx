@@ -147,7 +147,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
     <div className="flex h-full flex-col">
       
       {/* MESSAGES */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-4 bg-[#efeae2]">
+      <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-0 bg-[#efeae2]">
         <div className="space-y-4">
           {messages.length === 0 ? (
             <div className="py-8 text-center text-muted-foreground">
