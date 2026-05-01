@@ -162,8 +162,8 @@ const EnhancedNotificationsDropdown = () => {
 				<Button variant="ghost" size="icon" className="relative">
 					<Bell className="h-5 w-5" />
 					{unreadCount > 0 && (
-						<Badge className="absolute -top-1 -right-1 h-5 w-5 p-0 text-xs">
-							{unreadCount > 9 ? "9+" : unreadCount}
+						<Badge className="absolute -right-1 -top-[0.9px] mx-0 flex h-6 w-6 items-center justify-center p-0 text-center text-xs">
+							{unreadCount >9 ? "9+" : unreadCount}
 						</Badge>
 					)}
 				</Button>
@@ -171,7 +171,7 @@ const EnhancedNotificationsDropdown = () => {
 
 			<PopoverContent align="end" className="w-96 p-0">
 				{/* Header */}
-				<div className="flex justify-between items-center border-b p-4">
+				<div className="flex items-center justify-between border-b p-4">
 					<h3 className="font-semibold">Notifications</h3>
 					{unreadCount > 0 && (
 						<Button variant="ghost" size="sm" onClick={markAllAsRead}>
@@ -199,7 +199,7 @@ const EnhancedNotificationsDropdown = () => {
 					<div className="max-h-96 overflow-y-auto">
 						{loading ? (
 							<div className="flex justify-center py-8">
-								<div className="h-6 w-6 animate-spin border-b-2 border-primary rounded-full" />
+								<div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
 							</div>
 						) : filteredNotifications.length === 0 ? (
 							<div className="p-8 text-center text-sm text-muted-foreground">
@@ -243,7 +243,7 @@ const EnhancedNotificationsDropdown = () => {
 										</div>
 
 										{/* Unread dot */}
-										{!n.read && <div className="h-2 w-2 rounded-full bg-primary mt-2" />}
+										{!n.read && <div className="mt-2 h-2 w-2 rounded-full bg-primary" />}
 									</div>
 								)
 							})
