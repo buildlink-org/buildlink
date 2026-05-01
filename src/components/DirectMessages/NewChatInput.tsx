@@ -2,9 +2,14 @@ import { useEffect, useState, useRef } from "react"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
-import { Loader2 } from "lucide-react"
+import { Loader2, Paperclip, Send } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/contexts/AuthContext"
+import { directMessagesService } from "@/services/directMessagesService"
+import { useMessagingStore } from "@/stores/messagingStore"
+import { useToast } from "@/hooks/use-toast"
+import { compressImage } from "@/lib/utils"
+import EmojiPickerButton from "../EmojiPicker"
 
 interface RecipientInputProps {
   onStartChat: (user: UserListItem) => void
@@ -18,30 +23,36 @@ interface UserListItem {
 
 export default function RecipientInput({ onStartChat }: RecipientInputProps) {
   const { user } = useAuth()
+  const { toast } = useToast()
   const currentUserId = user?.id
+
+  const addMessageToStore = useMessagingStore((s) => s.addMessage)
 
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<UserListItem[]>([])
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
+  const [message, setMessage] = useState("")
+  const [file, setFile] = useState<File | null>(null)
+
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
   const [creating, setCreating] = useState(false)
 
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // ✅ Close dropdown when clicking outside
+  // Close dropdown
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!wrapperRef.current?.contains(e.target as Node)) {
         setOpen(false)
       }
     }
-
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // ✅ Debounced search
+  // Debounce search
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!query.trim()) {
@@ -59,14 +70,14 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
 
     setLoading(true)
 
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("profiles")
       .select("id, full_name, avatar")
       .ilike("full_name", `%${search}%`)
       .neq("id", currentUserId)
       .limit(10)
 
-    if (!error && data) {
+    if (data) {
       setResults(
         data.map((u) => ({
           id: u.id,
@@ -86,99 +97,225 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
     setOpen(false)
   }
 
+  // SEND MESSAGE
   const handleStart = async () => {
-    if (!selectedUser) return
+    if (!selectedUser || !currentUserId) return
 
     setCreating(true)
-    await onStartChat(selectedUser)
+
+    try {
+      let image_url: string | undefined
+      let image_type: "image" | "pdf" | null = null
+
+      if (file) {
+        let fileToUpload = file
+
+        if (file.type.startsWith("image/")) {
+          try {
+            fileToUpload = await compressImage(file)
+          } catch {}
+        }
+
+        if (fileToUpload.size > 10 * 1024 * 1024) {
+          toast({
+            title: "File too large",
+            description: "Max size is 10MB",
+            variant: "destructive",
+          })
+          setCreating(false)
+          return
+        }
+
+        const fileExt = file.name.split(".").pop()
+        const fileName = `${currentUserId}-${Date.now()}.${fileExt}`
+        const filePath = `chat/${fileName}`
+
+        const { error } = await supabase.storage
+          .from("uploads")
+          .upload(filePath, fileToUpload, {
+            contentType: fileToUpload.type,
+          })
+
+        if (error) throw error
+
+        const { data } = supabase.storage
+          .from("uploads")
+          .getPublicUrl(filePath)
+
+        image_url = data.publicUrl
+        image_type = file.type.startsWith("image") ? "image" : "pdf"
+      }
+
+      if (message.trim() || image_url) {
+        const { data, error } = await directMessagesService.sendMessage({
+          sender_id: currentUserId,
+          recipient_id: selectedUser.id,
+          content: message.trim(),
+          image_url,
+          image_type,
+        })
+
+        if (error) throw error
+        if (data) addMessageToStore(data)
+      }
+
+      await onStartChat(selectedUser)
+
+      // Reset
+      setMessage("")
+      setQuery("")
+      setSelectedUser(null)
+      setFile(null)
+    } catch (err: any) {
+      toast({
+        title: "Send failed",
+        description: err.message,
+        variant: "destructive",
+      })
+    }
+
     setCreating(false)
   }
 
   return (
-    <div ref={wrapperRef} className="flex w-full flex-col gap-4 p-2">
-      
-      {/* SEARCH INPUT */}
-      <div className="relative w-full">
-        <Input
-          placeholder="Search connections..."
-          value={query}
-          onChange={(e) => {
-            setQuery(e.target.value)
-            setSelectedUser(null)
-          }}
-          onFocus={() => query && setOpen(true)}
-        />
+    <div
+      ref={wrapperRef}
+      className="w-full max-w-md space-y-4 rounded-xl border bg-white p-4 shadow-sm"
+    >
+      <h2 className="text-center text-lg font-semibold">New Message</h2>
 
-        {/* DROPDOWN */}
-        {open && (
-          <div className="absolute left-0 right-0 z-50 mt-2 max-h-60 overflow-y-auto rounded-lg border bg-background shadow-lg">
-            
-            {/* LOADING */}
-            {loading && (
-              <div className="flex justify-center p-3">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </div>
-            )}
+      {/* RECIPIENT */}
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">Recipient</label>
 
-            {/* EMPTY */}
-            {!loading && results.length === 0 && (
-              <div className="p-3 text-sm text-muted-foreground">
-                No users found
-              </div>
-            )}
+        <div className="relative">
+          <Input
+            placeholder="Search user..."
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value)
+              setSelectedUser(null)
+            }}
+            onFocus={() => query && setOpen(true)}
+          />
 
-            {/* RESULTS */}
-            {!loading &&
-              results.map((user) => (
-                <button
-                  key={user.id}
-                  onClick={() => handleSelectUser(user)}
-                  className="flex w-full items-center gap-3 p-3 text-left transition hover:bg-muted"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.avatar ?? ""} />
-                    <AvatarFallback>
-                      {user.name?.[0]?.toUpperCase() || "U"}
-                    </AvatarFallback>
-                  </Avatar>
+          {open && (
+            <div className="absolute z-50 mt-1 max-h-52 w-full overflow-y-auto rounded-md border bg-white shadow-md">
+              {loading && (
+                <div className="flex justify-center p-3">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                </div>
+              )}
 
-                  <span className="text-sm font-medium">
-                    {user.name}
-                  </span>
-                </button>
-              ))}
-          </div>
-        )}
+              {!loading && results.length === 0 && (
+                <div className="p-3 text-sm text-muted-foreground">
+                  No users found
+                </div>
+              )}
+
+              {!loading &&
+                results.map((user) => (
+                  <button
+                    key={user.id}
+                    onClick={() => handleSelectUser(user)}
+                    className="flex w-full items-center gap-3 px-3 py-2 hover:bg-muted"
+                  >
+                    <Avatar className="h-7 w-7">
+                      <AvatarImage src={user.avatar ?? ""} />
+                      <AvatarFallback>
+                        {user.name?.[0] || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <span className="text-sm">{user.name}</span>
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* SELECTED USER PREVIEW */}
-      {selectedUser && (
-        <div className="flex items-center gap-3 rounded-md border p-2 bg-muted/40">
-          <Avatar className="h-8 w-8">
-            <AvatarImage src={selectedUser.avatar ?? ""} />
-            <AvatarFallback>
-              {selectedUser.name?.[0] || "U"}
-            </AvatarFallback>
-          </Avatar>
+      {/* MESSAGE */}
+      <textarea
+        value={message}
+        onChange={(e) => setMessage(e.target.value)}
+        placeholder="Type your message..."
+        className="min-h-[100px] w-full resize-none rounded-md border p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+      />
 
-          <span className="text-sm font-medium">
-            {selectedUser.name}
-          </span>
+      {/* ACTION BAR */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <EmojiPickerButton
+            onSelect={(emoji) => setMessage((prev) => prev + emoji)}
+          />
+
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-muted hover:bg-muted/70"
+          >
+            <Paperclip className="h-4 w-4" />
+          </button>
+
+             {file && (
+                <div className="rounded-md px-3 py-2 text-xs  flex justify-between items-center">
+                  <span className="truncate">{file.name}</span>
+
+                  <button
+                    onClick={() => setFile(null)}
+                    className="text-red-400 hover:underline ml-2"
+                  >
+                    Remove
+                  </button>
+                </div>
+             )}
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*,application/pdf"
+            onChange={(e) => {
+              const selected = e.target.files?.[0]
+              if (!selected) return
+
+              if (
+                !selected.type.startsWith("image") &&
+                selected.type !== "application/pdf"
+              )
+              {
+                toast({
+                  title: "Invalid file",
+                  description: "Only images and PDFs allowed",
+                  variant: "destructive",
+                })
+                return
+              }
+
+              setFile(selected)
+
+              //  TOAST
+              toast({
+                title: "File attached",
+                description: selected.name,
+              })
+            }}
+          />
         </div>
-      )}
 
-      {/* START CHAT */}
-      <Button
-        disabled={!selectedUser || creating}
-        onClick={handleStart}
-        className="w-full"
-      >
-        {creating ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          "Start Chat"
-        )}
-      </Button>
+        <Button
+          size="icon"
+          disabled={!selectedUser || creating}
+          onClick={handleStart}
+        >
+          {creating ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="h-4 w-4" />
+          )}
+        </Button>
+      </div>
+
     </div>
   )
 }
