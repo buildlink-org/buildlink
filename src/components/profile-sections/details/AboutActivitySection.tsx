@@ -11,21 +11,18 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
-				bgColor: "bg-student-100 dark:bg-yellow-950",
-				borderColor: "border-student-border",
-				activeTabClass: "data-[state=active]:bg-student-100 dark:data-[state=active]:bg-yellow-950",
+				bgColor: "bg-yellow-100 dark:bg-yellow-950",
+				borderColor: "border-yellow-50",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-professional-100 dark:bg-orange-950",
-				borderColor: "border-professional-border",
-				activeTabClass: "data-[state=active]:bg-professional-100 dark:data-[state=active]:bg-orange-950",
+				bgColor: "bg-orange-100 dark:bg-orange-950",
+				borderColor: "border-[#FFCBA4]",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-company-100 dark:bg-green-950",
-				borderColor: "border-company-border",
-				activeTabClass: "data-[state=active]:bg-company-100 dark:data-[state=active]:bg-green-950",
+				bgColor: "bg-green-100 dark:bg-green-950",
+				borderColor: "border-green-200",
 			}
 		}
 		// Default fallback
@@ -48,12 +45,12 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 					<TabsList className="flex h-auto w-full border-0 bg-transparent p-0">
 					<TabsTrigger
 						value="about"
-						className={`flex-1 rounded-tl-lg bg-muted px-6 py-3 text-muted-foreground ${colorConfig.activeTabClass} data-[state=active]:text-foreground`}>
+						className="flex-1 rounded-tl-lg bg-muted px-6 py-3 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground">
 						About
 					</TabsTrigger>
 					<TabsTrigger
 						value="activity"
-						className={`flex-1 rounded-tr-lg bg-muted px-6 py-3 text-muted-foreground ${colorConfig.activeTabClass} data-[state=active]:text-foreground`}>
+						className="flex-1 rounded-tr-lg bg-muted px-6 py-3 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground">
 						Activity
 					</TabsTrigger>
 					</TabsList>

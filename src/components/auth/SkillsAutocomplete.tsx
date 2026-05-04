@@ -44,7 +44,7 @@ const SkillsAutocomplete = ({ options, selected, onChange, max = 5, placeholder 
     }
 
     return (
-        <div className="space-y-2 relative">
+        <div className="relative space-y-2">
             {/* Selected skill tags */}
             {selected.length > 0 && (
                 <div className="flex flex-wrap gap-2">
@@ -56,7 +56,7 @@ const SkillsAutocomplete = ({ options, selected, onChange, max = 5, placeholder 
                     <button
                         type="button"
                         onClick={() => removeSkill(skill)}
-                        className="ml-1 hover:text-destructive transition-colors">
+                        className="ml-1 transition-colors hover:text-destructive">
                         <X size={14} />
                     </button>
                     </span>
@@ -66,7 +66,7 @@ const SkillsAutocomplete = ({ options, selected, onChange, max = 5, placeholder 
 
             {/* Input with dropdown */}
             {selected.length < max && (
-                <Command className="border rounded-md overflow-visible relative">
+                <Command className="relative overflow-visible rounded-md border">
                     <CommandInput
                         value={input}
                         onFocus={() => setOpen(true)}
@@ -76,6 +76,7 @@ const SkillsAutocomplete = ({ options, selected, onChange, max = 5, placeholder 
                             setInput(val)
                             setOpen(true)
                         }}
+                        onClick={()=>setOpen(true)}
                         onKeyDown={handleKeyDown}
                         placeholder={placeholder}
                     />

@@ -1,49 +1,59 @@
 import { create } from "zustand"
-import { directMessagesService, Message } from "@/services/directMessagesService" // Assuming you define Message interface in service file
+import { directMessagesService, Message } from "@/services/directMessagesService"
 
-// Define the shape of our store state
 interface MessagingState {
-	// UI State for selected conversation
 	recipientId: string | null
 	recipientName: string | null
 	recipientAvatar: string | null
 
-	// Data State for actual messages (indexed by otherUserId)
 	messagesByUserId: Record<string, Message[]>
-	loadingStatus: Record<string, boolean> // To track loading per conversation
+	loadingStatus: Record<string, boolean>
 
-	// Actions
 	openConversation: (userId: string, name?: string, avatar?: string) => void
 	clearRecipient: () => void
 	fetchMessages: (currentUserId: string, otherUserId: string) => Promise<void>
 	addMessage: (message: Message) => void
+
+	// ✅ NEW
+	updateMessage: (message: Message) => void
+	removeMessage: (messageId: string) => void
 }
 
 export const useMessagingStore = create<MessagingState>((set, get) => ({
-	// Initial UI state
 	recipientId: null,
 	recipientName: null,
 	recipientAvatar: null,
 
-	// Initial Data state
 	messagesByUserId: {},
 	loadingStatus: {},
 
-	// --- UI Actions ---
-	openConversation: (userId, name, avatar) => set({ recipientId: userId, recipientName: name, recipientAvatar: avatar }),
+	// -------- UI --------
+	openConversation: (userId, name, avatar) =>
+		set({
+			recipientId: userId,
+			recipientName: name,
+			recipientAvatar: avatar,
+		}),
 
-	clearRecipient: () => set({ recipientId: null, recipientName: null, recipientAvatar: null }),
+	clearRecipient: () =>
+		set({
+			recipientId: null,
+			recipientName: null,
+			recipientAvatar: null,
+		}),
 
-	// --- Data Actions --- 
+	// -------- FETCH --------
 	fetchMessages: async (currentUserId, otherUserId) => {
-		// Only fetch if not already loading and not already fetched (optional optimization)
 		if (get().loadingStatus[otherUserId]) return
 
 		set((state) => ({
 			loadingStatus: { ...state.loadingStatus, [otherUserId]: true },
 		}))
 
-		const { data, error } = await directMessagesService.getMessages(currentUserId, otherUserId)
+		const { data, error } = await directMessagesService.getMessages(
+			currentUserId,
+			otherUserId
+		)
 
 		set((state) => ({
 			loadingStatus: { ...state.loadingStatus, [otherUserId]: false },
@@ -51,9 +61,7 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 
 		if (error) {
 			console.error(`Failed to fetch messages for ${otherUserId}:`, error)
-			// Handle error (maybe add an error state if needed)
 		} else {
-			// Store the messages organized by the other user's ID
 			set((state) => ({
 				messagesByUserId: {
 					...state.messagesByUserId,
@@ -63,16 +71,54 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 		}
 	},
 
+	// -------- ADD --------
 	addMessage: (message) => {
-		const relevantUserId = message.sender_id === get().recipientId ? message.sender_id : message.recipient_id
+		const { recipientId } = get()
+		if (!recipientId) return
 
-		if (!relevantUserId) return
+		const relevantUserId =
+			message.sender_id === recipientId
+				? message.sender_id
+				: message.recipient_id
 
 		set((state) => ({
 			messagesByUserId: {
 				...state.messagesByUserId,
-				[relevantUserId]: [...(state.messagesByUserId[relevantUserId] || []), message],
+				[relevantUserId]: [
+					...(state.messagesByUserId[relevantUserId] || []),
+					message,
+				],
 			},
 		}))
+	},
+
+	// -------- UPDATE --------
+	updateMessage: (updatedMessage) => {
+		set((state) => {
+			const updated = { ...state.messagesByUserId }
+
+			Object.keys(updated).forEach((userId) => {
+				updated[userId] = updated[userId].map((msg) =>
+					msg.id === updatedMessage.id ? updatedMessage : msg
+				)
+			})
+
+			return { messagesByUserId: updated }
+		})
+	},
+
+	// -------- DELETE --------
+	removeMessage: (messageId) => {
+		set((state) => {
+			const updated = { ...state.messagesByUserId }
+
+			Object.keys(updated).forEach((userId) => {
+				updated[userId] = updated[userId].filter(
+					(msg) => msg.id !== messageId
+				)
+			})
+
+			return { messagesByUserId: updated }
+		})
 	},
 }))

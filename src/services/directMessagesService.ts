@@ -7,10 +7,12 @@ export interface Message {
 	content: string
 	created_at: string
 	read: boolean
+	image_url?: string | null
+	image_type?: "image" | "pdf" | null
 }
 
 export const directMessagesService = {
-	async sendMessage({ sender_id, recipient_id, content, image_url }: { sender_id: string; recipient_id: string; content?: string; image_url?: string }) {
+	async sendMessage({ sender_id, recipient_id, content, image_url,image_type }: { sender_id: string; recipient_id: string; content?: string; image_url?: string; image_type?: "image" | "pdf" | null }) {
 		const { data, error } = await supabase
 			.from("direct_messages")
 			.insert({
@@ -18,6 +20,7 @@ export const directMessagesService = {
 				recipient_id,
 				content,
 				image_url,
+				image_type,
 			})
 			.select()
 			.single()

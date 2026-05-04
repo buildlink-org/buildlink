@@ -23,11 +23,11 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 	const userType = profile.user_type?.toLowerCase() || "student"
 
 	
-	let badgeClasses = "bg-student-100 dark:bg-yellow-950 text-foreground border border-student-border dark:border-yellow-800"
+	let badgeClasses = "bg-yellow-100 dark:bg-yellow-950 text-foreground border border-yellow-200 dark:border-yellow-800"
 	if (userType === "professional") {
-	badgeClasses = "bg-professional-100 dark:bg-orange-950 text-foreground border border-professional-border dark:border-orange-800"
+	badgeClasses = "bg-orange-200 dark:bg-orange-950 text-foreground border border-orange-200 dark:border-orange-800"
 	} else if (userType === "company") {
-	badgeClasses = "bg-company-100 dark:bg-green-950 text-foreground border border-company-border dark:border-green-800"
+	badgeClasses = "bg-green-100 dark:bg-green-950 text-foreground border border-green-200 dark:border-green-800"
 	}
 
 	if (!canEdit && skills.length === 0) return null
