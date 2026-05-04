@@ -1,9 +1,10 @@
-import React, { useEffect, useRef } from "react"
+import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import PortfolioThumbnail from "./PortfolioThumbnail"
 import { Button } from "@/components/ui/button"
 import { Trash, FileText, ExternalLink } from "lucide-react"
 import { PortfolioItem } from "@/types"
+import MediaPreview from "@/components/ui/media-preview"
 
 interface PortfolioGalleryProps {
 	open: boolean
@@ -18,6 +19,11 @@ interface PortfolioGalleryProps {
 
 const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({ open, setOpen, portfolio, canEdit = false, onRemove, updating = false, activeIndex = 0, setActiveIndex }) => {
 	const scrollRef = useRef<HTMLDivElement>(null)
+	const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
+
+	const activeItem = useMemo(() => {
+		return portfolio?.[activeIndex]
+	}, [portfolio, activeIndex])
 
 	useEffect(() => {
 		if (!open) return
@@ -34,9 +40,15 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({ open, setOpen, port
 	const handleItemClick = (item: any, index: number) => {
 		if (setActiveIndex) setActiveIndex(index)
 
-		// For PDFs and links, just open in new tab
-		if (item.type === "pdf" || item.type === "link") {
-			window.open(item.url, "_blank")
+		// Links: open externally
+		if (item.type === "link") {
+			window.open(item.url, "_blank", "noopener,noreferrer")
+			return
+		}
+
+		// PDFs: open in-app viewer
+		if (item.type === "pdf") {
+			setPdfViewerOpen(true)
 			return
 		}
 	}
@@ -88,6 +100,40 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({ open, setOpen, port
 				<DialogHeader>
 					<DialogTitle className="text-lg font-semibold">Portfolio Projects</DialogTitle>
 				</DialogHeader>
+
+				{/* In-app PDF viewer */}
+				{activeItem?.type === "pdf" && (
+					<Dialog open={pdfViewerOpen} onOpenChange={setPdfViewerOpen}>
+						<DialogContent className="max-w-6xl h-[85vh] p-6">
+							<DialogHeader>
+								<DialogTitle className="text-lg font-semibold">
+									{activeItem.name}
+								</DialogTitle>
+							</DialogHeader>
+							<div className="h-[calc(85vh-6.5rem)]">
+								<MediaPreview
+									url={activeItem.url}
+									type="pdf"
+									name={activeItem.name}
+									size="lg"
+									showActions
+								/>
+							</div>
+							<div className="mt-3 flex gap-2">
+								<Button
+									variant="outline"
+									size="sm"
+									onClick={() => window.open(activeItem.url, "_blank", "noopener,noreferrer")}
+									className="flex items-center gap-2"
+								>
+									<ExternalLink className="h-4 w-4" />
+									Open in new tab
+								</Button>
+							</div>
+						</DialogContent>
+					</Dialog>
+				)}
+
 				<div
 					ref={scrollRef}
 					className="my-3 grid max-h-[68vh] grid-cols-1 gap-6 overflow-y-auto sm:grid-cols-2 md:grid-cols-3">

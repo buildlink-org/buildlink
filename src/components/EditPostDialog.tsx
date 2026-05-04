@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -35,6 +35,9 @@ const EditPostDialog = ({
   const [content, setContent] = useState(post?.content || "");
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(
+    null
+  );
   const [imagePreview, setImagePreview] = useState<string | null>(
     post?.image_url || null
   );
@@ -70,8 +73,15 @@ const EditPostDialog = ({
       }
 
       setDocumentFile(file);
+      setDocumentPreviewUrl(URL.createObjectURL(file));
     }
   };
+
+  useEffect(() => {
+    return () => {
+      if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl);
+    };
+  }, [documentPreviewUrl]);
 
   const handleRemoveImage = () => {
     setImageFile(null);
@@ -82,6 +92,7 @@ const EditPostDialog = ({
 
   const handleRemoveDocument = () => {
     setDocumentFile(null);
+    setDocumentPreviewUrl(null);
     setRemoveExistingDocument(true);
     if (documentInputRef.current) documentInputRef.current.value = "";
   };
@@ -197,6 +208,7 @@ const EditPostDialog = ({
           setContent(post?.content || "");
           setImageFile(null);
           setDocumentFile(null);
+          setDocumentPreviewUrl(null);
           setImagePreview(post?.image_url || null);
           setRemoveExistingImage(false);
           setRemoveExistingDocument(false);
@@ -291,7 +303,7 @@ const EditPostDialog = ({
               <MediaPreview
                 url={
                   documentFile
-                    ? URL.createObjectURL(documentFile)
+                    ? (documentPreviewUrl as string)
                     : (post.document_url as string)
                 }
                 type="pdf"

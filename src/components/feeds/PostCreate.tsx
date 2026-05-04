@@ -3,7 +3,7 @@ import { Card, CardContent } from "../ui/card"
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
 import { Camera, FileText, MapPin, X } from "lucide-react"
-import { useState, useRef, useCallback } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import PostTypeSelector from "./PostTypeSelector"
 import UserAvatarHeader from "./UserAvatarHeader"
@@ -25,6 +25,7 @@ const PostCreate = () => {
 	const [imageFile, setImageFile] = useState<File | null>(null)
 	const [documentFile, setDocumentFile] = useState<File | null>(null)
 	const [imagePreview, setImagePreview] = useState<string | null>(null)
+	const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(null)
 	const [isLoading, setIsLoading] = useState(false)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 	const documentInputRef = useRef<HTMLInputElement>(null)
@@ -73,15 +74,24 @@ const PostCreate = () => {
 				}
 
 				setDocumentFile(file)
+				setDocumentPreviewUrl(URL.createObjectURL(file))
 			}
 		},
 		[toast],
 	)
 
+	useEffect(() => {
+		return () => {
+			if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
+		}
+	}, [documentPreviewUrl])
+
 	const cancelCreatePost = (e) => {
 		e.preventDefault()
 
 		setImageFile(null)
+		setDocumentFile(null)
+		setDocumentPreviewUrl(null)
 		setContent("")
 	}
 
@@ -181,6 +191,7 @@ const PostCreate = () => {
 			setImageFile(null)
 			setDocumentFile(null)
 			setImagePreview(null)
+			setDocumentPreviewUrl(null)
 			if (fileInputRef.current) fileInputRef.current.value = ""
 			if (documentInputRef.current) documentInputRef.current.value = ""
 		} catch (error) {
@@ -254,7 +265,7 @@ const PostCreate = () => {
 					{documentFile && (
 						<div className="my-4">
 							<MediaPreview
-								url={URL.createObjectURL(documentFile)}
+								url={documentPreviewUrl || ""}
 								type="pdf"
 								name={documentFile.name}
 								size="md"

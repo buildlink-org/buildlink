@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useEffect, useState, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -36,6 +36,7 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 	const [imageFile, setImageFile] = useState<File | null>(null)
 	const [documentFile, setDocumentFile] = useState<File | null>(null)
 	const [imagePreview, setImagePreview] = useState<string | null>(null)
+	const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(null)
 	const imageInputRef = useRef<HTMLInputElement>(null)
 	const documentInputRef = useRef<HTMLInputElement>(null)
 
@@ -71,6 +72,7 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 			}
 
 			setDocumentFile(file)
+			setDocumentPreviewUrl(URL.createObjectURL(file))
 		}
 	}
 
@@ -82,8 +84,15 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 
 	const handleRemoveDocument = () => {
 		setDocumentFile(null)
+		setDocumentPreviewUrl(null)
 		if (documentInputRef.current) documentInputRef.current.value = ""
 	}
+
+	useEffect(() => {
+		return () => {
+			if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
+		}
+	}, [documentPreviewUrl])
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -149,6 +158,7 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 			setImageFile(null)
 			setDocumentFile(null)
 			setImagePreview(null)
+			setDocumentPreviewUrl(null)
 			setOpen(false)
 			onPostCreated?.()
 		} catch (error) {
@@ -240,7 +250,7 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 							<h4 className="mb-2 text-sm font-medium">PDF Document Preview</h4>
 							<div className="relative">
 								<MediaPreview
-									url={URL.createObjectURL(documentFile)}
+									url={documentPreviewUrl || ""}
 									type="pdf"
 									name={documentFile.name}
 									size="lg"

@@ -41,6 +41,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const [progress, setProgress] = useState<number>(0);
   const [linkURL, setLinkURL] = useState("");
   const [desc, setDesc] = useState("");
+  const [projectName, setProjectName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -94,11 +95,16 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   };
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    setSelectedFile(files && files.length > 0 ? files[0] : null);
+    const file = files && files.length > 0 ? files[0] : null;
+    setSelectedFile(file);
+    if (file) {
+      setProjectName((prev) => (prev.trim() ? prev : file.name.replace(/\.[^/.]+$/, "")));
+    }
   };
 
   const handleFileDelete = () => {
     setSelectedFile(null);
+    setProjectName("");
     if (fileInput.current) {
       fileInput.current.value = '';
     }
@@ -165,7 +171,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
 
     const item: PortfolioItem = {
       id: Math.random().toString(36).substring(2),
-      name: file.name.replace(/\.[^/.]+$/, ""),
+      name: projectName.trim() || file.name.replace(/\.[^/.]+$/, ""),
       url,
       type: isPDF ? "pdf" : "image",
       description: desc,
@@ -206,10 +212,11 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     if (linkURL) {
       // Fetch meta title with timeout
       const linkName = await fetchMetaTitle(linkURL);
+      const resolvedName = projectName.trim() || linkName;
       
       const item: PortfolioItem = {
         id: Math.random().toString(36).substring(2),
-        name: linkName,
+        name: resolvedName,
         url: linkURL,
         type: "link",
         description: desc,
@@ -220,6 +227,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setOpen(false);
       setLinkURL("");
       setDesc("");
+      setProjectName("");
       setSelectedFile(null);
       setThumbnailUrl("");
       if (onPortfolioAdd) onPortfolioAdd(item);
@@ -240,6 +248,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     if (!open) {
       setLinkURL("");
       setDesc("");
+      setProjectName("");
       setSelectedFile(null);
       setThumbnailUrl("");
       setError(null);
@@ -312,6 +321,25 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             )}
           </div>
         </div>
+
+        {/* Project naming */}
+        {(selectedFile || linkURL.trim() !== "") && (
+          <div className="mt-4">
+            <label className="block font-semibold mb-1 text-foreground">Project name</label>
+            <input
+              type="text"
+              value={projectName}
+              onChange={(e) => setProjectName(e.target.value)}
+              placeholder={selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : "e.g., My Project"}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              disabled={uploading || disabled}
+              maxLength={80}
+            />
+            <div className="text-xs text-muted-foreground mt-1">
+              This is the name that will show on your portfolio card.
+            </div>
+          </div>
+        )}
         
         {/* Thumbnail upload section */}
         <div className="mt-4">

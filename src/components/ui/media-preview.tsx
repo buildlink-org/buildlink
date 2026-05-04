@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, FileText, Download, Eye, ExternalLink } from "lucide-react";
 import { Button } from "./button";
 import { Dialog, DialogContent, DialogTrigger } from "./dialog";
@@ -26,6 +26,11 @@ const MediaPreview = ({
 }: MediaPreviewProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    setIsLoading(true);
+    setHasError(false);
+  }, [url]);
 
   const sizeClasses = {
     sm: "w-16 h-16",
@@ -96,6 +101,7 @@ const MediaPreview = ({
         <iframe
           src={`${url}#toolbar=1&navpanes=1&scrollbar=1`}
           className="w-full h-full border-0"
+          key={url}
           onLoad={() => setIsLoading(false)}
           onError={() => {
             setHasError(true);
