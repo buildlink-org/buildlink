@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Send, Loader2, Paperclip } from "lucide-react"
+import { Send, Loader2, Paperclip, MoreVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { formatTimestamp } from "@/lib/utils"
@@ -24,25 +24,21 @@ type ConversationItem =
   | ({ type: "message" } & Message)
   | { type: "separator"; id: string; dateLabel: string }
 
-// Add date separators
 const addDateSeparators = (messages: Message[]): ConversationItem[] => {
   const items: ConversationItem[] = []
   let lastDate: string | null = null
 
-  const sortedMessages = [...messages].sort(
-    (a, b) =>
-      new Date(a.created_at).getTime() -
-      new Date(b.created_at).getTime()
+  const sorted = [...messages].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
   )
 
-  sortedMessages.forEach((msg, index) => {
-    const messageDate = new Date(msg.created_at)
-    const dateKey = messageDate.toISOString().split("T")[0]
+  sorted.forEach((msg, i) => {
+    const dateKey = new Date(msg.created_at).toISOString().split("T")[0]
 
     if (dateKey !== lastDate) {
       items.push({
         type: "separator",
-        id: `sep-${dateKey}-${index}`,
+        id: `sep-${dateKey}-${i}`,
         dateLabel: formatTimestamp(msg.created_at, false),
       })
       lastDate = dateKey
@@ -56,31 +52,30 @@ const addDateSeparators = (messages: Message[]): ConversationItem[] => {
 
 const ConversationView: React.FC<ConversationViewProps> = ({
   otherUserId,
-  otherUserName,
   otherUserAvatar,
 }) => {
   const { user } = useAuth()
   const { toast } = useToast()
 
   const messages =
-    useMessagingStore((state) => state.messagesByUserId[otherUserId]) ?? []
+    useMessagingStore((s) => s.messagesByUserId[otherUserId]) ?? []
   const loading =
-    useMessagingStore((state) => state.loadingStatus[otherUserId] || false)
-  const fetchMessages = useMessagingStore((state) => state.fetchMessages)
-  const addMessageToStore = useMessagingStore((state) => state.addMessage)
+    useMessagingStore((s) => s.loadingStatus[otherUserId] || false)
+  const fetchMessages = useMessagingStore((s) => s.fetchMessages)
+  const addMessage = useMessagingStore((s) => s.addMessage)
+  const removeMessage = useMessagingStore((s) => s.removeMessage)
+  const updateMessage = useMessagingStore((s) => s.updateMessage)
 
   const [sending, setSending] = useState(false)
   const [content, setContent] = useState("")
   const [file, setFile] = useState<File | null>(null)
 
-  const scrollAreaRef = useRef<HTMLDivElement>(null)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editingText, setEditingText] = useState("")
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const formattedName =
-    otherUserName
-      ? otherUserName.charAt(0).toUpperCase() + otherUserName.slice(1)
-      : "User"
 
   const conversationItems = React.useMemo(
     () => addDateSeparators(messages),
@@ -90,249 +85,239 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   useEffect(() => {
     if (!user || !otherUserId) return
     fetchMessages(user.id, otherUserId)
-  }, [user, otherUserId, fetchMessages])
+  }, [user, otherUserId])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages.length])
 
+  // ✅ SEND (Optimistic UI)
   const handleSend = async () => {
     if (!user || (!content.trim() && !file) || sending) return
 
     setSending(true)
 
-    let image_url: string | undefined = undefined
-    let image_type: "image" | "pdf" | null = null
+    const tempId = `temp-${Date.now()}`
 
-    if (file) {
-      // TEMP: replace with Supabase upload later
-      image_url = URL.createObjectURL(file)
-      image_type = file.type.startsWith("image") ? "image" : "pdf"
-    }
-
-    const { data, error } = await directMessagesService.sendMessage({
+    // 👉 Optimistic message (shows instantly)
+    const optimisticMessage: Message = {
+      id: tempId,
       sender_id: user.id,
       recipient_id: otherUserId,
       content: content.trim(),
-      image_url,
-      image_type,
-    })
-
-    if (error) {
-      toast({
-        title: "Failed to send message",
-        description: error.message,
-        variant: "destructive",
-      })
-      setSending(false)
-      return
+      created_at: new Date().toISOString(),
+      read: false,
+      image_url: null,
+      image_type: null,
     }
 
-    if (data) {
-      addMessageToStore(data)
+    addMessage(optimisticMessage)
+
+    let image_url: string | undefined
+    let image_type: "image" | "pdf" | null = null
+
+    try {
+      if (file) {
+        let fileToUpload = file
+
+        if (file.type.startsWith("image/")) {
+          fileToUpload = await compressImage(file)
+        }
+
+        const path = `chat/${user.id}-${Date.now()}`
+        await supabase.storage.from("uploads").upload(path, fileToUpload)
+
+        const { data } = supabase.storage.from("uploads").getPublicUrl(path)
+
+        image_url = data.publicUrl
+        image_type = file.type.startsWith("image") ? "image" : "pdf"
+      }
+
+      const { data, error } = await directMessagesService.sendMessage({
+        sender_id: user.id,
+        recipient_id: otherUserId,
+        content: content.trim(),
+        image_url,
+        image_type,
+      })
+
+      if (error) throw error
+
+      // ✅ Replace temp message with real one
+      removeMessage(tempId)
+      if (data) addMessage(data)
+
       setContent("")
       setFile(null)
+    } catch (err: any) {
+      removeMessage(tempId)
+
+      toast({
+        title: "Send failed",
+        description: err.message,
+        variant: "destructive",
+      })
     }
 
     setSending(false)
   }
 
+  const handleDelete = async (id: string) => {
+    await directMessagesService.deleteMessage(id)
+    removeMessage(id)
+  }
+
+  const handleEdit = async (id: string) => {
+    const { data } = await directMessagesService.updateMessage({
+      id,
+      content: editingText,
+    })
+
+    if (data) {
+      updateMessage(data)
+      setEditingId(null)
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <Loader2 className="animate-spin" />
       </div>
     )
   }
 
   return (
     <div className="flex h-full flex-col">
-      
+
       {/* MESSAGES */}
-      <ScrollArea ref={scrollAreaRef} className="flex-1 px-3 py-4 bg-[#efeae2]">
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="py-8 text-center text-muted-foreground">
-              <p>No messages yet. Say hi! 👋</p>
-            </div>
-          ) : (
-            conversationItems.map((item) => {
-              if (item.type === "separator") {
-                return (
-                  <div key={item.id} className="my-4 flex justify-center">
-                    <span className="rounded-full bg-secondary px-3 py-1 text-xs text-muted-foreground shadow-sm">
-                      {item.dateLabel}
-                    </span>
-                  </div>
-                )
-              }
-
-              const msg = item
-              const isOwnMessage = msg.sender_id === user?.id
-
+      <ScrollArea className="flex-1 bg-[#efeae2] px-2">
+        <div className="space-y-3">
+          {conversationItems.map((item) => {
+            if (item.type === "separator") {
               return (
-                <div
-                  key={msg.id}
-                  className={cn(
-                    "flex gap-2",
-                    isOwnMessage ? "flex-row-reverse" : "flex-row"
+                <div key={item.id} className="text-center text-xs">
+                  {item.dateLabel}
+                </div>
+              )
+            }
+
+            const msg = item
+            const isOwn = msg.sender_id === user?.id
+
+            return (
+              <div key={msg.id} className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
+                <div className="relative max-w-[80%]">
+
+                  {isOwn && (
+                    <div className="absolute top-1 right-1">
+                      <button
+                        onClick={() =>
+                          setOpenMenuId(openMenuId === msg.id ? null : msg.id)
+                        }
+                        className="p-1 rounded hover:bg-black/10"
+                      >
+                        <MoreVertical size={14} />
+                      </button>
+
+                      {openMenuId === msg.id && (
+                        <div className="absolute right-0 mt-1 w-24 bg-white shadow border rounded text-xs">
+                          <button
+                            onClick={() => {
+                              setEditingId(msg.id)
+                              setEditingText(msg.content || "")
+                              setOpenMenuId(null)
+                            }}
+                            className="block w-full px-3 py-2 hover:bg-muted text-left"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleDelete(msg.id)}
+                            className="block w-full px-3 py-2 hover:bg-muted text-red-500 text-left"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   )}
-                >
-                  <Avatar className="h-7 w-7 mt-auto">
-                    <AvatarImage
-                      src={
-                        isOwnMessage
-                          ? user?.user_metadata?.avatar
-                          : otherUserAvatar
-                      }
-                    />
-                    <AvatarFallback>
-                      {isOwnMessage
-                        ? user?.user_metadata?.full_name?.[0] || "Y"
-                        : formattedName[0]}
-                    </AvatarFallback>
-                  </Avatar>
 
                   <div
                     className={cn(
-                      "max-w-[70%] rounded-lg px-4 py-2",
-                      isOwnMessage
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                      "rounded-lg px-3 py-2",
+                      isOwn ? "bg-primary text-white" : "bg-white"
                     )}
                   >
-                    {/* TEXT */}
-                    {msg.content && (
-                      <p className="whitespace-pre-wrap break-words text-sm">
-                        {msg.content}
-                      </p>
-                    )}
+                    {msg.content && <p className="text-sm">{msg.content}</p>}
 
-                    {/* IMAGE */}
                     {msg.image_url && msg.image_type === "image" && (
-                      <img
-                        src={msg.image_url}
-                        alt="attachment"
-                        className="mt-2 max-h-60 rounded-md"
-                      />
+                      <img src={msg.image_url} className="mt-2 rounded max-h-60" />
                     )}
 
-                    {/* PDF */}
-                    {msg.image_url && msg.image_type === "pdf" && (
-                      <a
-                        href={msg.image_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-2 block text-xs underline"
-                      >
+                    {msg.image_type === "pdf" && (
+                      <a href={msg.image_url} className="text-xs underline">
                         📄 View PDF
                       </a>
                     )}
 
-                    {/* Delivered */}
-                    {msg.read && isOwnMessage && (
-                      <p className="text-[9px] text-right opacity-70">
-                        Delivered
-                      </p>
-                    )}
-
-                    <p
-                      className={cn(
-                        "text-[9px] mt-[-1px]",
-                        isOwnMessage
-                          ? "text-primary-foreground/70"
-                          : "text-muted-foreground"
-                      )}
-                    >
-                      {new Date(msg.created_at).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
+                    <p className="text-[10px] opacity-70 text-right mt-1">
+                      {new Date(msg.created_at).toLocaleTimeString()}
                     </p>
                   </div>
                 </div>
-              )
-            })
-          )}
+              </div>
+            )
+          })}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
 
       {/* INPUT */}
-      <div className="border-t p-4">
-        <div className="flex items-center gap-2">
+      <div className="border-t p-3">
+        <div className="flex items-end gap-2">
+          <EmojiPickerButton onSelect={(e) => setContent((p) => p + e)} />
 
-          <EmojiPickerButton
-            onSelect={(emoji) => setContent((prev) => prev + emoji)}
-          />
-
-          {/* FILE INPUT */}
-          <input
-            type="file"
-            accept="image/*,application/pdf"
-            ref={fileInputRef}
-            className="hidden"
-            onChange={(e) => {
-              const selectedFile = e.target.files?.[0]
-              if (!selectedFile) return
-              setFile(selectedFile)
-
-              toast({
-                title: "File attached",
-                description: selectedFile.name,
-              })
-            }}
-          />
-
-          {/* ATTACH BUTTON */}
-          <Button
-            type="button"
-            size="icon"
-            variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
-          >
+          <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
             <Paperclip className="h-4 w-4" />
           </Button>
 
           <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) {
-                e.preventDefault()
-                handleSend()
-              }
-            }}
-            placeholder="Type a message..."
-            className="min-h-[60px] resize-none"
-            disabled={sending}
+            className="flex-1 min-h-[50px]"
           />
 
-          <Button
-            onClick={handleSend}
-            disabled={(!content.trim() && !file) || sending}
-            size="icon"
-          >
-            {sending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Send className="h-4 w-4" />
-            )}
+          <Button onClick={handleSend} size="icon">
+            {sending ? <Loader2 className="animate-spin" /> : <Send />}
           </Button>
         </div>
 
-        {/* FILE PREVIEW */}
+        {/* ✅ FIXED FILE PREVIEW (WHITE) */}
         {file && (
-          <div className="mt-2 flex items-center justify-between rounded-md bg-muted px-3 py-2 text-xs">
+          <div className="mt-2 flex justify-between text-xs bg-white border px-2 py-1 rounded shadow-sm">
             <span className="truncate">{file.name}</span>
-            <button
-              onClick={() => setFile(null)}
-              className="text-red-500"
-            >
+            <button onClick={() => setFile(null)} className="text-red-500">
               Remove
             </button>
           </div>
         )}
+
+        <input
+          type="file"
+          hidden
+          ref={fileInputRef}
+          onChange={(e) => {
+            const f = e.target.files?.[0]
+            if (!f) return
+            setFile(f)
+
+            toast({
+              title: "File attached",
+              description: f.name,
+            })
+          }}
+        />
       </div>
     </div>
   )
