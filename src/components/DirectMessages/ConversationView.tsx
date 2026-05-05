@@ -92,75 +92,89 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   }, [messages.length])
 
   // ✅ SEND (Optimistic UI)
-  const handleSend = async () => {
-    if (!user || (!content.trim() && !file) || sending) return
+ const handleSend = async () => {
+  if (!user || (!content.trim() && !file) || sending) return
 
-    setSending(true)
+  setSending(true)
 
-    const tempId = `temp-${Date.now()}`
+  const tempId = `temp-${Date.now()}`
+  const preview = file ? URL.createObjectURL(file) : null
 
-    // 👉 Optimistic message (shows instantly)
-    const optimisticMessage: Message = {
-      id: tempId,
+  const optimisticMessage: Message = {
+    id: tempId,
+    sender_id: user.id,
+    recipient_id: otherUserId,
+    content: content.trim(),
+    created_at: new Date().toISOString(),
+    read: false,
+    image_url: null,
+    image_type: null,
+    status: "sending",
+    localPreview: preview,
+  }
+
+  // ✅ SHOW INSTANTLY
+  addMessage(optimisticMessage)
+
+  let image_url: string | undefined
+  let image_type: "image" | "pdf" | null = null
+
+  try {
+    if (file) {
+      let fileToUpload = file
+
+      if (file.type.startsWith("image/")) {
+        fileToUpload = await compressImage(file)
+      }
+
+      const path = `chat/${user.id}-${Date.now()}`
+      await supabase.storage.from("uploads").upload(path, fileToUpload)
+
+      const { data } = supabase.storage.from("uploads").getPublicUrl(path)
+
+      image_url = data.publicUrl
+      image_type = file.type.startsWith("image") ? "image" : "pdf"
+    }
+
+    const { data, error } = await directMessagesService.sendMessage({
       sender_id: user.id,
       recipient_id: otherUserId,
       content: content.trim(),
-      created_at: new Date().toISOString(),
-      read: false,
-      image_url: null,
-      image_type: null,
-    }
+      image_url,
+      image_type,
+    })
 
-    addMessage(optimisticMessage)
+    if (error) throw error
 
-    let image_url: string | undefined
-    let image_type: "image" | "pdf" | null = null
+    // ✅ REPLACE TEMP MESSAGE
+    removeMessage(tempId)
 
-    try {
-      if (file) {
-        let fileToUpload = file
-
-        if (file.type.startsWith("image/")) {
-          fileToUpload = await compressImage(file)
-        }
-
-        const path = `chat/${user.id}-${Date.now()}`
-        await supabase.storage.from("uploads").upload(path, fileToUpload)
-
-        const { data } = supabase.storage.from("uploads").getPublicUrl(path)
-
-        image_url = data.publicUrl
-        image_type = file.type.startsWith("image") ? "image" : "pdf"
-      }
-
-      const { data, error } = await directMessagesService.sendMessage({
-        sender_id: user.id,
-        recipient_id: otherUserId,
-        content: content.trim(),
-        image_url,
-        image_type,
-      })
-
-      if (error) throw error
-
-      // ✅ Replace temp message with real one
-      removeMessage(tempId)
-      if (data) addMessage(data)
-
-      setContent("")
-      setFile(null)
-    } catch (err: any) {
-      removeMessage(tempId)
-
-      toast({
-        title: "Send failed",
-        description: err.message,
-        variant: "destructive",
+    if (data) {
+      addMessage({
+        ...data,
+        status: "sent",
       })
     }
 
-    setSending(false)
+    setContent("")
+    setFile(null)
+
+  } catch (err: any) {
+    // ❗ DO NOT REMOVE — MARK FAILED INSTEAD
+    updateMessage({
+      ...optimisticMessage,
+      status: "failed",
+    })
+
+    toast({
+      title: "Send failed",
+      description: err.message,
+      variant: "destructive",
+    })
   }
+
+  setSending(false)
+}
 
   const handleDelete = async (id: string) => {
     await directMessagesService.deleteMessage(id)
@@ -251,8 +265,11 @@ const ConversationView: React.FC<ConversationViewProps> = ({
                   >
                     {msg.content && <p className="text-sm">{msg.content}</p>}
 
-                    {msg.image_url && msg.image_type === "image" && (
-                      <img src={msg.image_url} className="mt-2 rounded max-h-60" />
+                    {(msg.localPreview || msg.image_url) && (
+                      <img
+                        src={msg.localPreview || msg.image_url!}
+                        className="mt-2 rounded max-h-60"
+                      />
                     )}
 
                     {msg.image_type === "pdf" && (
