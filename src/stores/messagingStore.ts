@@ -95,28 +95,32 @@ export const useMessagingStore = create<MessagingState>((set, get) => ({
 	// -------- UPDATE --------
 	updateMessage: (updatedMessage) => {
 		set((state) => {
-			const updated = { ...state.messagesByUserId }
+			const userId =
+				updatedMessage.sender_id === get().recipientId
+					? updatedMessage.sender_id
+					: updatedMessage.recipient_id
 
-			Object.keys(updated).forEach((userId) => {
-				updated[userId] = updated[userId].map((msg) =>
-					msg.id === updatedMessage.id ? updatedMessage : msg
-				)
-			})
-
-			return { messagesByUserId: updated }
+			return {
+				messagesByUserId: {
+					...state.messagesByUserId,
+					[userId]: state.messagesByUserId[userId].map((msg) =>
+						msg.id === updatedMessage.id ? updatedMessage : msg
+					),
+				},
+			}
 		})
 	},
 
 	// -------- DELETE --------
 	removeMessage: (messageId) => {
 		set((state) => {
-			const updated = { ...state.messagesByUserId }
+			const updated: Record<string, Message[]> = {}
 
-			Object.keys(updated).forEach((userId) => {
-				updated[userId] = updated[userId].filter(
+			for (const key in state.messagesByUserId) {
+				updated[key] = state.messagesByUserId[key].filter(
 					(msg) => msg.id !== messageId
 				)
-			})
+			}
 
 			return { messagesByUserId: updated }
 		})
