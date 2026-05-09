@@ -1,128 +1,199 @@
 import { create } from "zustand"
-import { directMessagesService, Message } from "@/services/directMessagesService"
+import {
+  directMessagesService,
+  Message,
+} from "@/services/directMessagesService"
 
 interface MessagingState {
-	recipientId: string | null
-	recipientName: string | null
-	recipientAvatar: string | null
+  recipientId: string | null
+  recipientName: string | null
+  recipientAvatar: string | null
 
-	messagesByUserId: Record<string, Message[]>
-	loadingStatus: Record<string, boolean>
+  messagesByUserId: Record<string, Message[]>
+  loadingStatus: Record<string, boolean>
 
-	openConversation: (userId: string, name?: string, avatar?: string) => void
-	clearRecipient: () => void
-	fetchMessages: (currentUserId: string, otherUserId: string) => Promise<void>
-	addMessage: (message: Message) => void
+  openConversation: (
+    userId: string,
+    name?: string,
+    avatar?: string
+  ) => void
 
-	// ✅ NEW
-	updateMessage: (message: Message) => void
-	removeMessage: (messageId: string) => void
+  clearRecipient: () => void
+
+  fetchMessages: (
+    currentUserId: string,
+    otherUserId: string
+  ) => Promise<void>
+
+  addMessage: (message: Message) => void
+
+  updateMessage: (message: Message) => void
+
+  removeMessage: (messageId: string) => void
 }
 
-export const useMessagingStore = create<MessagingState>((set, get) => ({
-	recipientId: null,
-	recipientName: null,
-	recipientAvatar: null,
+export const useMessagingStore =
+  create<MessagingState>((set) => ({
+    
+    // STATE
+    recipientId: null,
+    recipientName: null,
+    recipientAvatar: null,
 
-	messagesByUserId: {},
-	loadingStatus: {},
+    messagesByUserId: {},
 
-	// -------- UI --------
-	openConversation: (userId, name, avatar) =>
-		set({
-			recipientId: userId,
-			recipientName: name,
-			recipientAvatar: avatar,
-		}),
+    loadingStatus: {},
 
-	clearRecipient: () =>
-		set({
-			recipientId: null,
-			recipientName: null,
-			recipientAvatar: null,
-		}),
+    // OPEN CHAT
+    openConversation: (
+      userId,
+      name,
+      avatar
+    ) =>
+      set({
+        recipientId: userId,
+        recipientName: name,
+        recipientAvatar: avatar,
+      }),
 
-	// -------- FETCH --------
-	fetchMessages: async (currentUserId, otherUserId) => {
-		if (get().loadingStatus[otherUserId]) return
+    // CLEAR CHAT
+    clearRecipient: () =>
+      set({
+        recipientId: null,
+        recipientName: null,
+        recipientAvatar: null,
+      }),
 
-		set((state) => ({
-			loadingStatus: { ...state.loadingStatus, [otherUserId]: true },
-		}))
+    // FETCH MESSAGES
+    fetchMessages: async (
+      currentUserId,
+      otherUserId
+    ) => {
+      set((state) => ({
+        loadingStatus: {
+          ...state.loadingStatus,
+          [otherUserId]: true,
+        },
+      }))
 
-		const { data, error } = await directMessagesService.getMessages(
-			currentUserId,
-			otherUserId
-		)
+      const { data, error } =
+        await directMessagesService.getMessages(
+          currentUserId,
+          otherUserId
+        )
 
-		set((state) => ({
-			loadingStatus: { ...state.loadingStatus, [otherUserId]: false },
-		}))
+      set((state) => ({
+        loadingStatus: {
+          ...state.loadingStatus,
+          [otherUserId]: false,
+        },
+      }))
 
-		if (error) {
-			console.error(`Failed to fetch messages for ${otherUserId}:`, error)
-		} else {
-			set((state) => ({
-				messagesByUserId: {
-					...state.messagesByUserId,
-					[otherUserId]: data || [],
-				},
-			}))
-		}
-	},
+      if (error) {
+        console.error(
+          "Fetch messages error:",
+          error
+        )
 
-	// -------- ADD --------
-	addMessage: (message) => {
-		const { recipientId } = get()
-		if (!recipientId) return
+        return
+      }
 
-		const relevantUserId =
-			message.sender_id === recipientId
-				? message.sender_id
-				: message.recipient_id
+      set((state) => ({
+        messagesByUserId: {
+          ...state.messagesByUserId,
+          [otherUserId]: data || [],
+        },
+      }))
+    },
 
-		set((state) => ({
-			messagesByUserId: {
-				...state.messagesByUserId,
-				[relevantUserId]: [
-					...(state.messagesByUserId[relevantUserId] || []),
-					message,
-				],
-			},
-		}))
-	},
+    // ADD MESSAGE
+    addMessage: (message) => {
+      set((state) => {
+        
+        // DETERMINE CHAT KEY
+        const conversationId =
+          message.sender_id ===
+          state.recipientId
+            ? message.sender_id
+            : message.recipient_id
 
-	// -------- UPDATE --------
-	updateMessage: (updatedMessage) => {
-		set((state) => {
-			const userId =
-				updatedMessage.sender_id === get().recipientId
-					? updatedMessage.sender_id
-					: updatedMessage.recipient_id
+        // EXISTING MESSAGES
+        const existing =
+          state.messagesByUserId[
+            conversationId
+          ] || []
 
-			return {
-				messagesByUserId: {
-					...state.messagesByUserId,
-					[userId]: state.messagesByUserId[userId].map((msg) =>
-						msg.id === updatedMessage.id ? updatedMessage : msg
-					),
-				},
-			}
-		})
-	},
+        // PREVENT DUPLICATES
+        const alreadyExists =
+          existing.some(
+            (msg) => msg.id === message.id
+          )
 
-	// -------- DELETE --------
-	removeMessage: (messageId) => {
-		set((state) => {
-			const updated: Record<string, Message[]> = {}
+        if (alreadyExists) {
+          return state
+        }
 
-			for (const key in state.messagesByUserId) {
-				updated[key] = state.messagesByUserId[key].filter(
-					(msg) => msg.id !== messageId
-				)
-			}
+        return {
+          messagesByUserId: {
+            ...state.messagesByUserId,
 
-			return { messagesByUserId: updated }
-		})
-	},
-}))
+            [conversationId]: [
+              ...existing,
+              message,
+            ],
+          },
+        }
+      })
+    },
+
+    // UPDATE MESSAGE
+    updateMessage: (
+      updatedMessage
+    ) => {
+      set((state) => {
+        const updated: Record<
+          string,
+          Message[]
+        > = {}
+
+        for (const key in state.messagesByUserId) {
+          updated[key] =
+            state.messagesByUserId[key].map(
+              (msg) =>
+                msg.id === updatedMessage.id
+                  ? {
+                      ...msg,
+                      ...updatedMessage,
+                    }
+                  : msg
+            )
+        }
+
+        return {
+          messagesByUserId: updated,
+        }
+      })
+    },
+
+    // REMOVE MESSAGE
+    removeMessage: (messageId) => {
+      set((state) => {
+        const updated: Record<
+          string,
+          Message[]
+        > = {}
+
+        for (const key in state.messagesByUserId) {
+          updated[key] =
+            state.messagesByUserId[key].filter(
+              (msg) =>
+                msg.id !== messageId
+            )
+        }
+
+        return {
+          messagesByUserId: updated,
+        }
+      })
+    },
+  }))

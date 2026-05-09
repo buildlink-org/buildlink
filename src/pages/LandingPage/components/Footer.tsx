@@ -58,7 +58,7 @@ const Footer = () => {
               <X size={20} />
             </a>
             <a
-              href="#"
+              href="https://www.instagram.com/buildlink.ke?igsh=MTFhOWMzcTd1Z3Jtaw=="
               className="text-primary-foreground/60 hover:text-secondary transition-colors">
               <Instagram size={20} />
             </a>

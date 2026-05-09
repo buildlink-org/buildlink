@@ -5,62 +5,25 @@ import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Send, Loader2, Paperclip, MoreVertical } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useMessagingStore } from "@/stores/messagingStore"
-import { formatTimestamp } from "@/lib/utils"
 import EmojiPickerButton from "../EmojiPicker"
 import { supabase } from "@/integrations/supabase/client"
 import { compressImage } from "@/lib/utils"
 
 interface ConversationViewProps {
   otherUserId: string
-  otherUserName?: string
-  otherUserAvatar?: string
-}
-
-type ConversationItem =
-  | ({ type: "message" } & Message)
-  | { type: "separator"; id: string; dateLabel: string }
-
-const addDateSeparators = (messages: Message[]): ConversationItem[] => {
-  const items: ConversationItem[] = []
-  let lastDate: string | null = null
-
-  const sorted = [...messages].sort(
-    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-  )
-
-  sorted.forEach((msg, i) => {
-    const dateKey = new Date(msg.created_at).toISOString().split("T")[0]
-
-    if (dateKey !== lastDate) {
-      items.push({
-        type: "separator",
-        id: `sep-${dateKey}-${i}`,
-        dateLabel: formatTimestamp(msg.created_at, false),
-      })
-      lastDate = dateKey
-    }
-
-    items.push({ ...msg, type: "message" })
-  })
-
-  return items
 }
 
 const ConversationView: React.FC<ConversationViewProps> = ({
   otherUserId,
-  otherUserAvatar,
 }) => {
   const { user } = useAuth()
   const { toast } = useToast()
 
   const messages =
     useMessagingStore((s) => s.messagesByUserId[otherUserId]) ?? []
-  const loading =
-    useMessagingStore((s) => s.loadingStatus[otherUserId] || false)
   const fetchMessages = useMessagingStore((s) => s.fetchMessages)
   const addMessage = useMessagingStore((s) => s.addMessage)
   const removeMessage = useMessagingStore((s) => s.removeMessage)
@@ -77,13 +40,8 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const conversationItems = React.useMemo(
-    () => addDateSeparators(messages),
-    [messages]
-  )
-
   useEffect(() => {
-    if (!user || !otherUserId) return
+    if (!user) return
     fetchMessages(user.id, otherUserId)
   }, [user, otherUserId])
 
@@ -92,89 +50,82 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   }, [messages.length])
 
   // ✅ SEND (Optimistic UI)
- const handleSend = async () => {
-  if (!user || (!content.trim() && !file) || sending) return
+  const handleSend = async () => {
+    if (!user || (!content.trim() && !file) || sending) return
 
-  setSending(true)
+    setSending(true)
 
-  const tempId = `temp-${Date.now()}`
-  const preview = file ? URL.createObjectURL(file) : null
+    const tempId = `temp-${Date.now()}`
+    const preview = file ? URL.createObjectURL(file) : null
 
-  const optimisticMessage: Message = {
-    id: tempId,
-    sender_id: user.id,
-    recipient_id: otherUserId,
-    content: content.trim(),
-    created_at: new Date().toISOString(),
-    read: false,
-    image_url: null,
-    image_type: null,
-    status: "sending",
-    localPreview: preview,
-  }
-
-  // ✅ SHOW INSTANTLY
-  addMessage(optimisticMessage)
-
-  let image_url: string | undefined
-  let image_type: "image" | "pdf" | null = null
-
-  try {
-    if (file) {
-      let fileToUpload = file
-
-      if (file.type.startsWith("image/")) {
-        fileToUpload = await compressImage(file)
-      }
-
-      const path = `chat/${user.id}-${Date.now()}`
-      await supabase.storage.from("uploads").upload(path, fileToUpload)
-
-      const { data } = supabase.storage.from("uploads").getPublicUrl(path)
-
-      image_url = data.publicUrl
-      image_type = file.type.startsWith("image") ? "image" : "pdf"
-    }
-
-    const { data, error } = await directMessagesService.sendMessage({
+    const optimisticMessage: Message & any = {
+      id: tempId,
       sender_id: user.id,
       recipient_id: otherUserId,
       content: content.trim(),
-      image_url,
-      image_type,
-    })
+      created_at: new Date().toISOString(),
+      read: false,
+      image_url: null,
+      image_type: null,
+      status: "sending",
+      localPreview: preview,
+    }
 
-    if (error) throw error
+    addMessage(optimisticMessage)
 
-    // ✅ REPLACE TEMP MESSAGE
-    removeMessage(tempId)
+    let image_url: string | undefined
+    let image_type: "image" | "pdf" | null = null
 
-    if (data) {
-      addMessage({
-        ...data,
-        status: "sent",
+    try {
+      if (file) {
+        let fileToUpload = file
+
+        if (file.type.startsWith("image/")) {
+          fileToUpload = await compressImage(file)
+        }
+
+        const path = `chat/${user.id}-${Date.now()}`
+        await supabase.storage.from("uploads").upload(path, fileToUpload)
+
+        const { data } = supabase.storage.from("uploads").getPublicUrl(path)
+
+        image_url = data.publicUrl
+        image_type = file.type.startsWith("image") ? "image" : "pdf"
+      }
+
+      const { data, error } = await directMessagesService.sendMessage({
+        sender_id: user.id,
+        recipient_id: otherUserId,
+        content: content.trim(),
+        image_url,
+        image_type,
+      })
+
+      if (error) throw error
+
+      removeMessage(tempId)
+
+      if (data) {
+        addMessage(data)
+      }
+
+      setContent("")
+      setFile(null)
+    } catch (err: any) {
+      updateMessage({
+        ...optimisticMessage,
+        status: "failed",
+      })
+
+      toast({
+        title: "Send failed",
+        description: err.message,
+        variant: "destructive",
       })
     }
 
-    setContent("")
-    setFile(null)
-
-  } catch (err: any) {
-    // ❗ DO NOT REMOVE — MARK FAILED INSTEAD
-    updateMessage({
-      ...optimisticMessage,
-      status: "failed",
-    })
-
-    toast({
-      title: "Send failed",
-      description: err.message,
-      variant: "destructive",
-    })
+    setSending(false)
   }
-
-  setSending(false)
-}
 
   const handleDelete = async (id: string) => {
     await directMessagesService.deleteMessage(id)
@@ -193,36 +144,21 @@ const ConversationView: React.FC<ConversationViewProps> = ({
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="animate-spin" />
-      </div>
-    )
-  }
-
   return (
     <div className="flex h-full flex-col">
 
       {/* MESSAGES */}
-      <ScrollArea className="flex-1 bg-muted/20 px-2">
+      <ScrollArea className="flex-1 bg-[#efeae2] px-2 sm:px-4 py-2">
         <div className="space-y-3">
-          {conversationItems.map((item) => {
-            if (item.type === "separator") {
-              return (
-                <div key={item.id} className="text-center text-xs">
-                  {item.dateLabel}
-                </div>
-              )
-            }
-
-            const msg = item
+          {messages.map((msg: any) => {
             const isOwn = msg.sender_id === user?.id
 
             return (
               <div key={msg.id} className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
-                <div className="relative max-w-[80%]">
 
+                <div className="relative max-w-[85%] sm:max-w-[70%]">
+
+                  {/* 3 DOT MENU */}
                   {isOwn && (
                     <div className="absolute top-1 right-1">
                       <button
@@ -235,7 +171,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
                       </button>
 
                       {openMenuId === msg.id && (
-                        <div className="absolute right-0 mt-1 w-24 bg-popover shadow border rounded text-xs">
+                        <div className="absolute right-0 mt-1 w-24 bg-white shadow border rounded text-xs z-50">
                           <button
                             onClick={() => {
                               setEditingId(msg.id)
@@ -259,30 +195,106 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 
                   <div
                     className={cn(
-                      "rounded-lg px-3 py-2",
-                      isOwn
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "bg-card text-card-foreground border shadow-sm"
+                      "rounded-lg px-3 py-2 trasaction",
+                      isOwn ? "bg-primary text-white" : "bg-white",
+                      editingId === msg.id && "ring-1 ring-primary/40"
                     )}
                   >
-                    {msg.content && <p className="text-sm">{msg.content}</p>}
+                    {/* EDIT MODE */}
+                    {editingId === msg.id ? (
+                      <div className="flex flex-col gap-1">
 
-                    {(msg.localPreview || msg.image_url) && (
-                      <img
-                        src={msg.localPreview || msg.image_url!}
-                        className="mt-2 rounded max-h-60"
+                        {/* INLINE EDIT TEXTAREA */}
+                        <Textarea
+                        value={editingText}
+                        onChange={(e) => setEditingText(e.target.value)}
+                        autoFocus
+                        className={cn(
+                          "w-full resize-none bg-transparent p-0 text-sm",
+                          "border-none focus-visible:ring-0 focus-visible:ring-offset-0 outline-none",
+                          isOwn ? "text-white placeholder:text-white/60" : "text-black"
+                        )}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault()
+                            handleEdit(msg.id)
+                          }
+
+                          if (e.key === "Escape") {
+                            setEditingId(null)
+                          }
+                        }}
                       />
-                    )}
 
-                    {msg.image_type === "pdf" && (
-                      <a href={msg.image_url} className="text-xs underline">
-                        📄 View PDF
-                      </a>
-                    )}
+                        {/* INLINE ACTIONS */}
+                        <div className="flex justify-end gap-2 text-[11px] mt-1">
+                          <button
+                            onClick={() => handleEdit(msg.id)}
+                            className="text-green-500 hover:underline"
+                          >
+                            ✔
+                          </button>
 
-                    <p className="text-[10px] opacity-70 text-right mt-1">
-                      {new Date(msg.created_at).toLocaleTimeString()}
-                    </p>
+                          <button
+                            onClick={() => setEditingId(null)}
+                            className="text-red-400 hover:underline"
+                          >
+                            ✖ 
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        {msg.content && (
+                          <p className="text-sm whitespace-pre-wrap">
+                            {msg.content}
+                          </p>
+                        )}
+
+                        {/* PREVIEW BEFORE UPLOAD */}
+                        {msg.localPreview && (
+                          <img
+                            src={msg.localPreview}
+                            className="mt-2 rounded-md max-h-60 opacity-80"
+                          />
+                        )}
+
+                        {/* REAL IMAGE */}
+                        {msg.image_url && msg.image_type === "image" && (
+                          <img
+                            src={msg.image_url}
+                            className="mt-2 rounded-md max-h-60"
+                          />
+                        )}
+
+                        {/* PDF */}
+                        {msg.image_type === "pdf" && (
+                          <a href={msg.image_url} className="text-xs underline">
+                            📄 View PDF
+                          </a>
+                        )}
+
+                        {/* STATUS */}
+                        {msg.status === "sending" && (
+                          <p className="text-[10px] opacity-70 mt-1">
+                            Sending...
+                          </p>
+                        )}
+
+                        {msg.status === "failed" && (
+                          <p className="text-[10px] text-red-500 mt-1">
+                            Failed
+                          </p>
+                        )}
+
+                        <p className="text-[10px] opacity-70 text-right mt-1">
+                          {new Date(msg.created_at).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </p>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>
@@ -295,24 +307,40 @@ const ConversationView: React.FC<ConversationViewProps> = ({
       {/* INPUT */}
       <div className="border-t p-3">
         <div className="flex items-end gap-2">
+
           <EmojiPickerButton onSelect={(e) => setContent((p) => p + e)} />
 
-          <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={() => fileInputRef.current?.click()}
+          >
             <Paperclip className="h-4 w-4" />
           </Button>
 
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="flex-1 min-h-[50px]"
-          />
+         <Textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          placeholder="Type a message..."
+          className="flex-1 min-h-[50px] resize-none"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault()
+              handleSend()
+            }
+          }}
+        />
 
           <Button onClick={handleSend} size="icon">
-            {sending ? <Loader2 className="animate-spin" /> : <Send />}
+            {sending ? (
+              <Loader2 className="animate-spin" />
+            ) : (
+              <Send />
+            )}
           </Button>
         </div>
 
-        {/* ✅ FIXED FILE PREVIEW (WHITE) */}
+        {/* FILE PREVIEW */}
         {file && (
           <div className="mt-2 flex justify-between text-xs bg-muted border px-2 py-1 rounded shadow-sm">
             <span className="truncate">{file.name}</span>

@@ -79,24 +79,28 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
               <a
                 title="Email"
                 href="mailto:info@buildlink.co.ke"
+                target="_blank"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <Mail size={20} />
               </a>
               <a
                 title="Linkedin"
-                href="#"
+                href="https://www.linkedin.com/company/buildlink-ke"
+                target="_blank"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <Linkedin size={20} />
               </a>
               <a
                 title="Twitter"
-                href="#"
+                href="https://twitter.com/buildlink_ke"
+                target="_blank"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <X size={20} />
               </a>
               <a
                 title="Instagram"
-                href="#"
+                href="https://www.instagram.com/buildlink.ke?igsh=MTFhOWMzcTd1Z3Jtaw=="
+                target="_blank"
                 className="text-foreground/60 hover:text-primary transition-colors">
                 <Instagram size={20} />
               </a>

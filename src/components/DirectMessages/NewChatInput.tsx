@@ -21,16 +21,21 @@ interface UserListItem {
   avatar?: string
 }
 
-export default function RecipientInput({ onStartChat }: RecipientInputProps) {
+export default function RecipientInput({
+  onStartChat,
+}: RecipientInputProps) {
   const { user } = useAuth()
   const { toast } = useToast()
+
   const currentUserId = user?.id
 
   const addMessageToStore = useMessagingStore((s) => s.addMessage)
 
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<UserListItem[]>([])
-  const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
+  const [selectedUser, setSelectedUser] =
+    useState<UserListItem | null>(null)
+
   const [message, setMessage] = useState("")
   const [file, setFile] = useState<File | null>(null)
 
@@ -41,24 +46,28 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
   const wrapperRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Close dropdown
+  // CLOSE DROPDOWN
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!wrapperRef.current?.contains(e.target as Node)) {
         setOpen(false)
       }
     }
+
     document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
+
+    return () =>
+      document.removeEventListener("mousedown", handleClickOutside)
   }, [])
 
-  // Debounce search
+  // SEARCH USERS
   useEffect(() => {
     const timeout = setTimeout(() => {
       if (!query.trim()) {
         setResults([])
         return
       }
+
       fetchUsers(query)
     }, 300)
 
@@ -85,6 +94,7 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
           avatar: u.avatar,
         }))
       )
+
       setOpen(true)
     }
 
@@ -110,24 +120,29 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
       if (file) {
         let fileToUpload = file
 
+        // COMPRESS IMAGES
         if (file.type.startsWith("image/")) {
           try {
             fileToUpload = await compressImage(file)
           } catch {}
         }
 
+        // SIZE LIMIT
         if (fileToUpload.size > 10 * 1024 * 1024) {
           toast({
             title: "File too large",
             description: "Max size is 10MB",
             variant: "destructive",
           })
+
           setCreating(false)
           return
         }
 
         const fileExt = file.name.split(".").pop()
+
         const fileName = `${currentUserId}-${Date.now()}.${fileExt}`
+
         const filePath = `chat/${fileName}`
 
         const { error } = await supabase.storage
@@ -143,29 +158,41 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
           .getPublicUrl(filePath)
 
         image_url = data.publicUrl
-        image_type = file.type.startsWith("image") ? "image" : "pdf"
+
+        image_type = file.type.startsWith("image")
+          ? "image"
+          : "pdf"
       }
 
+      // SEND
       if (message.trim() || image_url) {
-        const { data, error } = await directMessagesService.sendMessage({
-          sender_id: currentUserId,
-          recipient_id: selectedUser.id,
-          content: message.trim(),
-          image_url,
-          image_type,
-        })
+        const { data, error } =
+          await directMessagesService.sendMessage({
+            sender_id: currentUserId,
+            recipient_id: selectedUser.id,
+            content: message.trim(),
+            image_url,
+            image_type,
+          })
 
         if (error) throw error
-        if (data) addMessageToStore(data)
+
+        if (data) {
+          addMessageToStore(data)
+        }
       }
 
       await onStartChat(selectedUser)
 
-      // Reset
+      // RESET
       setMessage("")
       setQuery("")
       setSelectedUser(null)
       setFile(null)
+
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ""
+      }
     } catch (err: any) {
       toast({
         title: "Send failed",
@@ -177,16 +204,35 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
     setCreating(false)
   }
 
+  // CANCEL DRAFT
+  const handleCancel = () => {
+    setMessage("")
+    setFile(null)
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ""
+    }
+
+    toast({
+      title: "Cleared",
+      description: "Message draft removed",
+    })
+  }
+
   return (
     <div
       ref={wrapperRef}
       className="w-full max-w-md space-y-4 rounded-xl border bg-card p-4 shadow-sm"
     >
-      <h2 className="text-center text-lg font-semibold">New Message</h2>
+      <h2 className="text-center text-lg font-semibold">
+        New Message
+      </h2>
 
       {/* RECIPIENT */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground">Recipient</label>
+        <label className="text-xs text-muted-foreground">
+          Recipient
+        </label>
 
         <div className="relative">
           <Input
@@ -221,13 +267,18 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
                     className="flex w-full items-center gap-3 px-3 py-2 hover:bg-muted"
                   >
                     <Avatar className="h-7 w-7">
-                      <AvatarImage src={user.avatar ?? ""} />
+                      <AvatarImage
+                        src={user.avatar ?? ""}
+                      />
+
                       <AvatarFallback>
                         {user.name?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
 
-                    <span className="text-sm">{user.name}</span>
+                    <span className="text-sm">
+                      {user.name}
+                    </span>
                   </button>
                 ))}
             </div>
@@ -244,31 +295,63 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
       />
 
       {/* ACTION BAR */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between gap-3 rounded-xl border bg-muted/30 px-3 py-2">
+
+        {/* LEFT */}
+        <div className="flex min-w-0 flex-1 items-center gap-2">
+
           <EmojiPickerButton
-            onSelect={(emoji) => setMessage((prev) => prev + emoji)}
+            onSelect={(emoji) =>
+              setMessage((prev) => prev + emoji)
+            }
           />
 
+          {/* ATTACH */}
           <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="flex h-9 w-9 items-center justify-center rounded-full bg-muted hover:bg-muted/70"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-background transition hover:bg-muted"
           >
             <Paperclip className="h-4 w-4" />
           </button>
 
+          {/* FILE PREVIEW */}
+          {file && (
+            <div className="flex min-w-0 flex-1 items-center gap-2 rounded-full border bg-background px-3 py-1.5 text-xs shadow-sm">
+              <span className="truncate text-foreground">
+                {file.name}
+              </span>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setFile(null)
+
+                  if (fileInputRef.current) {
+                    fileInputRef.current.value = ""
+                  }
+                }}
+                className="shrink-0 text-red-500 hover:underline"
+              >
+                Remove
+              </button>
+            </div>
+          )}
+
+          {/* SINGLE FILE INPUT */}
           <input
             type="file"
             ref={fileInputRef}
             className="hidden"
             accept="image/*,application/pdf"
             onChange={(e) => {
-              const selected = e.target.files?.[0]
+              const selected =
+                e.target.files?.[0]
+
               if (!selected) return
 
               setFile(selected)
 
-              // ✅ TOAST
               toast({
                 title: "File attached",
                 description: selected.name,
@@ -277,32 +360,33 @@ export default function RecipientInput({ onStartChat }: RecipientInputProps) {
           />
         </div>
 
-        <Button
-          size="icon"
-          disabled={!selectedUser || creating}
-          onClick={handleStart}
-        >
-          {creating ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
-        </Button>
-      </div>
+        {/* RIGHT */}
+        <div className="flex shrink-0 items-center gap-2">
 
-      {/* ✅ FILE NAME PREVIEW */}
-      {file && (
-        <div className="rounded-md bg-black px-3 py-2 text-xs text-white flex justify-between items-center">
-          <span className="truncate">{file.name}</span>
-
-          <button
-            onClick={() => setFile(null)}
-            className="text-red-400 hover:underline ml-2"
+          {/* CANCEL */}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={creating}
+            onClick={handleCancel}
           >
-            Remove
-          </button>
+            Cancel
+          </Button>
+
+          {/* SEND */}
+          <Button
+            size="icon"
+            disabled={!selectedUser || creating}
+            onClick={handleStart}
+          >
+            {creating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
         </div>
-      )}
+      </div>
     </div>
   )
 }
