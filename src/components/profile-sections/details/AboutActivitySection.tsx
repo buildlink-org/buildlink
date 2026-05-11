@@ -7,36 +7,34 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs"
 const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicProfile }: { profile: UserProfile; userPosts: any[]; handleProfileUpdate?: () => void; publicProfile?: boolean }) => {
 	const userType = profile?.user_type?.toLowerCase() || "student"
 
-	// Get account-type-specific colors matching ProfileHeader
+	// Colours mirror ProfileHeader — using semantic Tailwind tokens only
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
 				bgColor: "bg-yellow-100 dark:bg-yellow-950",
-				borderColor: "border-yellow-50",
+				borderColor: "border-yellow-200 dark:border-yellow-800",
 			}
 		} else if (userType === "professional") {
 			return {
 				bgColor: "bg-orange-100 dark:bg-orange-950",
-				borderColor: "border-[#FFCBA4]",
+				borderColor: "border-orange-200 dark:border-orange-800",
 			}
 		} else if (userType === "company") {
 			return {
 				bgColor: "bg-green-100 dark:bg-green-950",
-				borderColor: "border-green-200",
+				borderColor: "border-green-200 dark:border-green-800",
 			}
 		}
-		// Default fallback
 		return {
-			bgColor: "bg-gradient-to-r from-blue-50 to-indigo-50",
-			borderColor: "border-blue-200",
-			activeTabClass: "data-[state=active]:bg-blue-50",
+			bgColor: "bg-muted",
+			borderColor: "border-border",
 		}
 	}
 
 	const colorConfig = getColorConfig()
 
 	return (
-		<Card className={`border border-border ${colorConfig.bgColor} shadow-sm`}>
+		<Card className={`border ${colorConfig.borderColor} ${colorConfig.bgColor} shadow-sm`}>
 			<CardContent className="p-0">
 				<Tabs
 				defaultValue="about"

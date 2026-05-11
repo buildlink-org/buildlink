@@ -13,7 +13,7 @@ import ConversationsList from "./ConversationList"
 import ConversationView from "./ConversationView"
 import RecipientInput from "./NewChatInput"
 import { useMessagingStore } from "@/stores/messagingStore"
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface UserListItem {
   id: string
@@ -106,11 +106,11 @@ const FloatingMessagingWidget: React.FC = () => {
       {!isOpen && (
         <button
           onClick={handleOpen}
-          className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg hover:scale-110 transition-all duration-200"
+          className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-110"
         >
           <MessageSquare className="h-6 w-6" />
           {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-6 w-6 flex items-center justify-center rounded-full bg-red-500">
+            <Badge className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
               {unreadCount}
             </Badge>
           )}
@@ -123,7 +123,7 @@ const FloatingMessagingWidget: React.FC = () => {
 
           {/* BACKDROP */}
           <div
-            className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
               animate ? "opacity-100" : "opacity-0"
             }`}
             onClick={handleClose}
@@ -132,7 +132,7 @@ const FloatingMessagingWidget: React.FC = () => {
           {/* MODAL CONTENT */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative bg-background border rounded-2xl shadow-2xl transform transition-all duration-300 w-full max-w-md mx-2 ${
+            className={`relative flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl transition-all duration-300 w-full max-w-md mx-4 ${
               isMinimized
                 ? "h-12 scale-95 opacity-90"
                 : "h-[85vh] max-h-[600px]"
@@ -143,8 +143,8 @@ const FloatingMessagingWidget: React.FC = () => {
             }`}
           >
             {/* HEADER */}
-            <div className="flex items-center justify-between px-3 py-2 bg-card border-b rounded-t-2xl">
-              <div className="flex items-center gap-2 flex-1">
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2 rounded-t-2xl">
+              <div className="flex flex-1 items-center gap-2">
                 {selectedUser && (
                   <Button variant="ghost" size="icon" onClick={handleBack}>
                     <ArrowLeft className="h-4 w-4" />
@@ -155,13 +155,13 @@ const FloatingMessagingWidget: React.FC = () => {
                   <div className="flex items-center gap-2">
                     <Avatar className="h-8 w-8">
                       <AvatarImage src={selectedUser.avatar} />
-                      <AvatarFallback>
+                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
                         {selectedUser.name?.[0] || "U"}
                       </AvatarFallback>
                     </Avatar>
 
                     <div className="flex flex-col leading-tight">
-                      <span className="text-sm font-semibold">
+                      <span className="text-sm font-semibold text-foreground">
                         {selectedUser.name}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
@@ -170,7 +170,7 @@ const FloatingMessagingWidget: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <span className="text-sm font-semibold">
+                  <span className="text-sm font-semibold text-foreground">
                     {activeTab === "chat" ? "New Message" : "Messages"}
                   </span>
                 )}
@@ -184,6 +184,7 @@ const FloatingMessagingWidget: React.FC = () => {
                     setActiveTab("chat")
                     setSelectedUser(null)
                   }}
+                  title="New message"
                 >
                   <PlusSquare className="h-4 w-4" />
                 </Button>
@@ -192,25 +193,26 @@ const FloatingMessagingWidget: React.FC = () => {
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMinimized(!isMinimized)}
+                  title={isMinimized ? "Expand" : "Minimise"}
                 >
                   <Minimize2 className="h-4 w-4" />
                 </Button>
 
-                <Button variant="ghost" size="icon" onClick={handleClose}>
+                <Button variant="ghost" size="icon" onClick={handleClose} title="Close">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
 
-            {/* TABS */}
+            {/* TABS (only when no conversation is open) */}
             {!selectedUser && (
-              <div className="flex bg-card border-b">
+              <div className="flex shrink-0 border-b border-border bg-card">
                 <button
                   onClick={() => setActiveTab("inbox")}
-                  className={`flex-1 py-2 text-sm font-semibold transition ${
+                  className={`flex-1 py-2 text-sm font-semibold transition-colors ${
                     activeTab === "inbox"
-                      ? "border-b-2 border-primary text-primary bg-muted/40"
-                      : "text-muted-foreground"
+                      ? "border-b-2 border-primary bg-muted/40 text-primary"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Inbox
@@ -218,10 +220,10 @@ const FloatingMessagingWidget: React.FC = () => {
 
                 <button
                   onClick={() => setActiveTab("chat")}
-                  className={`flex-1 py-2 text-sm transition ${
+                  className={`flex-1 py-2 text-sm transition-colors ${
                     activeTab === "chat"
                       ? "border-b-2 border-primary text-primary"
-                      : "text-muted-foreground"
+                      : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
                   Chat
@@ -231,7 +233,7 @@ const FloatingMessagingWidget: React.FC = () => {
 
             {/* CONTENT */}
             {!isMinimized && (
-              <div className="h-[calc(100%-110px)] overflow-hidden">
+              <div className="min-h-0 flex-1 overflow-hidden bg-background">
 
                 {/* INBOX */}
                 {activeTab === "inbox" && !selectedUser && (

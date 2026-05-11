@@ -30,8 +30,6 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 	badgeClasses = "bg-green-100 dark:bg-green-950 text-foreground border border-green-200 dark:border-green-800"
 	}
 
-	if (!canEdit && skills.length === 0) return null
-
 	return (
 		<Card className="border border-border shadow-sm">
 			<CardContent className="rounded-md px-4 py-4 shadow-sm">
@@ -54,7 +52,9 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 				</div>
 				<div className="space-y-3">
 					{skills.length === 0 ? (
-						<div className="italic text-gray-500">No skills added yet.</div>
+						<div className="text-sm text-muted-foreground">
+							{canEdit ? "No skills added yet." : "This user hasn't listed any skills yet."}
+						</div>
 					) : (
 						<div className="flex flex-wrap gap-2">
 							{skills.map((skill, idx) => (
@@ -73,4 +73,4 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 	)
 }
 
-export default ProfileSkillsSection
+export default ProfileSkillsSection;

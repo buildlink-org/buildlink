@@ -1,4 +1,4 @@
-import { Search, BarChart3, Settings } from "lucide-react"
+import { Search, BarChart3, Settings, Sun, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Link, useLocation } from "react-router-dom"
 import UserProfileButton from "@/components/UserProfileButton"
@@ -8,6 +8,7 @@ import SearchDropdown from "./SearchDropdown"
 import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { cn } from "@/lib/utils"
 import logo from "@/assets/buildlink-logo.png"
+import { useTheme } from "@/contexts/ThemeContext"
 
 interface TopBarProps {
 	onLogoClick: () => void
@@ -18,6 +19,7 @@ interface TopBarProps {
 const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 	const { isAdmin } = useIsAdmin()
 	const location = useLocation()
+	const { theme, toggleTheme } = useTheme()
 
 	return (
 		<header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -52,6 +54,21 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 							<Search className="h-5 w-5" />
 						</Button>
 					</SearchDialog>
+
+					{/* Dark / Light mode toggle */}
+					<Button
+						variant="ghost"
+						size="icon"
+						onClick={toggleTheme}
+						title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+						aria-label="Toggle theme"
+					>
+						{theme === "dark" ? (
+							<Sun className="h-5 w-5" />
+						) : (
+							<Moon className="h-5 w-5" />
+						)}
+					</Button>
 
 					{isAdmin && (
 						<>

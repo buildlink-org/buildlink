@@ -1,9 +1,9 @@
-
 import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera, X } from "lucide-react";
 import AvatarCropDialog from "./AvatarCropDialog";
 import { supabase } from "@/lib/supabase";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface AvatarUploaderProps {
   avatarUrl: string;
@@ -24,6 +24,8 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
 }) => {
   const [cropDialogOpen, setCropDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  // Task 5 — popup preview state
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   const handleFileInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -53,24 +55,30 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
     }
   };
 
+  // Fallback background colours — semantic Tailwind tokens aligned with design system
+  const getFallbackClass = () => {
+    const type = userType?.toLowerCase();
+    if (type === "student")      return "bg-yellow-100 text-foreground dark:bg-yellow-950";
+    if (type === "professional") return "bg-orange-100 text-foreground dark:bg-orange-950";
+    if (type === "company")      return "bg-green-100  text-foreground dark:bg-green-950";
+    return "bg-muted text-foreground";
+  };
+
   return (
     <div className="flex flex-col justify-start space-y-2">
       <div className="relative">
-        <Avatar className="h-20 w-20">
+        {/* Task 5 — clicking the avatar opens a full-view popup if an image is already uploaded */}
+        <Avatar
+          className={`h-20 w-20 ${avatarUrl ? "cursor-pointer ring-2 ring-transparent hover:ring-primary/40 transition-all" : ""}`}
+          onClick={() => avatarUrl && setPreviewOpen(true)}
+        >
           <AvatarImage src={avatarUrl} />
-          <AvatarFallback 
-            className={!avatarUrl ? (() => {
-              const type = userType?.toLowerCase();
-              if (type === "student") return "bg-yellow-100 text-black-900 dark:bg-yellow-950";
-              if (type === "professional") return "bg-[#FFCBA4] text-black-900 dark:bg-orange-950";
-              if (type === "company") return "bg-green-200 text-black-900 dark:bg-green-950";
-              return "bg-gradient-to-r from-blue-50 to-indigo-50 text-foreground" ;
-            })() : ""}
-          >
+          <AvatarFallback className={!avatarUrl ? getFallbackClass() : ""}>
             {fullName?.charAt(0) || "U"}
           </AvatarFallback>
         </Avatar>
-        <label className="absolute bottom-0 left-0 bg-primary text-white rounded-full p-1 cursor-pointer hover:bg-primary/90" htmlFor="avatar-upload-input">
+
+        <label className="absolute bottom-0 left-0 bg-primary text-primary-foreground rounded-full p-1 cursor-pointer hover:bg-primary/90" htmlFor="avatar-upload-input">
           <Camera className="h-3 w-3" />
           <input
             id="avatar-upload-input"
@@ -82,11 +90,12 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
             aria-label="Upload profile photo"
           />
         </label>
+
         {/* Remove Photo button */}
         {avatarUrl && onAvatarRemove && (
           <button
             type="button"
-            className="absolute top-0 right-0 bg-destructive text-white rounded-full p-1 hover:bg-destructive/80 transition translate-x-1/2 -translate-y-1/2"
+            className="absolute top-0 right-0 bg-destructive text-destructive-foreground rounded-full p-1 hover:bg-destructive/80 transition translate-x-1/2 -translate-y-1/2"
             onClick={handleRemovePhoto}
             disabled={uploading}
             aria-label="Remove profile photo"
@@ -96,7 +105,9 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
           </button>
         )}
       </div>
-      {uploading && <p className="text-sm text-gray-500">Uploading...</p>}
+
+      {uploading && <p className="text-sm text-muted-foreground">Uploading...</p>}
+
       <AvatarCropDialog
         open={cropDialogOpen}
         imageSrc={selectedImage}
@@ -104,6 +115,19 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
         onCropSave={handleCropSave}
         loading={uploading}
       />
+
+      {/* Task 5 — full-size avatar preview dialog */}
+      {avatarUrl && (
+        <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+          <DialogContent className="flex items-center justify-center bg-transparent border-0 shadow-none max-w-sm p-2">
+            <img
+              src={avatarUrl}
+              alt={fullName}
+              className="rounded-full w-72 h-72 object-cover shadow-xl ring-4 ring-background"
+            />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 };
