@@ -1,11 +1,10 @@
 import React, { useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Edit, Link2, Plus, BadgePlus, X } from "lucide-react";
+import { Plus, BadgePlus, X, Image as ImageIcon, Upload } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-import { getType } from "./getPortfolioFileType";
-import { Badge } from "@/components/ui/badge";
+
 
 type PortfolioItem = {
   id: string;
@@ -44,9 +43,12 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const [projectName, setProjectName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
+  const thumbnailInput = useRef<HTMLInputElement | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
+  const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
 
 
   const updatePortfolio = async (newPortfolio: PortfolioItem[]) => {
@@ -75,7 +77,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
         if (titleMatch && titleMatch[1]) {
           const title = titleMatch[1].trim();
           // Clean up common title suffixes
-          return title.replace(/\s*[-|â€"]\s*.*$/, '').trim() || title;
+          return title.replace(/\s*[-|â€"].*$/, '').trim() || title;
         }
       }
     } catch (error) {
@@ -93,6 +95,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       return url;
     }
   };
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     const file = files && files.length > 0 ? files[0] : null;
@@ -102,6 +105,15 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     }
   };
 
+  const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragOver(false);
+    const file = event.dataTransfer.files?.[0] ?? null;
+    if (!file) return;
+    setSelectedFile(file);
+    setProjectName((prev) => (prev.trim() ? prev : file.name.replace(/\.[^/.]+$/, "")));
+  };
+
   const handleFileDelete = () => {
     setSelectedFile(null);
     setProjectName("");
@@ -109,10 +121,16 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       fileInput.current.value = '';
     }
   };
+
   const handleThumbnailUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
+
+    // Show local preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => setThumbnailPreview(reader.result as string);
+    reader.readAsDataURL(file);
 
     setThumbnailUploading(true);
     const ext = file.name.split('.').pop();
@@ -185,6 +203,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     setDesc("");
     setSelectedFile(null);
     setThumbnailUrl("");
+    setThumbnailPreview(null);
     if (onPortfolioAdd) onPortfolioAdd(item);
     handleProfileUpdate();
     return true;
@@ -230,6 +249,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setProjectName("");
       setSelectedFile(null);
       setThumbnailUrl("");
+      setThumbnailPreview(null);
       if (onPortfolioAdd) onPortfolioAdd(item);
       handleProfileUpdate();
     }
@@ -251,6 +271,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setProjectName("");
       setSelectedFile(null);
       setThumbnailUrl("");
+      setThumbnailPreview(null);
       setError(null);
       setProgress(0);
       if (fileInput.current) {
@@ -269,19 +290,34 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
           </Button>
         ) : null}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <BadgePlus className="h-5 w-5 text-primary" />
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-lg rounded-xl p-4 sm:p-6">
+        <DialogHeader className="mb-1">
+          <DialogTitle className="flex items-center gap-2 text-base sm:text-lg">
+            <BadgePlus className="h-5 w-5 text-primary shrink-0" />
             Add New Portfolio Project
           </DialogTitle>
-          <DialogDescription>
-            Share your best work—upload images or PDFs, or add accessible project links. You can also choose custom thumbnails.
+          <DialogDescription className="text-xs sm:text-sm">
+            Upload images or PDFs, or link to an external project. Add a title and optional thumbnail.
           </DialogDescription>
         </DialogHeader>
+
+        {/* ── Upload drop-zone ── */}
         <div className="mt-2">
-          <label className="block font-semibold mb-1 text-foreground">Upload an Image or PDF</label>
-          <div className="flex items-center gap-2">
+          <label className="block text-sm font-semibold mb-1.5 text-foreground">
+            Upload an Image or PDF
+          </label>
+
+          {/* Drop zone */}
+          <div
+            className={`relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors cursor-pointer
+              ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/40"}
+              ${selectedFile ? "bg-muted/30" : ""}
+              ${uploading || disabled ? "pointer-events-none opacity-50" : ""}`}
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={handleFileDrop}
+            onClick={() => !selectedFile && fileInput.current?.click()}
+          >
             <input
               title="Upload an Image/Document"
               type="file"
@@ -289,43 +325,57 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
               ref={fileInput}
               onChange={handleFileChange}
               disabled={uploading || disabled}
-              className="block disabled:opacity-50 flex-1 text-foreground file:bg-muted file:text-foreground file:border-0 file:py-1.5 file:px-3 file:rounded-md file:mr-3 hover:file:bg-accent hover:file:text-accent-foreground transition-colors cursor-pointer"
+              className="sr-only"
             />
-            {selectedFile && (
-              <button
-                type="button"
-                onClick={handleFileDelete}
-                disabled={uploading || disabled}
-                className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1"
-                aria-label="Remove selected file"
-              >
-                <X className="h-4 w-4" />
-              </button>
+
+            {selectedFile ? (
+              <div className="flex w-full items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
+                  <Upload className="h-5 w-5 text-primary" />
+                </div>
+                <div className="min-w-0 flex-1 text-left">
+                  <p className="truncate text-sm font-medium text-foreground">{selectedFile.name}</p>
+                  <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(0)} KB</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); handleFileDelete(); }}
+                  disabled={uploading || disabled}
+                  className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
+                  aria-label="Remove selected file"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Upload className="h-8 w-8 text-muted-foreground" />
+                <div>
+                  <p className="text-sm font-medium text-foreground">
+                    <span className="text-primary">Click to upload</span> or drag & drop
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">JPG, PNG, GIF, WebP, PDF — max 10 MB</p>
+                </div>
+              </>
             )}
           </div>
-          {selectedFile && (
-            <div className="text-sm text-muted-foreground mt-1">
-              Selected: {selectedFile.name}
-            </div>
-          )}
+
           {(progress > 0 && progress < 99) && (
             <Progress value={progress} className="mt-2" />
           )}
-          <div className="text-xs text-muted-foreground mt-1 mb-2">
-            Max 10MB. Accepted: JPG, PNG, GIF, WebP, PDF.
-            {portfolioList.length >= 3 && (
-              <div className="text-destructive mt-1">Portfolio limit reached (3/3). Remove existing items to upload new ones.</div>
-            )}
-            {portfolioList.length < 3 && portfolioList.length > 0 && (
-              <div className="text-blue-500 dark:text-blue-400 mt-1">Items uploaded: {portfolioList.length}/3</div>
-            )}
-          </div>
+
+          {portfolioList.length >= 3 && (
+            <p className="mt-1.5 text-xs text-destructive">Portfolio limit reached (3/3). Remove an item to add a new one.</p>
+          )}
+          {portfolioList.length > 0 && portfolioList.length < 3 && (
+            <p className="mt-1.5 text-xs text-blue-500 dark:text-blue-400">{portfolioList.length}/3 items uploaded</p>
+          )}
         </div>
 
-        {/* Project naming */}
+        {/* ── Project name — shown as soon as a file or link is present ── */}
         {(selectedFile || linkURL.trim() !== "") && (
           <div className="mt-4">
-            <label className="block font-semibold mb-1 text-foreground">Project name</label>
+            <label className="block text-sm font-semibold mb-1.5 text-foreground">Project name</label>
             <input
               type="text"
               value={projectName}
@@ -335,54 +385,85 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
               disabled={uploading || disabled}
               maxLength={80}
             />
-            <div className="text-xs text-muted-foreground mt-1">
-              This is the name that will show on your portfolio card.
-            </div>
+            <p className="text-xs text-muted-foreground mt-1">This name appears on your portfolio card.</p>
           </div>
         )}
-        
-        {/* Thumbnail upload section */}
+
+        {/* ── Thumbnail upload section ── */}
         <div className="mt-4">
-          <label className="block font-semibold mb-1 text-foreground">Choose Thumbnail (Optional)</label>
-          <div className="flex items-center gap-2">
-            <input
-              title="Upload a Thumbnail"
-              type="file"
-              accept="image/*"
-              onChange={handleThumbnailUpload}
-              disabled={uploading || disabled || thumbnailUploading}
-              className="block disabled:opacity-50 flex-1 text-foreground file:bg-muted file:text-foreground file:border-0 file:py-1.5 file:px-3 file:rounded-md file:mr-3 hover:file:bg-accent hover:file:text-accent-foreground transition-colors cursor-pointer"
-            />
-            {thumbnailUrl && (
-              <button
-                type="button"
-                onClick={() => setThumbnailUrl("")}
-                disabled={uploading || disabled}
-                className="text-red-500 hover:text-red-700 disabled:opacity-50 p-1"
-                aria-label="Remove thumbnail"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-          {thumbnailUploading && (
-            <div className="text-sm text-muted-foreground mt-1">Uploading thumbnail...</div>
-          )}
-          {thumbnailUrl && !thumbnailUploading && (
-            <div className="mt-2">
-              <img 
-                src={thumbnailUrl} 
-                alt="Thumbnail preview" 
-                className="w-32 h-32 object-cover rounded-md border border-gray-200"
+          <label className="block text-sm font-semibold mb-1.5 text-foreground">
+            Custom Thumbnail <span className="font-normal text-muted-foreground">(optional)</span>
+          </label>
+
+          <div className="flex items-start gap-3">
+            {/* Preview box */}
+            <div
+              className={`relative flex h-20 w-20 shrink-0 items-center justify-center rounded-lg border-2 border-dashed transition-colors cursor-pointer
+                ${thumbnailPreview ? "border-transparent" : "border-border hover:border-primary/50"}
+                ${thumbnailUploading ? "opacity-60 pointer-events-none" : ""}
+                ${uploading || disabled ? "pointer-events-none opacity-50" : ""}`}
+              onClick={() => thumbnailInput.current?.click()}
+            >
+              <input
+                title="Upload a Thumbnail"
+                type="file"
+                accept="image/*"
+                ref={thumbnailInput}
+                onChange={handleThumbnailUpload}
+                disabled={uploading || disabled || thumbnailUploading}
+                className="sr-only"
               />
+              {thumbnailPreview ? (
+                <>
+                  <img
+                    src={thumbnailPreview}
+                    alt="Thumbnail preview"
+                    className="h-full w-full rounded-lg object-cover"
+                  />
+                  {/* Remove thumbnail overlay */}
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setThumbnailUrl(""); setThumbnailPreview(null); }}
+                    disabled={uploading || disabled}
+                    className="absolute -right-1.5 -top-1.5 rounded-full bg-destructive p-0.5 text-white shadow-sm disabled:opacity-50"
+                    aria-label="Remove thumbnail"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </>
+              ) : (
+                <ImageIcon className="h-6 w-6 text-muted-foreground" />
+              )}
             </div>
-          )}
-          <div className="text-xs text-muted-foreground mt-1">
-            Optional: Upload a custom thumbnail for this project. If not provided, the main image will be used.
+
+            <div className="flex-1 min-w-0">
+              {thumbnailUploading ? (
+                <p className="text-sm text-muted-foreground">Uploading thumbnail…</p>
+              ) : thumbnailPreview ? (
+                <p className="text-sm text-foreground font-medium">Thumbnail set</p>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                  disabled={uploading || disabled || thumbnailUploading}
+                  onClick={() => thumbnailInput.current?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5 mr-1.5" />
+                  Upload image
+                </Button>
+              )}
+              <p className="mt-1 text-xs text-muted-foreground">
+                If not set, the uploaded image is used as thumbnail.
+              </p>
+            </div>
           </div>
         </div>
+
+        {/* ── Link input ── */}
         <div className="mt-4">
-          <label className="block font-semibold mb-1 text-foreground">Or add a project link</label>
+          <label className="block text-sm font-semibold mb-1.5 text-foreground">Or add a project link</label>
           <input
             type="url"
             value={linkURL}
@@ -391,27 +472,31 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
             disabled={uploading || disabled}
           />
-          <div className="text-xs text-muted-foreground mt-1">
-            Add an accessible link to your project (e.g., GitHub, Behance, live website).
-          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            GitHub, Behance, live website, etc.
+          </p>
         </div>
       
         {hasBothInputs && (
-          <div className="text-red-500 text-sm mt-1">
-            Only upload one portfolio item at a time
-          </div>
+          <p className="text-destructive text-xs mt-2">
+            Please choose either a file or a link — not both.
+          </p>
         )}
 
-        {error && <div className="text-red-500 mt-2">{error}</div>}
-        <DialogFooter className="mt-1">
+        {error && <p className="text-destructive text-sm mt-2">{error}</p>}
+
+        <DialogFooter className="mt-4 flex-col-reverse gap-2 sm:flex-row sm:gap-0">
           <DialogClose asChild>
-            <Button type="button" variant="outline" disabled={uploading || disabled}>Cancel</Button>
+            <Button type="button" variant="outline" disabled={uploading || disabled} className="w-full sm:w-auto">
+              Cancel
+            </Button>
           </DialogClose>
           <Button
             onClick={handleAddPortfolio}
             type="button"
             disabled={!hasValidInput || uploading || disabled}
             variant="default"
+            className="w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-2" /> Add Portfolio
           </Button>

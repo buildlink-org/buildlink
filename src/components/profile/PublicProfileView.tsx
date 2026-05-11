@@ -3,7 +3,8 @@ import { useParams } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { MessageCircle, UserPlus, Pencil } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { MessageCircle, UserPlus, Pencil, Clock, ThumbsUp } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { publicProfileService } from "@/services/publicProfileService"
 import { useToast } from "@/hooks/use-toast"
@@ -28,6 +29,38 @@ type ConnectionStatus =
   | "connected"
   | "self"
 
+// ---------------------------------------------------------------------------
+// Fix #3 — Recommendation tags (placeholder until endorsement system ships).
+// Shown only to visitors viewing someone else's profile, never to the owner.
+// ---------------------------------------------------------------------------
+const RECOMMENDATION_TAGS = [
+  { label: "Great Collaborator" },
+  { label: "Highly Skilled" },
+  { label: "Reliable" },
+  { label: "Creative Thinker" },
+  { label: "Strong Communicator" },
+]
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+// Fix #2a — Profession: stored as string or string[] depending on user type.
+const getProfessionDisplay = (profile: UserProfile): string | null => {
+  const p = (profile as any).profession
+  if (!p) return null
+  if (Array.isArray(p)) return p.filter(Boolean).join(", ") || null
+  return String(p) || null
+}
+
+// Fix #2b — Years Active: stored on company profile rows.
+const getYearsActive = (profile: UserProfile): string | null => {
+  return (profile as any).years_active || null
+}
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 const PublicProfileView: React.FC = () => {
   const { profileId } = useParams<{ profileId: string }>()
   const { user } = useAuth()
@@ -40,35 +73,25 @@ const PublicProfileView: React.FC = () => {
     useState<ConnectionStatus>("not_connected")
   const [userPosts, setUserPosts] = useState<any[]>([])
 
-  const openConversation = useMessagingStore(
-    (state) => state.openConversation
-  )
+  const openConversation = useMessagingStore((state) => state.openConversation)
 
   const isOwner = user?.id === profileId
   const isCompanyProfile = profile?.user_type === "company"
   const connectLabel = isCompanyProfile ? "Follow" : "Connect"
 
-  
   // LOAD PROFILE
   const loadPublicProfile = useCallback(async () => {
     if (!profileId) return
-
     setLoading(true)
-
     try {
       const { data, error } =
         await publicProfileService.getPublicProfile(profileId, user?.id)
-
       if (error || !data) throw error
-
       setProfile(data)
-
       const postsResult = await postsService.getPosts()
       if (postsResult.data) {
         setUserPosts(
-          postsResult.data.filter(
-            (post: any) => post.author_id === profileId
-          )
+          postsResult.data.filter((post: any) => post.author_id === profileId)
         )
       }
     } catch {
@@ -86,92 +109,52 @@ const PublicProfileView: React.FC = () => {
     loadPublicProfile()
   }, [loadPublicProfile])
 
-  
   // CONNECTION STATUS
   useEffect(() => {
     const fetchConnectionStatus = async () => {
       if (!user?.id || !profileId) return
-
       if (user.id === profileId) {
         setConnectionStatus("self")
         return
       }
-
       const { data } = await connectionsService.getConnectionStatus(
         user.id,
         profileId
       )
-
       if (!data) {
         setConnectionStatus("not_connected")
         return
       }
-
       setConnectionRow(data)
-
       if (data.status === "accepted") {
         setConnectionStatus("connected")
       } else if (data.status === "pending") {
         setConnectionStatus(
-          data.user_id === user.id
-            ? "pending_outgoing"
-            : "pending_incoming"
+          data.user_id === user.id ? "pending_outgoing" : "pending_incoming"
         )
       }
     }
-
     fetchConnectionStatus()
   }, [user, profileId])
 
- 
-  // CONFIRM HELPER
- /*
-const confirmAction = (type: string) => {
-  if (!profile) return false
-
-  const name = profile.full_name || "this user"
-
-  const messages = {
-    cancel: `Cancel connection request to ${name}?`,
-    decline: `Decline connection request from ${name}?`,
-    disconnect: isCompanyProfile
-      ? `Unfollow ${name}?`
-      : `Disconnect from ${name}?`,
-  }
-
-  return window.confirm(messages[type])
-}
-*/
-
- 
   // ACTIONS
   const handleConnect = async () => {
     if (!user?.id || !profileId) return
-
-    const { data, error } = await connectionsService.connect(
-      user.id,
-      profileId
-    )
-
+    const { data, error } = await connectionsService.connect(user.id, profileId)
     if (error) {
       toast({ title: "Error", description: "Failed to connect", variant: "destructive" })
       return
     }
-
     setConnectionRow(data)
     setConnectionStatus("pending_outgoing")
-
     toast({ title: "Success", description: "Connection request sent" })
   }
 
   const handleAccept = async () => {
     if (!connectionRow?.id) return
-
     const { error } = await connectionsService.acceptRequest(connectionRow.id)
     if (error) return
-
     setConnectionStatus("connected")
-
     toast({
       title: "Connected",
       description: `You are now connected with ${profile?.full_name}`,
@@ -180,24 +163,15 @@ const confirmAction = (type: string) => {
 
   const handleCancelOrDecline = async () => {
     if (!connectionRow?.id) return
-
     const actionType =
       connectionStatus === "pending_outgoing" ? "cancel" : "decline"
-
-    //if (!confirmAction(actionType)) return
-
     try {
       await connectionsService.removeConnection(connectionRow.id)
-
       setConnectionRow(null)
       setConnectionStatus("not_connected")
-
       toast({
         title: "Success",
-        description:
-          actionType === "cancel"
-            ? "Request cancelled"
-            : "Request declined",
+        description: actionType === "cancel" ? "Request cancelled" : "Request declined",
       })
     } catch {
       toast({
@@ -210,20 +184,13 @@ const confirmAction = (type: string) => {
 
   const handleDisconnect = async () => {
     if (!connectionRow?.id) return
-
-    //if (!confirmAction("disconnect")) return
-
     try {
       await connectionsService.removeConnection(connectionRow.id)
-
       setConnectionRow(null)
       setConnectionStatus("not_connected")
-
       toast({
         title: "Success",
-        description: isCompanyProfile
-          ? "Unfollowed successfully"
-          : "Disconnected successfully",
+        description: isCompanyProfile ? "Unfollowed successfully" : "Disconnected successfully",
       })
     } catch {
       toast({
@@ -234,8 +201,7 @@ const confirmAction = (type: string) => {
     }
   }
 
-  
-  // BUTTONS 
+  // BUTTONS
   const renderButtons = () => {
     if (!user || connectionStatus === "self") return null
 
@@ -244,11 +210,7 @@ const confirmAction = (type: string) => {
         variant="outline"
         disabled={connectionStatus !== "connected"}
         onClick={() =>
-          openConversation?.(
-            profileId!,
-            profile?.full_name,
-            profile?.avatar
-          )
+          openConversation?.(profileId!, profile?.full_name, profile?.avatar)
         }
       >
         <MessageCircle className="mr-2 h-4 w-4" />
@@ -266,7 +228,6 @@ const confirmAction = (type: string) => {
         </>
       )
     }
-
     if (connectionStatus === "pending_outgoing") {
       return (
         <>
@@ -277,7 +238,6 @@ const confirmAction = (type: string) => {
         </>
       )
     }
-
     if (connectionStatus === "pending_incoming") {
       return (
         <>
@@ -289,7 +249,6 @@ const confirmAction = (type: string) => {
         </>
       )
     }
-
     return (
       <>
         <Button onClick={handleConnect}>
@@ -301,8 +260,7 @@ const confirmAction = (type: string) => {
     )
   }
 
- 
-  // UI
+  // UI — loading
   if (loading) {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -313,12 +271,19 @@ const confirmAction = (type: string) => {
 
   if (!profile) return null
 
+  const professionDisplay = getProfessionDisplay(profile)
+  const yearsActive = getYearsActive(profile)
+
   return (
-     <div className="mx-auto max-w-5xl space-y-6 px-2 sm:px-4">
+    <div className="mx-auto max-w-5xl space-y-6 px-2 sm:px-4">
+
+      {/* ── PROFILE BANNER ─────────────────────────────────────────────── */}
       <Card>
         <CardContent className="py-6">
-           <div className="flex flex-col gap-6 md:flex-row md:justify-between">
-             <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start text-center sm:text-left">
+          <div className="flex flex-col gap-6 md:flex-row md:justify-between">
+
+            {/* Avatar + Identity block */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start text-center sm:text-left">
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
                 <AvatarImage src={profile.avatar || undefined} />
                 <AvatarFallback>
@@ -326,21 +291,49 @@ const confirmAction = (type: string) => {
                 </AvatarFallback>
               </Avatar>
 
-              <div>
-                <h1 className="text-2xl font-bold capitalize">
+              <div className="space-y-1.5">
+                {/* Name */}
+                <h1 className="text-2xl font-bold capitalize leading-tight">
                   {profile.full_name}
                 </h1>
 
-                <AccountTypeBadge
-                  userType={profile.user_type || "student"}
-                />
+                {/* Account type badge */}
+                <AccountTypeBadge userType={profile.user_type || "student"} />
 
-                <p className="text-muted-foreground mt-2">
-                  {profile.education_level}
-                </p>
+                {/* Fix #2a — Profession (students & professionals) */}
+                {!isCompanyProfile && professionDisplay && (
+                  <p className="text-sm text-muted-foreground">
+                    {professionDisplay}
+                  </p>
+                )}
+
+                {/* Fix #2b — Years Active (companies only) */}
+                {isCompanyProfile && yearsActive && (
+                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <Clock className="h-3.5 w-3.5 shrink-0" />
+                    {yearsActive} years active
+                  </p>
+                )}
+
+                {/* Fix #3 — Recommendation tags (visitors only, never owner) */}
+                {!isOwner && (
+                  <div className="flex flex-wrap gap-1.5 pt-1 justify-center sm:justify-start">
+                    {RECOMMENDATION_TAGS.slice(0, 3).map((tag) => (
+                      <Badge
+                        key={tag.label}
+                        variant="outline"
+                        className="text-xs px-2 py-0.5 text-muted-foreground border-border gap-1 cursor-default"
+                      >
+                        <ThumbsUp className="h-3 w-3 text-primary" />
+                        {tag.label}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* Action buttons + social links */}
             <div className="flex flex-col items-center md:items-end gap-3">
               <div className="flex flex-wrap justify-center md:justify-end gap-2 w-full">
                 {isOwner ? (
@@ -355,7 +348,6 @@ const confirmAction = (type: string) => {
                   renderButtons()
                 )}
               </div>
-
               <SocialMediaLinks
                 links={profile.social_links || {}}
                 editable={false}
@@ -365,6 +357,9 @@ const confirmAction = (type: string) => {
         </CardContent>
       </Card>
 
+      {/* ── BODY SECTIONS ──────────────────────────────────────────────── */}
+
+      {/* About / Activity — owner only (private info) */}
       {isOwner && (
         <AboutActivitySection
           publicProfile
@@ -373,7 +368,9 @@ const confirmAction = (type: string) => {
         />
       )}
 
+      {/* Fix #1 — Skills always rendered; ProfileSkillsSection handles the empty state */}
       <ProfileSkillsSection profile={profile} />
+
       <PortfolioSection profile={profile} />
       <ExperienceSection profile={profile} />
       <EducationSection profile={profile} />

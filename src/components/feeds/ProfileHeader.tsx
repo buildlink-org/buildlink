@@ -23,31 +23,22 @@ interface ProfileHeaderProps {
 const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRemove, handleProfileUpdate }: ProfileHeaderProps) => {
 	const [showRatingDialog, setShowRatingDialog] = useState(false)
 
-	// Get account-type-specific welcome config
 	const getWelcomeConfig = () => {
 		const userType = profile?.user_type?.toLowerCase() || "student"
-
-		// Use the uniform salmon/pink color for all profile type banners
-		const baseConfig = {
-			bgColor: "bg-[#e89f9b] dark:bg-[#9a4b49]",
-			borderColor: "border-[#e89f9d] dark:border-[#9a4b49]",
-			titleColor: "text-gray-900 dark:text-gray-100",
-			descColor: "text-gray-800 dark:text-gray-200",
-		}
 
 		if (userType === "student") {
 			return {
 				bgColor: "bg-yellow-100 dark:bg-yellow-950",
-				borderColor: "border-yellow-50",
+				borderColor: "border-yellow-200 dark:border-yellow-800",
 				titleColor: "text-foreground",
-				descColor: "text-muted-foreground",		
+				descColor: "text-muted-foreground",
 				iconEmoji: "🎓",
 				message: "Your journey into the industry starts right here!",
 			}
 		} else if (userType === "professional") {
 			return {
 				bgColor: "bg-orange-100 dark:bg-orange-950",
-				borderColor: "bg-[#FFCBA4]",
+				borderColor: "border-orange-200 dark:border-orange-800",
 				titleColor: "text-foreground",
 				descColor: "text-muted-foreground",
 				iconEmoji: "💼",
@@ -56,7 +47,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 		} else if (userType === "company") {
 			return {
 				bgColor: "bg-green-100 dark:bg-green-950",
-				borderColor: "bg-green-200",
+				borderColor: "border-green-200 dark:border-green-800",
 				titleColor: "text-foreground",
 				descColor: "text-muted-foreground",
 				iconEmoji: "🪪",
@@ -66,7 +57,10 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 
 		// Default fallback
 		return {
-			...baseConfig,
+			bgColor: "bg-muted",
+			borderColor: "border-border",
+			titleColor: "text-foreground",
+			descColor: "text-muted-foreground",
 			iconEmoji: "🎓",
 			message: "Your journey into the industry starts right here!",
 		}
@@ -122,13 +116,6 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 					{/* Action Buttons */}
 					<div className="flex flex-row items-center gap-4 md:flex-col md:items-end">
 						<div className="flex flex-row justify-end gap-2">
-							{/* <Button
-								variant="outline"
-								className="flex-1 sm:flex-none">
-								<MessageCircle className="mr-1 h-4 w-4" />
-								Message
-							</Button> */}
-
 							<ProfileSettingsDialog>
 								<Button
 									variant="outline"

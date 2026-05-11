@@ -6,24 +6,59 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Send, Loader2, Paperclip, MoreVertical } from "lucide-react"
-import { cn } from "@/lib/utils"
 import { useMessagingStore } from "@/stores/messagingStore"
+import { formatTimestamp, compressImage, cn } from "@/lib/utils"
 import EmojiPickerButton from "../EmojiPicker"
 import { supabase } from "@/integrations/supabase/client"
-import { compressImage } from "@/lib/utils"
+
 
 interface ConversationViewProps {
   otherUserId: string
+  otherUserName?: string
+  otherUserAvatar?: string
+}
+
+type ConversationItem =
+  | ({ type: "message" } & Message)
+  | { type: "separator"; id: string; dateLabel: string }
+
+const addDateSeparators = (messages: Message[]): ConversationItem[] => {
+  const items: ConversationItem[] = []
+  let lastDate: string | null = null
+
+  const sorted = [...messages].sort(
+    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  )
+
+  sorted.forEach((msg, i) => {
+    const dateKey = new Date(msg.created_at).toISOString().split("T")[0]
+
+    if (dateKey !== lastDate) {
+      items.push({
+        type: "separator",
+        id: `sep-${dateKey}-${i}`,
+        dateLabel: formatTimestamp(msg.created_at, false),
+      })
+      lastDate = dateKey
+    }
+
+    items.push({ ...msg, type: "message" })
+  })
+
+  return items
 }
 
 const ConversationView: React.FC<ConversationViewProps> = ({
   otherUserId,
+  otherUserAvatar,
 }) => {
   const { user } = useAuth()
   const { toast } = useToast()
 
   const messages =
     useMessagingStore((s) => s.messagesByUserId[otherUserId]) ?? []
+  const loading =
+    useMessagingStore((s) => s.loadingStatus[otherUserId] || false)
   const fetchMessages = useMessagingStore((s) => s.fetchMessages)
   const addMessage = useMessagingStore((s) => s.addMessage)
   const removeMessage = useMessagingStore((s) => s.removeMessage)
@@ -40,8 +75,13 @@ const ConversationView: React.FC<ConversationViewProps> = ({
   const bottomRef = useRef<HTMLDivElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  const conversationItems = React.useMemo(
+    () => addDateSeparators(messages),
+    [messages]
+  )
+
   useEffect(() => {
-    if (!user) return
+    if (!user || !otherUserId) return
     fetchMessages(user.id, otherUserId)
   }, [user, otherUserId])
 
@@ -58,7 +98,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
     const tempId = `temp-${Date.now()}`
     const preview = file ? URL.createObjectURL(file) : null
 
-    const optimisticMessage: Message & any = {
+    const optimisticMessage: Message = {
       id: tempId,
       sender_id: user.id,
       recipient_id: otherUserId,
@@ -71,6 +111,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
       localPreview: preview,
     }
 
+    // ✅ SHOW INSTANTLY
     addMessage(optimisticMessage)
 
     let image_url: string | undefined
@@ -103,15 +144,21 @@ const ConversationView: React.FC<ConversationViewProps> = ({
 
       if (error) throw error
 
+      // ✅ REPLACE TEMP MESSAGE
       removeMessage(tempId)
 
       if (data) {
-        addMessage(data)
+        addMessage({
+          ...data,
+          status: "sent",
+        })
       }
 
       setContent("")
       setFile(null)
+
     } catch (err: any) {
+      // ❗ DO NOT REMOVE — MARK FAILED INSTEAD
       updateMessage({
         ...optimisticMessage,
         status: "failed",
@@ -144,47 +191,66 @@ const ConversationView: React.FC<ConversationViewProps> = ({
     }
   }
 
+  if (loading) {
+    return (
+      <div className="flex h-full items-center justify-center bg-background">
+        <Loader2 className="animate-spin text-muted-foreground" />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-background">
 
       {/* MESSAGES */}
-      <ScrollArea className="flex-1 bg-[#efeae2] px-2 sm:px-4 py-2">
-        <div className="space-y-3">
-          {messages.map((msg: any) => {
+      <ScrollArea className="flex-1 bg-muted/10 px-2 py-3">
+        <div className="space-y-3 pb-2">
+          {conversationItems.map((item) => {
+            if (item.type === "separator") {
+              return (
+                <div key={item.id} className="flex items-center gap-3 py-1">
+                  <div className="h-px flex-1 bg-border" />
+                  <span className="shrink-0 rounded-full bg-muted px-3 py-0.5 text-[11px] font-medium text-muted-foreground">
+                    {item.dateLabel}
+                  </span>
+                  <div className="h-px flex-1 bg-border" />
+                </div>
+              )
+            }
+
+            const msg = item
             const isOwn = msg.sender_id === user?.id
 
             return (
               <div key={msg.id} className={cn("flex", isOwn ? "justify-end" : "justify-start")}>
+                <div className="relative max-w-[80%]">
 
-                <div className="relative max-w-[85%] sm:max-w-[70%]">
-
-                  {/* 3 DOT MENU */}
                   {isOwn && (
-                    <div className="absolute top-1 right-1">
+                    <div className="absolute top-1 right-1 z-10">
                       <button
                         onClick={() =>
                           setOpenMenuId(openMenuId === msg.id ? null : msg.id)
                         }
-                        className="p-1 rounded hover:bg-black/10"
+                        className="rounded p-1 text-primary-foreground/60 hover:bg-black/10 hover:text-primary-foreground"
                       >
                         <MoreVertical size={14} />
                       </button>
 
                       {openMenuId === msg.id && (
-                        <div className="absolute right-0 mt-1 w-24 bg-white shadow border rounded text-xs z-50">
+                        <div className="absolute right-0 mt-1 w-24 overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-lg">
                           <button
                             onClick={() => {
                               setEditingId(msg.id)
                               setEditingText(msg.content || "")
                               setOpenMenuId(null)
                             }}
-                            className="block w-full px-3 py-2 hover:bg-muted text-left"
+                            className="block w-full px-3 py-2 text-left text-xs hover:bg-muted"
                           >
                             Edit
                           </button>
                           <button
                             onClick={() => handleDelete(msg.id)}
-                            className="block w-full px-3 py-2 hover:bg-muted text-red-500 text-left"
+                            className="block w-full px-3 py-2 text-left text-xs text-destructive hover:bg-muted"
                           >
                             Delete
                           </button>
@@ -193,109 +259,72 @@ const ConversationView: React.FC<ConversationViewProps> = ({
                     </div>
                   )}
 
-                  <div
-                    className={cn(
-                      "rounded-lg px-3 py-2 trasaction",
-                      isOwn ? "bg-primary text-white" : "bg-white",
-                      editingId === msg.id && "ring-1 ring-primary/40"
-                    )}
-                  >
-                    {/* EDIT MODE */}
-                    {editingId === msg.id ? (
-                      <div className="flex flex-col gap-1">
-
-                        {/* INLINE EDIT TEXTAREA */}
-                        <Textarea
+                  {editingId === msg.id ? (
+                    <div className="flex gap-2 rounded-lg border bg-card p-2 shadow-sm">
+                      <input
+                        autoFocus
                         value={editingText}
                         onChange={(e) => setEditingText(e.target.value)}
-                        autoFocus
-                        className={cn(
-                          "w-full resize-none bg-transparent p-0 text-sm",
-                          "border-none focus-visible:ring-0 focus-visible:ring-offset-0 outline-none",
-                          isOwn ? "text-white placeholder:text-white/60" : "text-black"
-                        )}
                         onKeyDown={(e) => {
-                          if (e.key === "Enter" && !e.shiftKey) {
-                            e.preventDefault()
-                            handleEdit(msg.id)
-                          }
-
-                          if (e.key === "Escape") {
-                            setEditingId(null)
-                          }
+                          if (e.key === "Enter") handleEdit(msg.id)
+                          if (e.key === "Escape") setEditingId(null)
                         }}
+                        className="flex-1 min-w-0 bg-transparent text-sm text-foreground outline-none"
                       />
-
-                        {/* INLINE ACTIONS */}
-                        <div className="flex justify-end gap-2 text-[11px] mt-1">
-                          <button
-                            onClick={() => handleEdit(msg.id)}
-                            className="text-green-500 hover:underline"
-                          >
-                            ✔
-                          </button>
-
-                          <button
-                            onClick={() => setEditingId(null)}
-                            className="text-red-400 hover:underline"
-                          >
-                            ✖ 
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        {msg.content && (
-                          <p className="text-sm whitespace-pre-wrap">
-                            {msg.content}
-                          </p>
-                        )}
-
-                        {/* PREVIEW BEFORE UPLOAD */}
-                        {msg.localPreview && (
-                          <img
-                            src={msg.localPreview}
-                            className="mt-2 rounded-md max-h-60 opacity-80"
-                          />
-                        )}
-
-                        {/* REAL IMAGE */}
-                        {msg.image_url && msg.image_type === "image" && (
-                          <img
-                            src={msg.image_url}
-                            className="mt-2 rounded-md max-h-60"
-                          />
-                        )}
-
-                        {/* PDF */}
-                        {msg.image_type === "pdf" && (
-                          <a href={msg.image_url} className="text-xs underline">
-                            📄 View PDF
-                          </a>
-                        )}
-
-                        {/* STATUS */}
-                        {msg.status === "sending" && (
-                          <p className="text-[10px] opacity-70 mt-1">
-                            Sending...
-                          </p>
-                        )}
-
-                        {msg.status === "failed" && (
-                          <p className="text-[10px] text-red-500 mt-1">
-                            Failed
-                          </p>
-                        )}
-
-                        <p className="text-[10px] opacity-70 text-right mt-1">
-                          {new Date(msg.created_at).toLocaleTimeString([], {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                          })}
+                      <Button size="sm" variant="ghost" onClick={() => handleEdit(msg.id)} className="h-auto px-2 py-1 text-xs">Save</Button>
+                      <Button size="sm" variant="ghost" onClick={() => setEditingId(null)} className="h-auto px-2 py-1 text-xs text-muted-foreground">Cancel</Button>
+                    </div>
+                  ) : (
+                    <div
+                      className={cn(
+                        "rounded-2xl px-3 py-2 shadow-sm",
+                        isOwn
+                          ? "rounded-tr-sm bg-primary text-primary-foreground"
+                          : "rounded-tl-sm bg-card text-card-foreground border border-border"
+                      )}
+                    >
+                      {msg.content && (
+                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                          {msg.content}
                         </p>
-                      </>
-                    )}
-                  </div>
+                      )}
+
+                      {(msg.localPreview || msg.image_url) && (
+                        <img
+                          src={msg.localPreview || msg.image_url!}
+                          className="mt-2 max-h-60 rounded-lg object-cover"
+                          alt="attachment"
+                        />
+                      )}
+
+                      {msg.image_type === "pdf" && !msg.localPreview && (
+                        <a
+                          href={msg.image_url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-1 flex items-center gap-1 text-xs underline opacity-80 hover:opacity-100"
+                        >
+                          📄 View PDF
+                        </a>
+                      )}
+
+                      <p
+                        className={cn(
+                          "mt-1 text-right text-[10px]",
+                          isOwn ? "text-primary-foreground/60" : "text-muted-foreground"
+                        )}
+                      >
+                        {new Date(msg.created_at).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                        {msg.status === "sending" && " · Sending…"}
+                        {msg.status === "failed" && (
+                          <span className="text-red-400"> · Failed</span>
+                        )}
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
             )
@@ -305,50 +334,45 @@ const ConversationView: React.FC<ConversationViewProps> = ({
       </ScrollArea>
 
       {/* INPUT */}
-      <div className="border-t p-3">
-        <div className="flex items-end gap-2">
-
-          <EmojiPickerButton onSelect={(e) => setContent((p) => p + e)} />
-
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-
-         <Textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder="Type a message..."
-          className="flex-1 min-h-[50px] resize-none"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault()
-              handleSend()
-            }
-          }}
-        />
-
-          <Button onClick={handleSend} size="icon">
-            {sending ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              <Send />
-            )}
-          </Button>
-        </div>
-
-        {/* FILE PREVIEW */}
+      <div className="border-t bg-card px-3 py-3">
+        {/* File preview bar */}
         {file && (
-          <div className="mt-2 flex justify-between text-xs bg-muted border px-2 py-1 rounded shadow-sm">
-            <span className="truncate">{file.name}</span>
-            <button onClick={() => setFile(null)} className="text-red-500">
+          <div className="mb-2 flex items-center justify-between rounded-lg border bg-muted px-3 py-1.5 text-xs">
+            <span className="truncate text-foreground">{file.name}</span>
+            <button
+              onClick={() => setFile(null)}
+              className="ml-2 shrink-0 text-destructive hover:text-destructive/80"
+            >
               Remove
             </button>
           </div>
         )}
+
+        <div className="flex items-end gap-2">
+          <EmojiPickerButton onSelect={(e) => setContent((p) => p + e)} />
+
+          <Button size="icon" variant="ghost" onClick={() => fileInputRef.current?.click()}>
+            <Paperclip className="h-4 w-4" />
+          </Button>
+
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault()
+                handleSend()
+              }
+            }}
+            placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
+            className="flex-1 min-h-[44px] max-h-32 resize-none bg-background text-foreground placeholder:text-muted-foreground"
+            rows={1}
+          />
+
+          <Button onClick={handleSend} size="icon" disabled={sending || (!content.trim() && !file)}>
+            {sending ? <Loader2 className="animate-spin" /> : <Send className="h-4 w-4" />}
+          </Button>
+        </div>
 
         <input
           type="file"
@@ -358,11 +382,7 @@ const ConversationView: React.FC<ConversationViewProps> = ({
             const f = e.target.files?.[0]
             if (!f) return
             setFile(f)
-
-            toast({
-              title: "File attached",
-              description: f.name,
-            })
+            toast({ title: "File attached", description: f.name })
           }}
         />
       </div>
