@@ -225,13 +225,13 @@ export default function RecipientInput({
       className="w-full max-w-md space-y-4 rounded-xl border bg-card p-4 shadow-sm"
     >
       <h2 className="text-center text-lg font-semibold">
-        New Message
+        Create New Message
       </h2>
 
       {/* RECIPIENT */}
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">
-          Recipient
+          <h2 className="f+">To:</h2>
         </label>
 
         <div className="relative">
