@@ -13,12 +13,14 @@ import EmojiPickerButton from "../EmojiPicker"
 
 interface RecipientInputProps {
   onStartChat: (user: UserListItem) => void
+  
 }
 
 interface UserListItem {
   id: string
   name?: string
   avatar?: string
+  category?: "general" | "interests" | "submissions"
 }
 
 export default function RecipientInput({
@@ -38,6 +40,11 @@ export default function RecipientInput({
 
   const [message, setMessage] = useState("")
   const [file, setFile] = useState<File | null>(null)
+
+  // NEW CATEGORY STATE
+  const [category, setCategory] = useState<
+    "general" | "interests" | "submissions"
+  >("general")
 
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
@@ -173,6 +180,9 @@ export default function RecipientInput({
             content: message.trim(),
             image_url,
             image_type,
+
+            // NEW CATEGORY
+            category,
           })
 
         if (error) throw error
@@ -189,6 +199,7 @@ export default function RecipientInput({
       setQuery("")
       setSelectedUser(null)
       setFile(null)
+      setCategory("general")
 
       if (fileInputRef.current) {
         fileInputRef.current.value = ""
@@ -231,7 +242,7 @@ export default function RecipientInput({
       {/* RECIPIENT */}
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">
-          <h2 className="f+">To:</h2>
+          <h2>To:</h2>
         </label>
 
         <div className="relative">
@@ -284,6 +295,34 @@ export default function RecipientInput({
             </div>
           )}
         </div>
+      </div>
+
+      {/* CATEGORY SELECTOR */}
+      <div className="flex items-center gap-2">
+        {["general", "interests", "submissions"].map(
+          (item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() =>
+                setCategory(
+                  item as
+                    | "general"
+                    | "interests"
+                    | "submissions"
+                )
+              }
+              className={`rounded-full px-4 py-1.5 text-xs font-medium transition capitalize
+              ${
+                category === item
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted hover:bg-muted/80"
+              }`}
+            >
+              {item}
+            </button>
+          )
+        )}
       </div>
 
       {/* MESSAGE */}
