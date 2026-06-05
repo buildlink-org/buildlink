@@ -406,62 +406,68 @@ const PublicProfileView: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="py-5">
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+      {isOwner && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 
-            <div className="rounded-lg border p-4 text-center">
-              <Eye className="mx-auto mb-2 h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold">
-                {profileViews}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Profile Views
-              </p>
+              <div className="rounded-lg border p-4 text-center">
+                <Eye className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {profileViews}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Profile Views
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {connectionsCount}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Connections
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {userPosts.length}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Posts
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Star className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {profileCompletion}%
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Completion
+                </p>
+              </div>
+
             </div>
+          </CardContent>
+        </Card>
+      )}
 
-            <div className="rounded-lg border p-4 text-center">
-              <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold">
-                {connectionsCount}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Connections
-              </p>
-            </div>
-
-            <div className="rounded-lg border p-4 text-center">
-              <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold">
-                {userPosts.length}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Posts
-              </p>
-            </div>
-
-            <div className="rounded-lg border p-4 text-center">
-              <Star className="mx-auto mb-2 h-5 w-5 text-primary" />
-              <p className="text-2xl font-bold">
-                {profileCompletion}%
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Completion
-              </p>
-            </div>
-
-          </div>
-        </CardContent>
-      </Card>
+    
 
       {/* ── BODY SECTIONS ──────────────────────────────────────────────── */}
 
       {/* About / Activity — owner only (private info) */}
-     <AboutActivitySection
+     
+      <AboutActivitySection
         publicProfile
         profile={profile}
         userPosts={userPosts}
       />
+    
 
       {/* Fix #1 — Skills always rendered; ProfileSkillsSection handles the empty state */}
       <ProfileSkillsSection profile={profile} />
