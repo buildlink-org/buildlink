@@ -17,7 +17,7 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 
 	const renderAboutContent = () => {
 		if (!profile.bio) {
-			return <div className="italic text-muted-foreground">No professional summary available yet. Click edit to add your story and let others know about your journey, expertise, and career aspirations.</div>
+			return <div className="italic text-muted-foreground">No professional summary available yet.</div>
 		}
 
 		const characterLimit = 220
