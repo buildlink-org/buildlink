@@ -454,9 +454,39 @@ const PublicProfileView: React.FC = () => {
             </div>
           </CardContent>
         </Card>
-      )}
+      ) 
+      } 
 
-    
+      {!isOwner && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+             
+
+              <div className="rounded-lg border p-4 text-center">
+                <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {connectionsCount}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Connections
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {userPosts.length}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Posts
+                </p>
+                
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── BODY SECTIONS ──────────────────────────────────────────────── */}
 
