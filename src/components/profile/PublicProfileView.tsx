@@ -186,8 +186,8 @@ const handleConnect = async () => {
     toast({
       title: "Success",
       description: isCompanyProfile
-        ? "Now following"
-        : "Connected successfully",
+        ? `Now following ${profile?.full_name}`
+        : `Connected to ${profile?.full_name} successfully`,
     })
   } catch {
     toast({
@@ -218,8 +218,8 @@ const handleConnect = async () => {
     toast({
       title: "Success",
       description: isCompanyProfile
-        ? "Unfollowed successfully"
-        : "Disconnected successfully",
+        ? `Stopped following ${profile?.full_name}`
+        : `Disconnected from ${profile?.full_name} successfully`,
     })
   } catch {
     toast({
