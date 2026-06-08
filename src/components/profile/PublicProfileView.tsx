@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { MessageCircle, UserPlus, Pencil, Clock, ThumbsUp } from "lucide-react"
+import {MessageCircle,UserPlus,Pencil,Clock,ThumbsUp,Eye,Users,Briefcase,Star,} from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { publicProfileService } from "@/services/publicProfileService"
 import { useToast } from "@/hooks/use-toast"
@@ -72,6 +72,9 @@ const PublicProfileView: React.FC = () => {
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("not_connected")
   const [userPosts, setUserPosts] = useState<any[]>([])
+  const [profileViews, setProfileViews] = useState(0)
+  const [connectionsCount, setConnectionsCount] = useState(0)
+  const [profileCompletion, setProfileCompletion] = useState(0)
 
   const openConversation = useMessagingStore((state) => state.openConversation)
 
@@ -88,12 +91,29 @@ const PublicProfileView: React.FC = () => {
         await publicProfileService.getPublicProfile(profileId, user?.id)
       if (error || !data) throw error
       setProfile(data)
+
+      setProfileCompletion(
+        (data as any)?.profile_completion_score || 0
+      )
       const postsResult = await postsService.getPosts()
       if (postsResult.data) {
         setUserPosts(
           postsResult.data.filter((post: any) => post.author_id === profileId)
         )
       }
+      const viewsResult =
+          await publicProfileService.getProfileViews(profileId)
+
+        if (viewsResult.data) {
+          setProfileViews(viewsResult.data.length)
+        }
+
+        const connectionsResult =
+          await connectionsService.getConnections(profileId)
+
+        if (connectionsResult.data) {
+          setConnectionsCount(connectionsResult.data.length)
+        }
     } catch {
       toast({
         title: "Error",
@@ -136,6 +156,12 @@ const PublicProfileView: React.FC = () => {
     }
     fetchConnectionStatus()
   }, [user, profileId])
+
+  useEffect(() => {
+  if (!profileId || isOwner) return
+
+  publicProfileService.recordProfileView(profileId)
+}, [profileId, isOwner])
 
   // ACTIONS
   const handleConnect = async () => {
@@ -208,7 +234,7 @@ const PublicProfileView: React.FC = () => {
     const messageBtn = (
       <Button
         variant="outline"
-        disabled={connectionStatus !== "connected"}
+        disabled={false}
         onClick={() =>
           openConversation?.(profileId!, profile?.full_name, profile?.avatar)
         }
@@ -315,10 +341,17 @@ const PublicProfileView: React.FC = () => {
                   </p>
                 )}
 
+                {isCompanyProfile &&
+                  (profile as any).organization && (
+                    <p className="text-sm text-muted-foreground">
+                      {(profile as any).organization}
+                    </p>
+                )}
+
                 {/* Fix #3 — Recommendation tags (visitors only, never owner) */}
                 {!isOwner && (
                   <div className="flex flex-wrap gap-1.5 pt-1 justify-center sm:justify-start">
-                    {RECOMMENDATION_TAGS.slice(0, 3).map((tag) => (
+                    {RECOMMENDATION_TAGS.slice(0, 5).map((tag) => (
                       <Badge
                         key={tag.label}
                         variant="outline"
@@ -353,20 +386,118 @@ const PublicProfileView: React.FC = () => {
                 editable={false}
               />
             </div>
+            
           </div>
+          <div className="w-full max-w-xs mt-2">
+            <div className="mb-1 flex justify-between text-xs">
+              <span>Profile Strength</span>
+              <span>{profileCompletion}%</span>
+            </div>
+
+          <div className="h-2 overflow-hidden rounded-full bg-muted">
+            <div
+              className="h-full bg-primary transition-all"
+              style={{
+                width: `${profileCompletion}%`,
+              }}
+            />
+          </div>
+        </div>
         </CardContent>
       </Card>
+
+      {isOwner && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+
+              <div className="rounded-lg border p-4 text-center">
+                <Eye className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {profileViews}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Profile Views
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {connectionsCount}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Connections
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {userPosts.length}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Posts
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Star className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {profileCompletion}%
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Completion
+                </p>
+              </div>
+
+            </div>
+          </CardContent>
+        </Card>
+      ) 
+      } 
+
+      {!isOwner && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+             
+
+              <div className="rounded-lg border p-4 text-center">
+                <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {connectionsCount}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Connections
+                </p>
+              </div>
+
+              <div className="rounded-lg border p-4 text-center">
+                <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
+                <p className="text-2xl font-bold">
+                  {userPosts.length}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Posts
+                </p>
+                
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── BODY SECTIONS ──────────────────────────────────────────────── */}
 
       {/* About / Activity — owner only (private info) */}
-      {isOwner && (
-        <AboutActivitySection
-          publicProfile
-          profile={profile}
-          userPosts={userPosts}
-        />
-      )}
+     
+      <AboutActivitySection
+        publicProfile
+        profile={profile}
+        userPosts={userPosts}
+      />
+    
 
       {/* Fix #1 — Skills always rendered; ProfileSkillsSection handles the empty state */}
       <ProfileSkillsSection profile={profile} />
