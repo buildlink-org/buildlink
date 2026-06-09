@@ -21,26 +21,28 @@ export default function EmojiPickerButton({
 					type="button"
 					size="icon"
 					variant="ghost"
-					className="
-						h-8 w-8
-						sm:h-9 sm:w-9
-						rounded-full
-						p-0
-						shrink-0
-						hover:bg-muted
-						transition-colors
-					"
+					className="h-7 w-7 rounded-full p-0"
 				>
-					<Smile className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+					<Smile className="h-3.5 w-3.5" />
 				</Button>
 			</PopoverTrigger>
 
 			<PopoverContent
+				className="
+					w-auto
+					p-0
+					bg-background/80
+					backdrop-blur-xl
+					border
+					border-white/10
+					shadow-2xl
+				"
 				align="start"
-				sideOffset={8}
-				className="w-auto border-none p-0 shadow-lg"
 			>
 				<EmojiPicker
+					width={400}
+					height={300}
+					
 					onEmojiClick={(emojiData) => {
 						onSelect(emojiData.emoji)
 					}}
