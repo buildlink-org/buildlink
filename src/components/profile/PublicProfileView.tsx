@@ -237,6 +237,7 @@ const handleConnect = async () => {
   const messageBtn = (
     <Button
       variant="outline"
+      disabled={connectionStatus !== "connected"}
       onClick={() =>
         openConversation?.(
           profileId!,
