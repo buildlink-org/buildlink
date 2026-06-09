@@ -28,19 +28,17 @@ export default function EmojiPickerButton({
 			</PopoverTrigger>
 
 			<PopoverContent
-				className="
-					w-auto
-					p-0
-					bg-background/80
-					backdrop-blur-xl
-					border
-					border-white/10
-					shadow-2xl
-				"
+			className="
+				w-auto
+				p-0
+				bg-transparent
+				backdrop-blur-lg
+				border-white/10
+			"
 				align="start"
 			>
 				<EmojiPicker
-					width={400}
+					width={380}
 					height={300}
 					
 					onEmojiClick={(emojiData) => {
