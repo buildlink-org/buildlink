@@ -24,11 +24,8 @@ import SocialMediaLinks from "./SocialMediaLinks"
 
 type ConnectionStatus =
   | "not_connected"
-  | "pending_outgoing"
-  | "pending_incoming"
   | "connected"
   | "self"
-
 // ---------------------------------------------------------------------------
 // Fix #3 — Recommendation tags (placeholder until endorsement system ships).
 // Shown only to visitors viewing someone else's profile, never to the owner.
@@ -131,31 +128,34 @@ const PublicProfileView: React.FC = () => {
 
   // CONNECTION STATUS
   useEffect(() => {
-    const fetchConnectionStatus = async () => {
-      if (!user?.id || !profileId) return
-      if (user.id === profileId) {
-        setConnectionStatus("self")
-        return
-      }
-      const { data } = await connectionsService.getConnectionStatus(
-        user.id,
-        profileId
-      )
-      if (!data) {
-        setConnectionStatus("not_connected")
-        return
-      }
-      setConnectionRow(data)
-      if (data.status === "accepted") {
-        setConnectionStatus("connected")
-      } else if (data.status === "pending") {
-        setConnectionStatus(
-          data.user_id === user.id ? "pending_outgoing" : "pending_incoming"
-        )
-      }
+  const fetchConnectionStatus = async () => {
+    if (!user?.id || !profileId) return
+
+    if (user.id === profileId) {
+      setConnectionStatus("self")
+      return
     }
-    fetchConnectionStatus()
-  }, [user, profileId])
+
+    const { data } = await connectionsService.getConnectionStatus(
+      user.id,
+      profileId
+    )
+
+    if (!data) {
+      setConnectionStatus("not_connected")
+      return
+    }
+
+    if (data.status === "accepted") {
+      setConnectionStatus("connected")
+      setConnectionRow(data)
+    } else {
+      setConnectionStatus("not_connected")
+    }
+  }
+
+  fetchConnectionStatus()
+}, [user, profileId])
 
   useEffect(() => {
   if (!profileId || isOwner) return
@@ -164,127 +164,121 @@ const PublicProfileView: React.FC = () => {
 }, [profileId, isOwner])
 
   // ACTIONS
-  const handleConnect = async () => {
-    if (!user?.id || !profileId) return
-    const { data, error } = await connectionsService.connect(user.id, profileId)
-    if (error) {
-      toast({ title: "Error", description: "Failed to connect", variant: "destructive" })
-      return
-    }
-    setConnectionRow(data)
-    setConnectionStatus("pending_outgoing")
-    toast({ title: "Success", description: "Connection request sent" })
-  }
+const handleConnect = async () => {
+  if (!user?.id || !profileId) return
 
-  const handleAccept = async () => {
-    if (!connectionRow?.id) return
-    const { error } = await connectionsService.acceptRequest(connectionRow.id)
-    if (error) return
+  try {
+    const { data, error } =
+      await connectionsService.connect(user.id, profileId)
+
+    if (error) throw error
+
+    // force instant connection state
+    setConnectionRow({
+      ...data,
+      status: "accepted",
+    })
+
     setConnectionStatus("connected")
+
+    setConnectionsCount((prev) => prev + 1)
+
     toast({
-      title: "Connected",
-      description: `You are now connected with ${profile?.full_name}`,
+      title: "Success",
+      description: isCompanyProfile
+        ? `Now following ${profile?.full_name}`
+        : `Connected to ${profile?.full_name} successfully`,
+    })
+  } catch {
+    toast({
+      title: "Error",
+      description: "Failed to connect",
+      variant: "destructive",
     })
   }
+}
 
-  const handleCancelOrDecline = async () => {
-    if (!connectionRow?.id) return
-    const actionType =
-      connectionStatus === "pending_outgoing" ? "cancel" : "decline"
-    try {
-      await connectionsService.removeConnection(connectionRow.id)
-      setConnectionRow(null)
-      setConnectionStatus("not_connected")
-      toast({
-        title: "Success",
-        description: actionType === "cancel" ? "Request cancelled" : "Request declined",
-      })
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to update connection",
-        variant: "destructive",
-      })
-    }
-  }
+  
 
-  const handleDisconnect = async () => {
-    if (!connectionRow?.id) return
-    try {
-      await connectionsService.removeConnection(connectionRow.id)
-      setConnectionRow(null)
-      setConnectionStatus("not_connected")
-      toast({
-        title: "Success",
-        description: isCompanyProfile ? "Unfollowed successfully" : "Disconnected successfully",
-      })
-    } catch {
-      toast({
-        title: "Error",
-        description: "Failed to update connection",
-        variant: "destructive",
-      })
-    }
+  
+
+ const handleDisconnect = async () => {
+  if (!connectionRow?.id) return
+
+  try {
+    await connectionsService.removeConnection(connectionRow.id)
+
+    setConnectionRow(null)
+    setConnectionStatus("not_connected")
+
+    setConnectionsCount((prev) =>
+      Math.max(0, prev - 1)
+    )
+
+    toast({
+      title: "Success",
+      description: isCompanyProfile
+        ? `Stopped following ${profile?.full_name}`
+        : `Disconnected from ${profile?.full_name} successfully`,
+    })
+  } catch {
+    toast({
+      title: "Error",
+      description: "Failed to update connection",
+      variant: "destructive",
+    })
   }
+}
 
   // BUTTONS
   const renderButtons = () => {
-    if (!user || connectionStatus === "self") return null
+  if (!user || connectionStatus === "self") return null
 
-    const messageBtn = (
-      <Button
-        variant="outline"
-        disabled={false}
-        onClick={() =>
-          openConversation?.(profileId!, profile?.full_name, profile?.avatar)
-        }
-      >
-        <MessageCircle className="mr-2 h-4 w-4" />
-        Message
-      </Button>
-    )
+  const messageBtn = (
+    <Button
+      variant="outline"
+      disabled={connectionStatus !== "connected"}
+      onClick={() =>
+        openConversation?.(
+          profileId!,
+          profile?.full_name,
+          profile?.avatar
+        )
+      }
+    >
+      <MessageCircle className="mr-2 h-4 w-4" />
+      Message
+    </Button>
+  )
 
-    if (connectionStatus === "connected") {
-      return (
-        <>
-          <Button variant="outline" onClick={handleDisconnect}>
-            {isCompanyProfile ? "Following" : "Connected"}
-          </Button>
-          {messageBtn}
-        </>
-      )
-    }
-    if (connectionStatus === "pending_outgoing") {
-      return (
-        <>
-          <Button variant="outline" onClick={handleCancelOrDecline}>
-            Cancel Request
-          </Button>
-          {messageBtn}
-        </>
-      )
-    }
-    if (connectionStatus === "pending_incoming") {
-      return (
-        <>
-          <Button onClick={handleAccept}>Accept</Button>
-          <Button variant="outline" onClick={handleCancelOrDecline}>
-            Decline
-          </Button>
-          {messageBtn}
-        </>
-      )
-    }
+  if (connectionStatus === "connected") {
     return (
       <>
-        <Button onClick={handleConnect}>
-          <UserPlus className="mr-2 h-4 w-4" />
-          {connectLabel}
+        <Button
+          variant="outline"
+          onClick={handleDisconnect}
+        >
+          {isCompanyProfile
+            ? "Following"
+            : "Connected"}
         </Button>
+
         {messageBtn}
       </>
     )
   }
+
+  return (
+    <>
+      <Button onClick={handleConnect}>
+        <UserPlus className="mr-2 h-4 w-4" />
+        {connectLabel}
+      </Button>
+
+      {messageBtn}
+    </>
+  )
+}
 
   // UI — loading
   if (loading) {
