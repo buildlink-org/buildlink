@@ -123,24 +123,21 @@ const FloatingMessagingWidget: React.FC = () => {
 
           {/* BACKDROP */}
           <div
-            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
-              animate ? "opacity-100" : "opacity-0"
-            }`}
+            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${animate ? "opacity-100" : "opacity-0"
+              }`}
             onClick={handleClose}
           />
 
           {/* MODAL CONTENT */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative flex flex-col overflow-hidden rounded-2xl border border-border bg-background shadow-2xl transition-all duration-300 w-full max-w-md mx-4 ${
-              isMinimized
-                ? "h-12 scale-95 opacity-90"
-                : "h-[85vh] max-h-[600px]"
-            } ${
-              animate
+            className={`relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all duration-300 w-full max-w-md mx-4 ${isMinimized
+              ? "h-12 scale-95 opacity-90"
+              : "h-[85vh] max-h-[600px]"
+              } ${animate
                 ? "scale-100 opacity-100 translate-y-0"
                 : "scale-95 opacity-0 translate-y-4"
-            }`}
+              }`}
           >
             {/* HEADER */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2 rounded-t-2xl">
@@ -209,22 +206,20 @@ const FloatingMessagingWidget: React.FC = () => {
               <div className="flex shrink-0 border-b border-border bg-card">
                 <button
                   onClick={() => setActiveTab("inbox")}
-                  className={`flex-1 py-2 text-sm font-semibold transition-colors ${
-                    activeTab === "inbox"
-                      ? "border-b-2 border-primary bg-muted/40 text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 py-2 text-sm font-semibold transition-colors ${activeTab === "inbox"
+                    ? "border-b-2 border-primary bg-muted/40 text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   Inbox
                 </button>
 
                 <button
                   onClick={() => setActiveTab("chat")}
-                  className={`flex-1 py-2 text-sm transition-colors ${
-                    activeTab === "chat"
-                      ? "border-b-2 border-primary text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                  }`}
+                  className={`flex-1 py-2 text-sm transition-colors ${activeTab === "chat"
+                    ? "border-b-2 border-primary text-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                    }`}
                 >
                   Chat
                 </button>
@@ -233,7 +228,7 @@ const FloatingMessagingWidget: React.FC = () => {
 
             {/* CONTENT */}
             {!isMinimized && (
-              <div className="min-h-0 flex-1 overflow-hidden bg-background">
+              <div className="min-h-0 flex-1 overflow-hidden bg-card">
 
                 {/* INBOX */}
                 {activeTab === "inbox" && !selectedUser && (
