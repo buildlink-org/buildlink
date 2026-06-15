@@ -1,4 +1,4 @@
-import EmojiPicker from "emoji-picker-react"
+import EmojiPicker, { Theme } from "emoji-picker-react"
 import { Smile } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,7 +36,6 @@ export default function EmojiPickerButton({
 					<Smile className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
 				</Button>
 			</PopoverTrigger>
-
 			<PopoverContent
 				align="start"
 				sideOffset={8}
