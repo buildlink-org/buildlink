@@ -186,14 +186,16 @@ const FloatingMessagingWidget: React.FC = () => {
                   <PlusSquare className="h-4 w-4" />
                 </Button>
 
-                <Button
+                {/* <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMinimized(!isMinimized)}
                   title={isMinimized ? "Expand" : "Minimise"}
                 >
                   <Minimize2 className="h-4 w-4" />
-                </Button>
+                </Button> */}
+
+                
 
                 <Button variant="ghost" size="icon" onClick={handleClose} title="Close">
                   <X className="h-4 w-4" />
