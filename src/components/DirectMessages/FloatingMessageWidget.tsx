@@ -104,17 +104,54 @@ const FloatingMessagingWidget: React.FC = () => {
     <>
       {/* FLOATING BUTTON */}
       {!isOpen && (
-        <button
+       <button
           onClick={handleOpen}
-          className="fixed bottom-6 right-4 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-all duration-200 hover:scale-110"
+          className="
+            fixed
+            bottom-16 right-3
+            sm:bottom-4 sm:right-4
+            md:bottom-6 md:right-4
+            z-50
+
+            flex items-center justify-center
+
+            h-12 w-12
+            sm:h-14 sm:w-14
+
+            rounded-full
+            bg-primary
+            text-primary-foreground
+
+            shadow-lg
+            transition-all duration-200
+            hover:scale-110
+            active:scale-95
+          "
         >
-          <MessageSquare className="h-6 w-6" />
+          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+
           {unreadCount > 0 && (
-            <Badge className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white">
-              {unreadCount}
+            <Badge
+              className="
+                absolute
+                -right-1 -top-1
+
+                flex items-center justify-center
+
+                h-5 w-5
+                sm:h-6 sm:w-6
+
+                rounded-full
+                bg-red-500
+                text-[10px]
+                sm:text-xs
+                text-white
+              "
+            >
+              {unreadCount > 99 ? "99+" : unreadCount}
             </Badge>
           )}
-        </button>
+       </button>
       )}
 
       {/* MODAL */}
@@ -186,14 +223,16 @@ const FloatingMessagingWidget: React.FC = () => {
                   <PlusSquare className="h-4 w-4" />
                 </Button>
 
-                <Button
+                {/* <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMinimized(!isMinimized)}
                   title={isMinimized ? "Expand" : "Minimise"}
                 >
                   <Minimize2 className="h-4 w-4" />
-                </Button>
+                </Button> */}
+
+                
 
                 <Button variant="ghost" size="icon" onClick={handleClose} title="Close">
                   <X className="h-4 w-4" />
