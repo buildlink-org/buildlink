@@ -79,7 +79,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 				</CardHeader>
 			</Card>
 
-			<CardContent className="!mt-1 px-0 py-6">
+			<CardContent className="!mt-1 border-b border-border px-0 py-6">
 				<div className="flex flex-col space-y-4 lg:flex-row lg:items-start lg:justify-between lg:space-y-0">
 					{/* Info and Avatar */}
 					<div className="flex gap-4 space-y-4 sm:flex-row sm:items-start sm:space-x-4 sm:space-y-0 lg:space-x-6">
