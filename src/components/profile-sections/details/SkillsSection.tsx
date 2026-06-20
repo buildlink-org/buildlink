@@ -24,7 +24,7 @@ const SkillsSection = ({ profile, handleProfileUpdate }: SkillsSectionProps) => 
 						<div
 							key={index}
 							className="flex animate-fade-in items-center space-x-4">
-							<span className="flex-1 truncate font-medium text-gray-900">{skill.name}</span>
+						<span className="flex-1 truncate font-medium text-foreground">{skill.name}</span>
 						</div>
 					)
 				})}
@@ -33,11 +33,11 @@ const SkillsSection = ({ profile, handleProfileUpdate }: SkillsSectionProps) => 
 	}
 
 	return (
-		<Card className="border-0 shadow-sm">
+		<Card className="border border-border shadow-sm">
 			<CardContent className="px-4 py-4 shadow-md">
 				<div className="mb-6 flex items-center justify-between">
 					<div>
-						<h2 className="mb-1 text-lg font-semibold text-gray-800">Skills & Specialization</h2>
+						<h2 className="mb-1 text-lg font-semibold text-foreground">Skills & Specialization</h2>
 						<p className="text-sm text-gray-500">Showcase your expertise and experience levels</p>
 					</div>
 					<SkillsEditDialog

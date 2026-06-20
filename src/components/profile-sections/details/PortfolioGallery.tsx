@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import PortfolioThumbnail from "./PortfolioThumbnail"
 import { Button } from "@/components/ui/button"
-import { Trash, FileText, ExternalLink, Edit, Check, X, Image as ImageIcon, GripVertical, ArrowLeftRight } from "lucide-react"
+import { Trash, FileText, Edit, Check, X, Image as ImageIcon, GripVertical, ArrowLeftRight } from "lucide-react"
 import { PortfolioItem } from "@/types"
 import MediaPreview from "@/components/ui/media-preview"
 import { supabase } from "@/integrations/supabase/client"
@@ -312,17 +312,6 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 									size="lg"
 									showActions
 								/>
-							</div>
-							<div className="mt-3 flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={() => window.open(activeItem.url, "_blank", "noopener,noreferrer")}
-									className="flex items-center gap-2"
-								>
-									<ExternalLink className="h-4 w-4" />
-									Open in new tab
-								</Button>
 							</div>
 						</DialogContent>
 					</Dialog>
