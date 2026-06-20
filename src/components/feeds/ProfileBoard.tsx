@@ -88,7 +88,7 @@ const ProfileBoard = () => {
 
 			{/* Stats Cards - Keep existing */}
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-				<Card className="md:col-span-1">
+				<Card className="md:col-span-1 border border-border">
 					<CardContent className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
@@ -100,7 +100,7 @@ const ProfileBoard = () => {
 					</CardContent>
 				</Card>
 
-				<Card className="md:col-span-1">
+				<Card className="md:col-span-1 border border-border">
 					<CardContent className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
@@ -112,7 +112,7 @@ const ProfileBoard = () => {
 					</CardContent>
 				</Card>
 
-				<Card className="md:col-span-2">
+				<Card className="md:col-span-2 border border-border">
 					<CardContent className="p-4">
 						<ProfileCompletionIndicator
 							score={profile?.profile_completion_score || 0}

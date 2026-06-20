@@ -320,14 +320,12 @@ const handleConnect = async () => {
                 {/* Account type badge */}
                 <AccountTypeBadge userType={profile.user_type || "student"} />
 
-                {/* Fix #2a — Profession (students & professionals) */}
-                {!isCompanyProfile && professionDisplay && (
+                {professionDisplay && (
                   <p className="text-sm text-muted-foreground">
                     {professionDisplay}
                   </p>
                 )}
 
-                {/* Fix #2b — Years Active (companies only) */}
                 {isCompanyProfile && yearsActive && (
                   <p className="flex items-center gap-1 text-sm text-muted-foreground">
                     <Clock className="h-3.5 w-3.5 shrink-0" />
@@ -340,22 +338,6 @@ const handleConnect = async () => {
                     <p className="text-sm text-muted-foreground">
                       {(profile as any).organization}
                     </p>
-                )}
-
-                {/* Fix #3 — Recommendation tags (visitors only, never owner) */}
-                {!isOwner && (
-                  <div className="flex flex-wrap gap-1.5 pt-1 justify-center sm:justify-start">
-                    {RECOMMENDATION_TAGS.slice(0, 5).map((tag) => (
-                      <Badge
-                        key={tag.label}
-                        variant="outline"
-                        className="text-xs px-2 py-0.5 text-muted-foreground border-border gap-1 cursor-default"
-                      >
-                        <ThumbsUp className="h-3 w-3 text-primary" />
-                        {tag.label}
-                      </Badge>
-                    ))}
-                  </div>
                 )}
               </div>
             </div>
@@ -382,21 +364,7 @@ const handleConnect = async () => {
             </div>
             
           </div>
-          <div className="w-full max-w-xs mt-2">
-            <div className="mb-1 flex justify-between text-xs">
-              <span>Profile Strength</span>
-              <span>{profileCompletion}%</span>
-            </div>
-
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{
-                width: `${profileCompletion}%`,
-              }}
-            />
-          </div>
-        </div>
+        
         </CardContent>
       </Card>
 
@@ -477,6 +445,28 @@ const handleConnect = async () => {
                 </p>
                 
               </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isOwner && (
+        <Card>
+          <CardContent className="py-5">
+            <div className="mb-3 flex items-center gap-2">
+              <ThumbsUp className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-semibold text-foreground">Endorsed by connections</h3>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {RECOMMENDATION_TAGS.map((tag) => (
+                <span
+                  key={tag.label}
+                  className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                >
+                  <ThumbsUp className="h-3 w-3" />
+                  {tag.label}
+                </span>
+              ))}
             </div>
           </CardContent>
         </Card>

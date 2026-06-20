@@ -27,10 +27,8 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // CATEGORY TAB
-  const [activeTab, setActiveTab] = useState<
-    'general' | 'interests' | 'submissions'
-  >('general');
+  
+ 
 
   // STORE
   const messagesByUserId = useMessagingStore(
@@ -87,10 +85,6 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               id: otherUserId,
               name: profile.full_name,
               avatar: profile.avatar,
-
-              // OPTIONAL CATEGORY
-              category:
-                c.category || 'general',
             };
           }
         } catch (e) {}
@@ -99,7 +93,6 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
           id: otherUserId,
           name: 'Unknown User',
           avatar: undefined,
-          category: 'general',
         };
       });
 
@@ -185,10 +178,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   };
 
   // FILTER USERS
-  const filteredUsers = users.filter(
-    (u: any) =>
-      (u.category || 'general') === activeTab
-  );
+ 
 
   return (
     <div className="flex h-full flex-col bg-background">
@@ -202,52 +192,11 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
           </h2>
 
           <span className="text-xs text-muted-foreground">
-            {filteredUsers.length} chats
+            {users.length} chats
           </span>
         </div>
 
-        {/* CATEGORY TABS */}
-        <div className="mt-4 grid grid-cols-3 gap-2">
-
-          <button
-            onClick={() =>
-              setActiveTab('interests')
-            }
-            className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-              activeTab === 'interests'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            Interests
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab('general')
-            }
-            className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-              activeTab === 'general'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            General
-          </button>
-
-          <button
-            onClick={() =>
-              setActiveTab('submissions')
-            }
-            className={`rounded-lg px-3 py-2 text-xs font-medium transition ${
-              activeTab === 'submissions'
-                ? 'bg-primary text-primary-foreground'
-                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
-          >
-            Submissions
-          </button>
-        </div>
+       
       </div>
 
       {/* LOADING */}
@@ -267,7 +216,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
             </div>
           ))}
         </div>
-      ) : filteredUsers.length === 0 ? (
+      ) : users.length === 0 ? (
 
         // EMPTY STATE
         <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
@@ -287,7 +236,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         <ScrollArea className="flex-1">
           <div className="space-y-2 p-2">
 
-            {filteredUsers.map((u) => {
+            {users.map((u) => {
 
               const timestamp =
                 getLastMessageTimestamp(u.id);

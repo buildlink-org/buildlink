@@ -1,5 +1,6 @@
 import EmojiPicker, { Theme } from "emoji-picker-react"
 import { Smile } from "lucide-react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
 	Popover,
@@ -15,6 +16,20 @@ export default function EmojiPickerButton({
 	onSelect,
 }: EmojiPickerButtonProps) {
 	const isMobile = window.innerWidth < 640
+	const [isDark, setIsDark] = useState(
+		document.documentElement.classList.contains("dark")
+	)
+
+	useEffect(() => {
+		const observer = new MutationObserver(() => {
+			setIsDark(document.documentElement.classList.contains("dark"))
+		})
+		observer.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ["class"],
+		})
+		return () => observer.disconnect()
+	}, [])
 
 	return (
 		<Popover>
@@ -57,6 +72,7 @@ export default function EmojiPickerButton({
 					lazyLoadEmojis
 					searchDisabled={false}
 					skinTonesDisabled={isMobile}
+					theme={isDark ? Theme.DARK : Theme.LIGHT}
 					previewConfig={{
 						showPreview: !isMobile,
 					}}
