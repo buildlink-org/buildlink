@@ -358,7 +358,6 @@ const handleConnect = async () => {
       </Card>
 
       {isOwner && (
-        <Card>
           <CardContent className="py-5">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 
@@ -404,7 +403,6 @@ const handleConnect = async () => {
 
             </div>
           </CardContent>
-        </Card>
       ) 
       } 
 
