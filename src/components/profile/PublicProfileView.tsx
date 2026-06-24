@@ -26,17 +26,6 @@ type ConnectionStatus =
   | "not_connected"
   | "connected"
   | "self"
-// ---------------------------------------------------------------------------
-// Fix #3 — Recommendation tags (placeholder until endorsement system ships).
-// Shown only to visitors viewing someone else's profile, never to the owner.
-// ---------------------------------------------------------------------------
-const RECOMMENDATION_TAGS = [
-  { label: "Great Collaborator" },
-  { label: "Highly Skilled" },
-  { label: "Reliable" },
-  { label: "Creative Thinker" },
-  { label: "Strong Communicator" },
-]
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -445,28 +434,6 @@ const handleConnect = async () => {
                 </p>
                 
               </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {!isOwner && (
-        <Card>
-          <CardContent className="py-5">
-            <div className="mb-3 flex items-center gap-2">
-              <ThumbsUp className="h-4 w-4 text-primary" />
-              <h3 className="text-sm font-semibold text-foreground">Endorsed by connections</h3>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {RECOMMENDATION_TAGS.map((tag) => (
-                <span
-                  key={tag.label}
-                  className="inline-flex items-center gap-1 rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                >
-                  <ThumbsUp className="h-3 w-3" />
-                  {tag.label}
-                </span>
-              ))}
             </div>
           </CardContent>
         </Card>
