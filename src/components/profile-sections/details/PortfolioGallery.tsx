@@ -2,10 +2,11 @@ import React, { useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import PortfolioThumbnail from "./PortfolioThumbnail"
 import { Button } from "@/components/ui/button"
-import { Trash, FileText, Edit, Check, X, Image as ImageIcon, GripVertical, ArrowLeftRight } from "lucide-react"
+import { Trash, FileText, Edit, Check, X, Image as ImageIcon, GripVertical, ArrowLeftRight, ExternalLink } from "lucide-react"
 import { PortfolioItem } from "@/types"
 import MediaPreview from "@/components/ui/media-preview"
 import { supabase } from "@/integrations/supabase/client"
+
 
 interface PortfolioGalleryProps {
 	open: boolean
