@@ -358,7 +358,7 @@ const handleConnect = async () => {
       </Card>
 
       {isOwner && (
-          <CardContent className="py-5">
+          <CardContent className="py-5 px-0">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
 
               <div className="rounded-lg border p-4 text-center">
@@ -407,8 +407,7 @@ const handleConnect = async () => {
       } 
 
       {!isOwner && (
-        <Card>
-          <CardContent className="py-5">
+          <CardContent className="py-5 px-0">
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
              
 
@@ -434,7 +433,6 @@ const handleConnect = async () => {
               </div>
             </div>
           </CardContent>
-        </Card>
       )}
 
       {/* ── BODY SECTIONS ──────────────────────────────────────────────── */}
