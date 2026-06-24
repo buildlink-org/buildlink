@@ -26,7 +26,7 @@ const ConnectionsPreview = ({ profile }: { profile: UserProfile }) => {
 
 	return (
 		<Card>
-			<CardContent className="p-6">
+			<CardContent className="py-5">
 				<div className="mb-4 flex items-center justify-between">
 					<h3 className="text-lg font-semibold">Connections</h3>
 					<Button

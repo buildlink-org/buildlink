@@ -151,7 +151,7 @@ const EnhancedNotificationsDropdown = () => {
 	if (!user) {
 		return (
 			<Button variant="ghost" size="icon" disabled>
-				<Bell className="h-5 w-5" />
+				<Bell className="h-4 w-4" />
 			</Button>
 		)
 	}
@@ -162,7 +162,7 @@ const EnhancedNotificationsDropdown = () => {
 				<Button variant="ghost" size="icon" className="relative">
 					<Bell className="h-5 w-5" />
 					{unreadCount > 0 && (
-						<Badge className="absolute -right-1 -top-[0.9px] mx-0 flex h-6 w-6 items-center justify-center p-0 text-center text-xs">
+						<Badge className="absolute -right-0 -top-[0.9px] mx-0 flex h-4 w-4 items-center justify-center p-0 text-center text-xs">
 							{unreadCount >9 ? "9+" : unreadCount}
 						</Badge>
 					)}
@@ -217,7 +217,7 @@ const EnhancedNotificationsDropdown = () => {
 									<div
 										key={n.id}
 										onClick={() => handleNotificationClick(n)}
-										className={`flex justify-between p-4 border-b cursor-pointer hover:bg-accent ${
+										className={`flex justify-between p-4 border-b cursor-pointer ${
 											!n.read ? "bg-accent/30" : ""
 										}`}
 									>

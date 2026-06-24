@@ -45,7 +45,7 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 				</div> 
 
         {/* Right side actions */}
-				<div className="flex items-center space-x-1">
+				<div className="flex items-center space-x-4">
 					<SearchDialog>
 						<Button
 							variant="ghost"
