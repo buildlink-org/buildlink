@@ -51,7 +51,7 @@ const AccountTypeBadge = ({ userType, className = '' }: AccountTypeBadgeProps) =
   const Icon = config.icon;
 
   return (
-    <Badge variant={config.variant} className={`flex items-center gap-1 ${className}`}>
+    <Badge variant={config.variant} className={`inline-flex items-center gap-1 ${className}`}>
       <Icon className="w-3 h-3" />
       {config.label}
     </Badge>
