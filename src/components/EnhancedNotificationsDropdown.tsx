@@ -217,7 +217,7 @@ const EnhancedNotificationsDropdown = () => {
 									<div
 										key={n.id}
 										onClick={() => handleNotificationClick(n)}
-										className={`flex justify-between p-4 border-b cursor-pointer hover:bg-accent ${
+										className={`flex justify-between p-4 border-b cursor-pointer ${
 											!n.read ? "bg-accent/30" : ""
 										}`}
 									>
