@@ -12,8 +12,8 @@ const AccountTypeBadge = ({ userType, className = '' }: AccountTypeBadgeProps) =
       case 'student':
         return {
           icon: GraduationCap,
-          label: 'Student',
-          variant: 'default' as const,
+          label: 'student',
+          variant: 'destructive' as const,
           description: '🎓 Emerging talent, learning & seeking opportunities'
         };
       // case 'graduate':
@@ -26,14 +26,14 @@ const AccountTypeBadge = ({ userType, className = '' }: AccountTypeBadgeProps) =
       case 'professional':
         return {
           icon: Users,
-          label: 'Professional',
-          variant: 'default' as const,
+          label: 'professional',
+          variant: 'destructive' as const,
           description: '🏗️ Practicing professional with accreditation/experience'
         };
       case 'company':
         return {
           icon: Building2,
-          label: 'Company',
+          label: 'company',
           variant: 'destructive' as const,
           description: '🏢 Firms, contractors, consultancies, suppliers'
         };

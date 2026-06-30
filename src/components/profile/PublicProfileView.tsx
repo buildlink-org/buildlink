@@ -23,9 +23,11 @@ import ProfileSkillsSection from "../profile-sections/details/ProfileSkillsSecti
 import SocialMediaLinks from "./SocialMediaLinks"
 
 type ConnectionStatus =
-  | "not_connected"
-  | "connected"
-  | "self"
+   | "not_connected"
+   | "pending_outgoing"
+   | "pending_incoming"
+   | "connected"
+   | "self"
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -111,13 +113,7 @@ const PublicProfileView: React.FC = () => {
     }
   }, [profileId, user, toast])
 
-  useEffect(() => {
-    loadPublicProfile()
-  }, [loadPublicProfile])
-
-  // CONNECTION STATUS
-  useEffect(() => {
-  const fetchConnectionStatus = async () => {
+  const refreshConnectionStatus = useCallback(async () => {
     if (!user?.id || !profileId) return
 
     if (user.id === profileId) {
@@ -131,20 +127,48 @@ const PublicProfileView: React.FC = () => {
     )
 
     if (!data) {
+      setConnectionRow(null)
       setConnectionStatus("not_connected")
       return
     }
 
+    setConnectionRow(data)
+
     if (data.status === "accepted") {
       setConnectionStatus("connected")
-      setConnectionRow(data)
-    } else {
-      setConnectionStatus("not_connected")
+      return
     }
+
+    if (data.status === "pending") {
+      if (data.user_id === user.id) {
+        setConnectionStatus("pending_outgoing")
+      } else {
+        setConnectionStatus("pending_incoming")
+      }
+      return
   }
 
-  fetchConnectionStatus()
-}, [user, profileId])
+  setConnectionStatus("not_connected")
+  }, [user, profileId])
+
+  const refreshConnectionsCount = useCallback(async () => {
+  if (!profileId) return
+
+  const { data } = await connectionsService.getConnections(profileId)
+
+  //setConnectionsCount(data?.length ?? 0)
+  setConnectionsCount(
+    data?.filter(c => c.status === "accepted").length ?? 0)
+}, [profileId])
+
+  useEffect(() => {
+    loadPublicProfile()
+  }, [loadPublicProfile])
+
+  // CONNECTION STATUS
+  useEffect(() => {
+    refreshConnectionStatus()
+  }, [refreshConnectionStatus])
 
   useEffect(() => {
   if (!profileId || isOwner) return
@@ -154,74 +178,120 @@ const PublicProfileView: React.FC = () => {
 
   // ACTIONS
 const handleConnect = async () => {
-  if (!user?.id || !profileId) return
+  if (!user?.id || !profileId) return;
 
-  try {
-    const { data, error } =
-      await connectionsService.connect(user.id, profileId)
+  const { error } = await connectionsService.connect(
+    user.id,
+    profileId,
+    isCompanyProfile
+  );
 
-    if (error) throw error
-
-    // force instant connection state
-    setConnectionRow({
-      ...data,
-      status: "accepted",
-    })
-
-    setConnectionStatus("connected")
-
-    setConnectionsCount((prev) => prev + 1)
-
-    toast({
-      title: "Success",
-      description: isCompanyProfile
-        ? `Now following ${profile?.full_name}`
-        : `Connected to ${profile?.full_name} successfully`,
-    })
-  } catch {
+  if (error) {
     toast({
       title: "Error",
-      description: "Failed to connect",
+      description: isCompanyProfile
+        ? "Unable to follow."
+        : "Unable to send connection request.",
       variant: "destructive",
-    })
+    });
+    return;
   }
-}
 
-  
+  // Refresh directly from database
+  await refreshConnectionStatus();
+  await refreshConnectionsCount();
 
-  
+  toast({
+    title: isCompanyProfile ? "Following" : "Request Sent",
+    description: isCompanyProfile
+      ? `You're now following ${profile?.full_name}.`
+      : `Connection request sent to ${profile?.full_name}.`,
+  });
+};
 
- const handleDisconnect = async () => {
+const handleAccept = async () => {
   if (!connectionRow?.id) return
 
-  try {
-    await connectionsService.removeConnection(connectionRow.id)
+  const { error } = await connectionsService.acceptRequest(connectionRow.id)
 
-    setConnectionRow(null)
-    setConnectionStatus("not_connected")
-
-    setConnectionsCount((prev) =>
-      Math.max(0, prev - 1)
-    )
-
-    toast({
-      title: "Success",
-      description: isCompanyProfile
-        ? `Stopped following ${profile?.full_name}`
-        : `Disconnected from ${profile?.full_name} successfully`,
-    })
-  } catch {
+  if (error) {
     toast({
       title: "Error",
-      description: "Failed to update connection",
+      description: "Unable to accept request.",
       variant: "destructive",
     })
+    return
   }
+
+  await refreshConnectionStatus()
+  await refreshConnectionsCount()
+
+  toast({
+    title: "Connected",
+    description: `You are now connected with ${profile?.full_name}.`,
+  })
 }
 
+const handleCancelRequest = async () => {
+  if (!connectionRow?.id) return;
+
+  const { error } = await connectionsService.removeConnection(
+    connectionRow.id
+  );
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Unable to cancel request.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  await refreshConnectionStatus();
+  await refreshConnectionsCount();
+
+  toast({
+    title: "Request Cancelled",
+    description: "Your connection request has been cancelled.",
+  });
+};
+
+  
+
+  
+
+const handleDisconnect = async () => {
+  if (!connectionRow?.id) return;
+
+  const { error } = await connectionsService.removeConnection(
+    connectionRow.id
+  );
+
+  if (error) {
+    toast({
+      title: "Error",
+      description: "Failed to update connection.",
+      variant: "destructive",
+    });
+    return;
+  }
+
+  // Refresh directly from database
+  await refreshConnectionStatus();
+  await refreshConnectionsCount();
+
+  toast({
+    title: "Success",
+    description: isCompanyProfile
+      ? `Stopped following ${profile?.full_name}.`
+      : `Disconnected from ${profile?.full_name}.`,
+  });
+};
+
   // BUTTONS
-  const renderButtons = () => {
-  if (!user || connectionStatus === "self") return null
+const renderButtons = () => {
+  if (!user || connectionStatus === "self") return null;
 
   const messageBtn = (
     <Button
@@ -238,36 +308,81 @@ const handleConnect = async () => {
       <MessageCircle className="mr-2 h-4 w-4" />
       Message
     </Button>
-  )
+  );
 
-  if (connectionStatus === "connected") {
+  // Company profiles
+  if (isCompanyProfile) {
+    if (connectionStatus === "connected") {
+      return (
+        <>
+          <Button variant="outline" onClick={handleDisconnect}>
+            Following
+          </Button>
+          {messageBtn}
+        </>
+      );
+    }
+
     return (
       <>
-        <Button
-          variant="outline"
-          onClick={handleDisconnect}
-        >
-          {isCompanyProfile
-            ? "Following"
-            : "Connected"}
+        <Button variant="outline" className="border-black text-black" onClick={handleConnect}>
+          Follow
         </Button>
-
         {messageBtn}
       </>
-    )
+    );
   }
 
-  return (
-    <>
-      <Button onClick={handleConnect}>
-        <UserPlus className="mr-2 h-4 w-4" />
-        {connectLabel}
-      </Button>
+  // Normal users
+  switch (connectionStatus) {
+    case "connected":
+      return (
+        <>
+          <Button variant="outline" onClick={handleDisconnect}>
+            Connected
+          </Button>
+          {messageBtn}
+        </>
+      );
 
-      {messageBtn}
-    </>
-  )
-}
+    case "pending_outgoing":
+      return (
+        <>
+          <Button
+            variant="outline"
+            onClick={handleCancelRequest}
+          >
+            Cancel Request
+          </Button>
+        </>
+      );
+
+    case "pending_incoming":
+      return (
+        <>
+          <Button onClick={handleAccept}>
+            Accept
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={handleCancelRequest}
+          >
+            Decline
+          </Button>
+        </>
+      );
+
+    default:
+      return (
+        <>
+          <Button variant="outline" className="border-black text-black" onClick={handleConnect}>
+            Connect
+          </Button>
+        </>
+      );
+  }
+};
 
   // UI — loading
   if (loading) {
@@ -332,8 +447,7 @@ const handleConnect = async () => {
             </div>
 
             {/* Action buttons + social links */}
-            <div className="flex flex-col items-center md:items-end gap-3">
-              <div className="flex flex-wrap justify-center md:justify-end gap-2 w-full">
+              <div className="flex flex-col items-center md:items-end gap-3">
                 {isOwner ? (
                   <Button
                     variant="outline"
@@ -343,14 +457,20 @@ const handleConnect = async () => {
                     Edit
                   </Button>
                 ) : (
-                  renderButtons()
+                  <div className="flex flex-row justify-end gap-2">
+                    {renderButtons()}
+                  </div>
                 )}
+                <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
+                  <Button variant="outline" size="sm" className={`text-xs ${(isCompanyProfile || profile.user_type === "professional" || profile.user_type === "student") ? "border-black text-black" : ""}`}>
+                    Social Links
+                  </Button>
+                  <SocialMediaLinks
+                    links={profile.social_links || {}}
+                    editable={false}
+                  />
+                </div>
               </div>
-              <SocialMediaLinks
-                links={profile.social_links || {}}
-                editable={false}
-              />
-            </div>
             
           </div>
         
@@ -448,6 +568,39 @@ const handleConnect = async () => {
 
       {/* Fix #1 — Skills always rendered; ProfileSkillsSection handles the empty state */}
       <ProfileSkillsSection profile={profile} />
+
+      {isCompanyProfile && (
+        <Card className="border border-border shadow-sm">
+            <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-foreground">Featured (3 items)</h3>
+                </div>
+                <div className="flex flex-row justify-center items-end gap-6">
+                    {/* Item 3 */}
+                    <div className="flex flex-col w-[140px]">
+                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+                        <div className="h-[160px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 3</div>
+                        </div>
+                    </div>
+                    {/* Item 1 */}
+                    <div className="flex flex-col w-[140px]">
+                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+                        <div className="h-[140px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 1</div>
+                        </div>
+                    </div>
+                    {/* Item 2 */}
+                    <div className="flex flex-col w-[140px]">
+                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+                        <div className="h-[150px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 2</div>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
 
       <PortfolioSection profile={profile} />
       <ExperienceSection profile={profile} />

@@ -3,76 +3,64 @@ import { supabase } from "@/integrations/supabase/client";
 export const connectionsService = {
 
   // FOLLOW / CONNECT
-  async connect(
-    userId: string,
-    targetId: string,
-    isCompany: boolean = false
-  ) {
+ // FOLLOW / CONNECT
+async connect(
+  userId: string,
+  targetId: string,
+  isCompany: boolean = false
+) {
+  // Check existing connection
+  const { data: existingConnection } = await supabase
+    .from("connections")
+    .select("*")
+    .or(
+      `and(user_id.eq.${userId},connected_user_id.eq.${targetId}),and(user_id.eq.${targetId},connected_user_id.eq.${userId})`
+    )
+    .maybeSingle();
 
-    // CHECK EXISTING CONNECTION
-    const { data: existingConnection } = await supabase
-      .from("connections")
-      .select("*")
-      .or(
-        `and(user_id.eq.${userId},connected_user_id.eq.${targetId}),and(user_id.eq.${targetId},connected_user_id.eq.${userId})`
-      )
-      .maybeSingle();
+  // Already exists
+  if (existingConnection) {
+    // COMPANY FOLLOW
+    if (isCompany) {
+      if (existingConnection.status !== "accepted") {
+        const { data, error } = await supabase
+          .from("connections")
+          .update({
+            status: "accepted",
+          })
+          .eq("id", existingConnection.id)
+          .select()
+          .single();
 
-    // =====================================
-    // COMPANY FOLLOW FIX
-    // =====================================
-    // If a pending connection already exists
-    // for a company, convert it to accepted
-    if (existingConnection && isCompany) {
-
-      // Already following
-      if (existingConnection.status === "accepted") {
-        return {
-          data: existingConnection,
-          error: null,
-        };
+        return { data, error };
       }
 
-      // Convert pending -> accepted
-      const { data, error } = await supabase
-        .from("connections")
-        .update({
-          status: "accepted",
-        })
-        .eq("id", existingConnection.id)
-        .select()
-        .single();
-
-      return { data, error };
-    }
-
-    // =====================================
-    // NORMAL USER DUPLICATE PROTECTION
-    // =====================================
-    if (existingConnection) {
       return {
         data: existingConnection,
         error: null,
       };
     }
 
-    // =====================================
-    // CREATE NEW CONNECTION
-    // =====================================
-    const status = isCompany
-      ? "accepted"
-      : "pending";
+    // USER CONNECTION
+    return {
+      data: existingConnection,
+      error: null,
+    };
+  }
 
-    return await supabase
-      .from("connections")
-      .insert({
-        user_id: userId,
-        connected_user_id: targetId,
-        status,
-      })
-      .select()
-      .single();
-  },
+  // Create new row
+  const { data, error } = await supabase
+    .from("connections")
+    .insert({
+      user_id: userId,
+      connected_user_id: targetId,
+      status: isCompany ? "accepted" : "pending",
+    })
+    .select()
+    .single();
+
+  return { data, error };
+},
 
   // ACCEPT REQUEST
   async acceptRequest(connId: string) {

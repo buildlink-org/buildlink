@@ -23,9 +23,9 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 	const userType = profile.user_type?.toLowerCase() || "student"
 
 	
-	let badgeClasses = "bg-yellow-100 dark:bg-yellow-950 text-foreground border border-yellow-200 dark:border-yellow-800"
+	let badgeClasses = "bg-[#fde68a] dark:bg-yellow-900 text-foreground border border-yellow-300 dark:border-yellow-700"
 	if (userType === "professional") {
-	badgeClasses = "bg-orange-200 dark:bg-orange-950 text-foreground border border-orange-200 dark:border-orange-800"
+	badgeClasses = "bg-[#fed7aa] dark:bg-orange-950 text-foreground border border-orange-200 dark:border-orange-800"
 	} else if (userType === "company") {
 	badgeClasses = "bg-green-100 dark:bg-green-950 text-foreground border border-green-200 dark:border-green-800"
 	}
@@ -34,7 +34,7 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 		<Card className="border border-border shadow-sm">
 			<CardContent className="rounded-md px-4 py-4 shadow-sm">
 				<div className="mb-3 flex items-center justify-between">
-					<h2 className="text-base font-semibold text-foreground">Skills</h2>
+					<h2 className="text-base font-semibold text-foreground">{userType === "company" ? "Expertise" : "Skills"}</h2>
 					{canEdit && (
 						<SkillsEditDialog
 							currentProfile={profile}
