@@ -28,30 +28,30 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 
 		if (userType === "student") {
 			return {
-				bgColor: "bg-yellow-100 dark:bg-yellow-950",
-				borderColor: "border-yellow-200 dark:border-yellow-800",
-				titleColor: "text-foreground",
-				descColor: "text-muted-foreground",
-				iconEmoji: "🎓",
+				bgColor: "bg-[#ffb3a7] dark:bg-[#ffb3a7]",
+				borderColor: "border-[#ffb3a7] dark:border-[#ffb3a7]",
+				titleColor: "text-black",
+				descColor: "text-black",
+				iconEmoji: "",
 				message: "Your journey into the industry starts right here!",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-orange-100 dark:bg-orange-950",
-				borderColor: "border-orange-200 dark:border-orange-800",
-				titleColor: "text-foreground",
-				descColor: "text-muted-foreground",
-				iconEmoji: "💼",
-				message: "Ready to connect, grow, and lead in Kenya's built environment?",
+				bgColor: "bg-[#ffb3a7] dark:bg-[#ffb3a7]",
+				borderColor: "border-[#ffb3a7] dark:border-[#ffb3a7]",
+				titleColor: "text-black",
+				descColor: "text-black",
+				iconEmoji: "",
+				message: "Ready to connect, grow and lead in Kenya's Built Environment?",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-green-100 dark:bg-green-950",
-				borderColor: "border-green-200 dark:border-green-800",
-				titleColor: "text-foreground",
-				descColor: "text-muted-foreground",
-				iconEmoji: "🪪",
-				message: "Relevance & Visibility has never been easier until now.",
+				bgColor: "bg-[#ff7f7f] dark:bg-[#ff7f7f]",
+				borderColor: "border-[#ff7f7f] dark:border-[#ff7f7f]",
+				titleColor: "text-black",
+				descColor: "text-black",
+				iconEmoji: "",
+				message: "Relevance & Visibility has never been easier until now!",
 			}
 		}
 
@@ -128,7 +128,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 							<ProfileEditDialog
 								currentProfile={profile}
 								onProfileUpdated={handleProfileUpdate}>
-								<Button className="flex-1 sm:flex-none">
+								<Button className={`flex-1 sm:flex-none bg-[#b30000] hover:bg-[#8b0000] text-white`}>
 									<Edit className="mr-1 h-4 w-4" />
 									Edit Profile
 								</Button>
@@ -144,7 +144,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 									<Button
 										variant="outline"
 										size="sm"
-										className="text-xs">
+										className={`text-xs border-black text-black`}>
 										Social Links
 									</Button>
 								}

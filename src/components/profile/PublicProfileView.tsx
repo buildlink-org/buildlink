@@ -325,8 +325,7 @@ const renderButtons = () => {
 
     return (
       <>
-        <Button onClick={handleConnect}>
-          <UserPlus className="mr-2 h-4 w-4" />
+        <Button variant="outline" className="border-black text-black" onClick={handleConnect}>
           Follow
         </Button>
         {messageBtn}
@@ -377,8 +376,7 @@ const renderButtons = () => {
     default:
       return (
         <>
-          <Button onClick={handleConnect}>
-            <UserPlus className="mr-2 h-4 w-4" />
+          <Button variant="outline" className="border-black text-black" onClick={handleConnect}>
             Connect
           </Button>
         </>
@@ -449,8 +447,7 @@ const renderButtons = () => {
             </div>
 
             {/* Action buttons + social links */}
-            <div className="flex flex-col items-center md:items-end gap-3">
-              <div className="flex flex-wrap justify-center md:justify-end gap-2 w-full">
+              <div className="flex flex-col items-center md:items-end gap-3">
                 {isOwner ? (
                   <Button
                     variant="outline"
@@ -460,14 +457,20 @@ const renderButtons = () => {
                     Edit
                   </Button>
                 ) : (
-                  renderButtons()
+                  <div className="flex flex-row justify-end gap-2">
+                    {renderButtons()}
+                  </div>
                 )}
+                <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
+                  <Button variant="outline" size="sm" className={`text-xs ${(isCompanyProfile || profile.user_type === "professional" || profile.user_type === "student") ? "border-black text-black" : ""}`}>
+                    Social Links
+                  </Button>
+                  <SocialMediaLinks
+                    links={profile.social_links || {}}
+                    editable={false}
+                  />
+                </div>
               </div>
-              <SocialMediaLinks
-                links={profile.social_links || {}}
-                editable={false}
-              />
-            </div>
             
           </div>
         
@@ -565,6 +568,39 @@ const renderButtons = () => {
 
       {/* Fix #1 — Skills always rendered; ProfileSkillsSection handles the empty state */}
       <ProfileSkillsSection profile={profile} />
+
+      {isCompanyProfile && (
+        <Card className="border border-border shadow-sm">
+            <CardContent className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <h3 className="text-lg font-semibold text-foreground">Featured (3 items)</h3>
+                </div>
+                <div className="flex flex-row justify-center items-end gap-6">
+                    {/* Item 3 */}
+                    <div className="flex flex-col w-[140px]">
+                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+                        <div className="h-[160px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 3</div>
+                        </div>
+                    </div>
+                    {/* Item 1 */}
+                    <div className="flex flex-col w-[140px]">
+                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+                        <div className="h-[140px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 1</div>
+                        </div>
+                    </div>
+                    {/* Item 2 */}
+                    <div className="flex flex-col w-[140px]">
+                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+                        <div className="h-[150px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 2</div>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
 
       <PortfolioSection profile={profile} />
       <ExperienceSection profile={profile} />

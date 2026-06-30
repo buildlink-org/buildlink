@@ -11,13 +11,13 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
-				bgColor: "bg-yellow-100 dark:bg-yellow-950",
-				borderColor: "border-yellow-200 dark:border-yellow-800",
+				bgColor: "bg-[#fde68a] dark:bg-[#fde68a]",
+				borderColor: "border-[#fde68a] dark:border-[#fde68a]",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-orange-100 dark:bg-orange-950",
-				borderColor: "border-orange-200 dark:border-orange-800",
+				bgColor: "bg-[#fed7aa] dark:bg-[#fed7aa]",
+				borderColor: "border-[#fed7aa] dark:border-[#fed7aa]",
 			}
 		} else if (userType === "company") {
 			return {

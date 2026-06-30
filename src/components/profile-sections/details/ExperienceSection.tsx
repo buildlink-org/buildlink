@@ -32,7 +32,7 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 		iconText = "text-company-700 dark:text-green-400"
 	}
 
-	if (!canEdit && experiences.length === 0) return null
+	if (!canEdit && experiences.length === 0 && profile.user_type !== "student") return null
 
 	return (
 		<Card className="rounded-lg border border-border shadow-sm">
@@ -98,7 +98,18 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 							)}
 						</>
 					) : (
-						<p className="text-muted-foreground">No experience added yet. Click edit to add your work experience.</p>
+						(profile.user_type === "professional" || profile.user_type === "student") ? (
+							<div className="flex space-x-4">
+								<div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${profile.user_type === "student" ? "bg-[#fde68a]" : "bg-[#fed7aa]"}`} />
+								<div className="min-w-0 flex-1 space-y-1">
+									<h3 className="font-bold text-foreground leading-tight">{profile.user_type === "student" ? "[Internship/Role]" : "[Job Title]"}</h3>
+									<p className="text-sm text-muted-foreground leading-tight">[Organization/Company]</p>
+									<p className="text-sm text-muted-foreground leading-tight">[Timeline]</p>
+								</div>
+							</div>
+						) : (
+							<p className="text-muted-foreground">No experience added yet. Click edit to add your work experience.</p>
+						)
 					)}
 				</div>
 			</CardContent>

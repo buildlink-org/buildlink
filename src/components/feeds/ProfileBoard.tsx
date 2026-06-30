@@ -92,8 +92,8 @@ const ProfileBoard = () => {
 					<CardContent className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-muted-foreground">Portfolio Items</p>
-								<p className="text-4xl font-bold">{profile.portfolio?.length || 0}</p>
+								<p className="text-sm text-muted-foreground">{userType === "company" ? "Staff" : "Portfolio Items"}</p>
+								<p className="text-4xl font-bold">{userType === "company" ? 0 : profile.portfolio?.length || 0}</p>
 							</div>
 							<BookOpen className="h-8 w-8 text-green-500" />
 						</div>
@@ -104,7 +104,7 @@ const ProfileBoard = () => {
 					<CardContent className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-muted-foreground">Connections</p>
+								<p className="text-sm text-muted-foreground">{userType === "company" ? "Following" : "Connections"}</p>
 								<p className="text-4xl font-bold">0</p>
 							</div>
 							<Users className="h-8 w-8 text-purple-500" />
@@ -130,16 +130,14 @@ const ProfileBoard = () => {
 				handleProfileUpdate={handleProfileUpdate}
 			/>
 
-			{/* Skills - Right below About/Activity */}
-			{userType !== "company" && (
-				<div>
-					<ProfileSkillsSection
-						profile={profile}
-						canEdit={true}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-				</div>
-			)}
+			{/* Skills/Expertise - Right below About/Activity */}
+			<div>
+				<ProfileSkillsSection
+					profile={profile}
+					canEdit={true}
+					handleProfileUpdate={handleProfileUpdate}
+				/>
+			</div>
 
 			{/* Account Type Specific Sections */}
 			{userType === "student" && (
@@ -209,14 +207,60 @@ const ProfileBoard = () => {
 			{userType === "company" && (
 				<>
 					{/* Featured Section */}
-					<Card>
+					<Card className="border border-border shadow-sm">
 						<CardContent className="p-6">
-							<h3 className="mb-4 text-lg font-semibold">Featured</h3>
-							{/* Featured content */}
+							<div className="flex items-center justify-between mb-6">
+								<h3 className="text-lg font-semibold text-foreground">Featured (3/3 items uploaded)</h3>
+								<div className="flex items-center gap-3">
+									<Button variant="outline" size="sm" className="rounded-md border-black text-black px-4 py-1 h-auto text-xs">
+										+ Add Item
+									</Button>
+									<Edit className="h-4 w-4 text-foreground cursor-pointer" />
+								</div>
+							</div>
+							<div className="flex flex-row justify-center items-end gap-6">
+								{/* Item 3 */}
+								<div className="flex flex-col w-[140px]">
+									<div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+									<div className="h-[160px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 3</div>
+									</div>
+								</div>
+								{/* Item 1 */}
+								<div className="flex flex-col w-[140px]">
+									<div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+									<div className="h-[140px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 1</div>
+									</div>
+								</div>
+								{/* Item 2 */}
+								<div className="flex flex-col w-[140px]">
+									<div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
+									<div className="h-[150px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 2</div>
+									</div>
+								</div>
+							</div>
 						</CardContent>
 					</Card>
-					<ProfileProducts profile={profile} />
-					<ProfilePeople profile={profile} />
+					
+					{/* Products & Services */}
+					<Card className="border border-border shadow-sm">
+						<CardContent className="p-6 relative">
+							<div className="absolute top-4 right-4">
+								<Edit className="h-4 w-4 text-foreground cursor-pointer" />
+							</div>
+							<h3 className="mb-4 text-lg font-semibold text-foreground">Products & Services (optional)</h3>
+							<div className="flex gap-4 items-start mt-4">
+								<div className="w-12 h-12 rounded bg-[#bbf7d0]" />
+								<div className="space-y-1">
+									<p className="font-bold text-base leading-tight text-foreground">[Product/Service]</p>
+									<p className="text-sm text-muted-foreground leading-tight">[Type/Group]</p>
+									<p className="text-sm text-muted-foreground leading-tight">[Availability – location]</p>
+								</div>
+							</div>
+						</CardContent>
+					</Card>
 				</>
 			)}
 		</div>
