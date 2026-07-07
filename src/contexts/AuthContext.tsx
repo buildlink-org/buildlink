@@ -1,6 +1,22 @@
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { User, Session } from "@supabase/supabase-js"
-import { supabase } from "@/integrations/supabase/client"
+import { supabase, AUTH_STORAGE_KEY } from "@/integrations/supabase/client"
+
+// Reads whatever session Supabase already persisted to localStorage on a
+// previous visit, so the app can render as this user immediately instead of
+// showing a blank spinner while `getSession()`'s promise resolves.
+function readPersistedSession(): Session | null {
+	try {
+		const raw = localStorage.getItem(AUTH_STORAGE_KEY)
+		if (!raw) return null
+
+		const parsed = JSON.parse(raw) as Session
+		const isStillValid = parsed?.access_token && parsed?.expires_at && parsed.expires_at * 1000 > Date.now()
+		return isStillValid ? parsed : null
+	} catch {
+		return null
+	}
+}
 
 interface AuthContextType {
 	user: User | null
@@ -26,9 +42,12 @@ export const useAuth = () => {
 }
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-	const [user, setUser] = useState<User | null>(null)
-	const [session, setSession] = useState<Session | null>(null)
-	const [loading, setLoading] = useState(true)
+	const [initialSession] = useState(() => readPersistedSession())
+	const [user, setUser] = useState<User | null>(initialSession?.user ?? null)
+	const [session, setSession] = useState<Session | null>(initialSession)
+	// If we already found a still-valid session in storage, skip the loading
+	// state entirely instead of blocking the page behind the auth round-trip
+	const [loading, setLoading] = useState(initialSession === null)
 
 	useEffect(() => {
 		// Set up auth state listener
