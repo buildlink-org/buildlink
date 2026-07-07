@@ -4,6 +4,7 @@ import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import AdminRoute from "@/components/auth/AdminRoute";
 import PublicRoute from "./components/auth/PublicRoute";
+import LandingPage from "./pages/LandingPage";
 
 const Home = lazy(() => import("./pages/Home"));
 const ResourceHub = lazy(() => import("./pages/ResourceHub"));
@@ -15,7 +16,6 @@ const AdminResourcesPage = lazy(() => import("@/pages/AdminResources"));
 const AdminAnalyticsPage = lazy(() => import("@/pages/AdminAnalytics"));
 const PublicProfile = lazy(() => import("@/pages/PublicProfile"));
 const ProfileSettings = lazy(() => import("@/pages/ProfileSettings"));
-const LandingPage = lazy(() => import("./pages/LandingPage"));
 const SearchResultsPage = lazy(() => import("./pages/SearchResultsPage"));
 
 const RouteFallback = () => (
