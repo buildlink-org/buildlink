@@ -113,7 +113,7 @@ const SignInForm: React.FC<SignInFormProps> = ({showOtpModal}) => {
               type="button"
               variant="ghost"
               size="sm"
-              className="text-sm text-muted-foreground hover:text-foreground"
+              className="text-sm text-muted-foreground hover:text-white"
               disabled={isResetting}
               onClick={() => {
                 const emailInput = document.getElementById('signin-email') as HTMLInputElement;
