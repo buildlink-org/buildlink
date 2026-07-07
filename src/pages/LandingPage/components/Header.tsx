@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Menu, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import buildlinkLogo from "@/assets/buildlink-logo.png"
+import buildlinkLogo from "@/assets/buildlink-logo.png?w=240&quality=90&format=webp"
 import { HashLink } from "react-router-hash-link"
 import UserProfileButton from "@/components/UserProfileButton"
 

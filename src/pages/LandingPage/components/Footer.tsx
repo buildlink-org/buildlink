@@ -1,5 +1,5 @@
 import { Building2, Mail, Linkedin, X, Instagram } from "lucide-react";
-import buildlinkLogo from "@/assets/buildlink-logo.png";
+import buildlinkLogo from "@/assets/buildlink-logo.png?w=240&quality=90&format=webp";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();

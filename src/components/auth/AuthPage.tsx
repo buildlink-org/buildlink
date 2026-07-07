@@ -8,7 +8,7 @@ import OtpVerificationModal from "./OTPVerifyModal"
 import { Sun, Moon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useTheme } from "@/contexts/ThemeContext"
-import buildlinkLogo from "@/assets/buildlink-logo.png"
+import buildlinkLogo from "@/assets/buildlink-logo.png?w=240&quality=90&format=webp"
 
 const AuthPage = () => {
 	const { user, loading } = useAuth()

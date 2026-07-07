@@ -7,7 +7,7 @@ import EnhancedNotificationsDropdown from "@/components/EnhancedNotificationsDro
 import SearchDropdown from "./SearchDropdown"
 import { useIsAdmin } from "@/hooks/useIsAdmin"
 import { cn } from "@/lib/utils"
-import logo from "@/assets/buildlink-logo.png"
+import logo from "@/assets/buildlink-logo.png?w=240&quality=90&format=webp"
 import { useTheme } from "@/contexts/ThemeContext"
 
 interface TopBarProps {
