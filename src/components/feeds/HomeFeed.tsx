@@ -63,19 +63,10 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 		},
 	})
 
-	// SINGLE useQuery declaration with debugging
 	const { data: statsData, isLoading: isLoadingStats } = useQuery({
 		queryKey: ["profileStats"],
 		queryFn: profileService.getStats,
 		staleTime: 5 * 60 * 1000, // 5 minutes
-		onSuccess: (data) => {
-			console.log("Stats data received:", data)
-			console.log("Professionals count:", data?.data?.professionalsCount)
-			console.log("Companies count:", data?.data?.companiesCount)
-		},
-		onError: (error) => {
-			console.error("Error fetching stats:", error)
-		},
 	})
 
 	const handleLike = useCallback(
@@ -193,7 +184,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 					<div className="mb-4 flex items-start justify-between">
 						<div>
 							<h2 className="mb-2 text-2xl font-bold">Welcome to BuildLink Kenya</h2>
-							<p className="text-primary-foreground/90">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
+							<p className="text-white">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
 						</div>
 					</div>
 					<div className="grid grid-cols-3 gap-4">
@@ -242,7 +233,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 				<div className="mb-4 flex items-start justify-between">
 					<div>
 						<h2 className="mb-2 text-2xl font-bold">Welcome to BuildLink Kenya</h2>
-						<p className="text-primary-foreground/90">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
+						<p className="text-white">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
 					</div>
 				</div>
 				<div className="grid grid-cols-3 gap-4">
