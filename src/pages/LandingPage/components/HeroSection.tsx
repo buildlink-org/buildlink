@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Users, Building2, MapPin } from "lucide-react";
-import heroImage from "@/assets/hero-image.jpg";
+import heroImage from "@/assets/hero-image.jpg?w=1920&quality=75&format=webp";
 
 const HeroSection = () => {
   return (
