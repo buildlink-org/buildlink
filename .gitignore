@@ -32,3 +32,7 @@ package-lock.json
 
 # Personal notes tracker
 Notes.MD
+
+# Env files
+.env
+.env.example
