@@ -12,7 +12,7 @@ interface RepostDialogProps {
   isOpen: boolean;
   onClose: () => void;
   post: any;
-  onRepost: () => void;
+  onRepost: (action: 'reposted' | 'unreposted') => void;
 }
 
 const RepostDialog = ({ isOpen, onClose, post, onRepost }: RepostDialogProps) => {
@@ -39,7 +39,7 @@ const RepostDialog = ({ isOpen, onClose, post, onRepost }: RepostDialogProps) =>
         description: action === 'reposted' ? 'Post reposted!' : 'Repost removed!',
       });
 
-      onRepost();
+      onRepost(action);
       onClose();
       setComment('');
     } catch (error) {

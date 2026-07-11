@@ -13,6 +13,7 @@ import ConversationsList from "./ConversationList"
 import ConversationView from "./ConversationView"
 import RecipientInput from "./NewChatInput"
 import { useMessagingStore } from "@/stores/messagingStore"
+import { useAuth } from "@/contexts/AuthContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface UserListItem {
@@ -22,10 +23,14 @@ interface UserListItem {
 }
 
 const FloatingMessagingWidget: React.FC = () => {
+  const { user } = useAuth()
   const recipientId = useMessagingStore((state) => state.recipientId)
   const recipientName = useMessagingStore((state) => state.recipientName)
   const recipientAvatar = useMessagingStore((state) => state.recipientAvatar)
   const clearRecipient = useMessagingStore((state) => state.clearRecipient)
+  const setCurrentUser = useMessagingStore((state) => state.setCurrentUser)
+  const subscribeToMessages = useMessagingStore((state) => state.subscribeToMessages)
+  const unsubscribeFromMessages = useMessagingStore((state) => state.unsubscribeFromMessages)
 
   const [isOpen, setIsOpen] = useState(!!recipientId)
   const [isMinimized, setIsMinimized] = useState(false)
@@ -33,7 +38,12 @@ const FloatingMessagingWidget: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"inbox" | "chat">("chat")
   const [animate, setAnimate] = useState(false)
 
-  const unreadCount = 0
+  const unreadCounts = useMessagingStore((state) => state.unreadCounts)
+
+  const unreadCount = Object.values(unreadCounts).reduce(
+    (sum, count) => sum + count,
+    0
+  )
 
   // 🔒 Prevent background scroll (no jump)
   useEffect(() => {
@@ -54,6 +64,18 @@ const FloatingMessagingWidget: React.FC = () => {
       document.body.style.top = ""
     }
   }, [isOpen])
+
+  // Initialize real-time subscription when user is available
+  useEffect(() => {
+    if (!user) return
+
+    setCurrentUser(user.id)
+    subscribeToMessages()
+
+    return () => {
+      unsubscribeFromMessages()
+    }
+  }, [user])
 
   // ✨ Animate modal
   useEffect(() => {

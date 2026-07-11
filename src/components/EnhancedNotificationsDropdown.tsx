@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import {
 	Bell,
 	Check,
@@ -16,7 +16,8 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { useAuth } from "@/contexts/AuthContext"
-import { NotificationService } from "@/services/notificationService"
+import { NotificationService, groupNotifications } from "@/services/notificationService"
+import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate } from "react-router-dom"
 import { useMessagingStore } from "@/stores/messagingStore"
@@ -63,14 +64,42 @@ const EnhancedNotificationsDropdown = () => {
 			const interval = setInterval(loadNotifications, 30000)
 			return () => clearInterval(interval)
 		}
+	}, [user, loadNotifications])
+
+	useEffect(() => {
+		if (!user) return
+
+		const channel = supabase
+			.channel("notifications-dropdown")
+			.on(
+				"postgres_changes",
+				{
+					event: "INSERT",
+					schema: "public",
+					table: "notifications",
+					filter: `user_id=eq.${user.id}`,
+				},
+				(payload) => {
+					const newNotification = payload.new as any
+					setNotifications((prev) => [newNotification, ...prev])
+					if (!newNotification.read) {
+						setUnreadCount((prev) => prev + 1)
+					}
+				},
+			)
+			.subscribe()
+
+		return () => {
+			supabase.removeChannel(channel)
+		}
 	}, [user])
 
-	const loadNotifications = async () => {
+	const loadNotifications = useCallback(async () => {
 		if (!user) return
 
 		try {
 			setLoading(true)
-			const { data, error } = await NotificationService.getNotification(user.id)
+			const { data, error } = await NotificationService.getNotificationsPaginated(user.id, 20, 0)
 			if (error) return
 
 			setNotifications(data || [])
@@ -78,7 +107,7 @@ const EnhancedNotificationsDropdown = () => {
 		} finally {
 			setLoading(false)
 		}
-	}
+	}, [user])
 
 	const markAsRead = async (id: string) => {
 		await NotificationService.markAsRead(id)
@@ -107,6 +136,8 @@ const EnhancedNotificationsDropdown = () => {
 			return n.type === categoryMap[activeCategory]
 		})
 		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+
+	const groupedNotifications = useMemo(() => groupNotifications(filteredNotifications), [filteredNotifications])
 
 	//Handle click routing
 	const handleNotificationClick = async (n: any) => {
@@ -201,12 +232,12 @@ const EnhancedNotificationsDropdown = () => {
 							<div className="flex justify-center py-8">
 								<div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary" />
 							</div>
-						) : filteredNotifications.length === 0 ? (
+						) : groupedNotifications.length === 0 ? (
 							<div className="p-8 text-center text-sm text-muted-foreground">
 								No notifications yet
 							</div>
 						) : (
-							filteredNotifications.map((n) => {
+							groupedNotifications.map((n) => {
 								const name =
 									n.from_user?.full_name
 										? n.from_user.full_name.charAt(0).toUpperCase() +
@@ -235,6 +266,11 @@ const EnhancedNotificationsDropdown = () => {
 											<div>
 												<p className="text-sm">
 													<strong>{name}</strong> {n.content}
+													{n.groupCount && n.groupCount > 1 && (
+														<span className="ml-1 text-xs text-muted-foreground">
+															(+{n.groupCount - 1} more)
+														</span>
+													)}
 												</p>
 												<p className="text-xs text-muted-foreground">
 													{new Date(n.created_at).toLocaleDateString()}
