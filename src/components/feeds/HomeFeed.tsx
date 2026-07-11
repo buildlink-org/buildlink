@@ -80,10 +80,29 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 				return
 			}
 
+			// Save previous state for rollback
+			const prevInteraction = postInteractions[postId]
+			const prevPost = posts.find((p) => p.id === postId)
+			const prevLiked = prevInteraction?.liked ?? false
+			const newLiked = !prevLiked
+
+			// Optimistic update
+			updatePostInteraction(postId, { liked: newLiked })
+			updatePostCounts(postId, {
+				likes_count: newLiked
+					? (prevPost?.likes_count || 0) + 1
+					: Math.max(0, (prevPost?.likes_count || 0) - 1),
+			})
+
 			try {
 				const { error, action } = await postsService.likePost(postId, user.id)
 
 				if (error) {
+					// Rollback on error
+					updatePostInteraction(postId, { liked: prevLiked })
+					updatePostCounts(postId, {
+						likes_count: prevPost?.likes_count || 0,
+					})
 					toast({
 						title: "Error",
 						description: "Failed to update like",
@@ -92,26 +111,88 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 					return
 				}
 
-				// Update interactions and counts using the hook functions
-				updatePostInteraction(postId, { liked: action === "liked" })
-				updatePostCounts(postId, {
-					likes_count: action === "liked" ? (posts.find((p) => p.id === postId)?.likes_count || 0) + 1 : Math.max(0, (posts.find((p) => p.id === postId)?.likes_count || 0) - 1),
-				})
-
-				toast({
-					title: "Success",
-					description: action === "liked" ? "Post liked!" : "Post unliked!",
-				})
+				// Sync with actual DB count via getPostInteractions
+				const { data: counts } = await postsService.getPostInteractions(postId)
+				if (counts) {
+					updatePostCounts(postId, {
+						likes_count: counts.likes_count,
+					})
+				}
 			} catch (error) {
+				// Rollback on exception
+				updatePostInteraction(postId, { liked: prevLiked })
+				updatePostCounts(postId, {
+					likes_count: prevPost?.likes_count || 0,
+				})
 				console.error("Error handling like:", error)
 			}
 		},
-		[user, toast, updatePostInteraction, updatePostCounts, posts],
+		[user, toast, updatePostInteraction, updatePostCounts, postInteractions, posts],
 	)
 
 	const handleComment = (postId: string) => {
 		setCommentsDialog({ isOpen: true, postId })
 	}
+
+	const handleShare = useCallback(
+		async (postId: string) => {
+			if (!user) {
+				toast({
+					title: "Authentication required",
+					description: "Please sign in to share posts",
+					variant: "destructive",
+				})
+				return
+			}
+
+			// Optimistic update
+			const prevPost = posts.find((p) => p.id === postId);
+			updatePostCounts(postId, {
+				shares_count: (prevPost?.shares_count || 0) + 1,
+			});
+
+			try {
+				const { data, error } = await postsService.sharePost(postId, user.id);
+				if (error) {
+					// Rollback on error
+					updatePostCounts(postId, {
+						shares_count: prevPost?.shares_count || 0,
+					});
+					toast({
+						title: "Error",
+						description: "Failed to share post",
+						variant: "destructive",
+					})
+					return
+				}
+
+				// Try Web Share API, fall back to clipboard
+				if (navigator.share) {
+					try {
+						await navigator.share({
+							title: data.title,
+							text: data.text,
+							url: data.url,
+						})
+					} catch {
+						// User cancelled or Web Share failed - share was already recorded
+					}
+				} else {
+					await navigator.clipboard.writeText(data.url)
+					toast({
+						title: "Success",
+						description: "Post URL copied to clipboard!",
+					})
+				}
+			} catch {
+				// Rollback on exception
+				updatePostCounts(postId, {
+					shares_count: prevPost?.shares_count || 0,
+				});
+			}
+		},
+		[user, toast, posts, updatePostCounts],
+	)
 
 	const handleRepost = (post: any) => {
 		if (!user) {
@@ -123,35 +204,6 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 			return
 		}
 		setRepostDialog({ isOpen: true, post })
-	}
-
-	const handleShare = async (postId: string) => {
-		try {
-			const { data, error } = await postsService.sharePost(postId)
-
-			if (error) throw error
-
-			if (navigator.share) {
-				await navigator.share({
-					title: data.title,
-					text: data.text,
-					url: data.url,
-				})
-			} else {
-				await navigator.clipboard.writeText(data.url)
-				toast({
-					title: "Success",
-					description: "Post URL copied to clipboard!",
-				})
-			}
-		} catch (error) {
-			console.error("Error sharing post:", error)
-			toast({
-				title: "Error",
-				description: "Failed to share post",
-				variant: "destructive",
-			})
-		}
 	}
 
 	const handleUserClick = (userprofile: UserProfileType) => {
@@ -173,9 +225,19 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 		refresh()
 	}, [refresh])
 
-	const handleRepostComplete = useCallback(() => {
+	const handleRepostComplete = useCallback((action: 'reposted' | 'unreposted') => {
+		// Update reposts_count in local state
+		const repostedPost = repostDialog.post;
+		if (repostedPost) {
+			updatePostCounts(repostedPost.id, {
+				reposts_count:
+					action === 'reposted'
+						? (repostedPost.reposts_count || 0) + 1
+						: Math.max(0, (repostedPost.reposts_count || 0) - 1),
+			});
+		}
 		refresh()
-	}, [refresh])
+	}, [refresh, repostDialog.post, updatePostCounts])
 
 	if (initialLoading) {
 		return (
@@ -253,11 +315,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 			</div>
 
 			{/* Notifications Panel */}
-			{showNotifications && user && (
-				<div className="rounded-lg border border-border bg-card p-6 text-card-foreground shadow-sm">
-					<NotificationsList />
-				</div>
-			)}
+			{showNotifications && user && <NotificationsList />}
 
 			{/* Create Post Section */}
 			{user && (
@@ -286,6 +344,8 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 								isLiked={postInteractions[post.id]?.liked || false}
 								onLike={() => handleLike(post.id)}
 								onComment={() => handleComment(post.id)}
+								onShare={() => handleShare(post.id)}
+								onRepost={() => handleRepost(post)}
 								onPostUpdated={handlePostUpdated}
 								onPostDeleted={handlePostDeleted}
 								dataSaver={dataSaverMode}
@@ -332,6 +392,14 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 				isOpen={commentsDialog.isOpen}
 				onClose={() => setCommentsDialog({ isOpen: false, postId: "" })}
 				postId={commentsDialog.postId}
+				onCommentAdded={(postId) => {
+					const post = posts.find((p) => p.id === postId)
+					if (post) {
+						updatePostCounts(postId, {
+							comments_count: (post.comments_count || 0) + 1,
+						})
+					}
+				}}
 			/>
 
 			<RepostDialog

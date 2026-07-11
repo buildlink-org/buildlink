@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare } from "lucide-react"
+import { Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare, Repeat2 } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -24,13 +24,15 @@ interface PostCardProps {
 	isLiked?: boolean
 	onLike?: () => void
 	onComment?: () => void
+	onShare?: () => void
+	onRepost?: () => void
 	onPostUpdated?: () => void
 	onPostDeleted?: () => void
 	dataSaver?: boolean
 	priority?: boolean
 }
 
-const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onPostDeleted, dataSaver = false, priority = false }: PostCardProps) => {
+const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost, onPostUpdated, onPostDeleted, dataSaver = false, priority = false }: PostCardProps) => {
 	const { user } = useAuth()
 	const { toast } = useToast()
 	const navigate = useNavigate()
@@ -262,9 +264,19 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 							<Button
 								variant="ghost"
 								size="sm"
+								onClick={onRepost}
+								className="flex items-center space-x-2 text-muted-foreground hover:text-white">
+								<Repeat2 className="h-4 w-4" />
+								<span>{post.reposts_count}</span>
+							</Button>
+
+							<Button
+								variant="ghost"
+								size="sm"
 								onClick={() => setShowShareDialog(true)}
-								className="text-muted-foreground hover:text-white">
+								className="flex items-center space-x-2 text-muted-foreground hover:text-white">
 								<Share2 className="h-4 w-4" />
+								<span>{post.shares_count || 0}</span>
 							</Button>
 						</div>
 					</div>
@@ -282,6 +294,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onPostUpdated, onP
 				post={post}
 				open={showShareDialog}
 				onOpenChange={setShowShareDialog}
+				onShare={onShare}
 			/>
 
 			<AlertDialog

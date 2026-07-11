@@ -16,18 +16,22 @@ export const postsService = {
         ),
         likes_count,
         comments_count,
-        reposts_count
+        reposts_count,
+        shares_count
       `);
     
     if (category && category !== 'all' && category !== 'latest') {
-      // Map filter categories to database categories
+      // Map filter categories to database location values
       const categoryMap: { [key: string]: string } = {
-        'news': 'general',
-        'jobs': 'career',
-        'portfolios': 'project'
+        'industry': 'industry',
+        'projects': 'project',
+        'opportunities': 'opportunity'
+        // 'news': 'general',
+        // 'jobs': 'career', 
+        // 'portfolios': 'project'
       };
       const dbCategory = categoryMap[category] || category;
-      query = query.ilike('content', `%${dbCategory}%`);
+      query = query.eq('location', dbCategory);
     }
     
     if (sortBy === 'latest') {
@@ -197,7 +201,7 @@ export const postsService = {
       return { data, error, action: 'reposted' };
     }
   },
-  async sharePost(postId: string) {
+  async sharePost(postId: string, userId?: string) {
     // Get post data for sharing
     const { data: post, error } = await supabase
       .from('posts')
@@ -215,6 +219,16 @@ export const postsService = {
       .single();
 
     if (error) return { data: null, error };
+
+    // Record share in post_shares table if user is logged in
+    if (userId) {
+      await supabase
+        .from('post_shares')
+        .upsert(
+          { post_id: postId, user_id: userId },
+          { onConflict: 'post_id,user_id' }
+        );
+    }
 
     // Create share URL
     const shareUrl = `${window.location.origin}/?post=${postId}`;

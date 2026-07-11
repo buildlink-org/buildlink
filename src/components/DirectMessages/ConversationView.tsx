@@ -88,6 +88,9 @@ const ConversationView: React.FC<
   const fetchMessages =
     useMessagingStore((s) => s.fetchMessages)
 
+  const fetchOlderMessages =
+    useMessagingStore((s) => s.fetchOlderMessages)
+
   const addMessage =
     useMessagingStore((s) => s.addMessage)
 
@@ -96,6 +99,9 @@ const ConversationView: React.FC<
 
   const updateMessage =
     useMessagingStore((s) => s.updateMessage)
+
+  const markConversationRead =
+    useMessagingStore((s) => s.markConversationRead)
 
   const [sending, setSending] = useState(false)
   const [content, setContent] = useState("")
@@ -114,6 +120,11 @@ const ConversationView: React.FC<
     string | null
   >(null)
 
+  const [loadingOlder, setLoadingOlder] =
+    useState(false)
+  const [hasMoreOlder, setHasMoreOlder] =
+    useState(true)
+
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const fileInputRef =
@@ -131,6 +142,17 @@ const ConversationView: React.FC<
     if (!user || !otherUserId) return
 
     fetchMessages(user.id, otherUserId)
+  }, [user, otherUserId])
+
+  // Mark messages as read when viewing a conversation
+  useEffect(() => {
+    if (!user || !otherUserId) return
+
+    markConversationRead(otherUserId)
+    directMessagesService.markMessagesAsRead(
+      user.id,
+      otherUserId
+    )
   }, [user, otherUserId])
 
   useEffect(() => {
@@ -246,6 +268,58 @@ const ConversationView: React.FC<
     removeMessage(id)
   }
 
+  const handleRetry = async (msg: Message) => {
+    if (!user || sending) return
+
+    setSending(true)
+
+    const tempId = `temp-${Date.now()}`
+
+    const retryMessage: Message = {
+      ...msg,
+      id: tempId,
+      status: "sending",
+    }
+
+    removeMessage(msg.id)
+    addMessage(retryMessage)
+
+    try {
+      const { data, error } =
+        await directMessagesService.sendMessage({
+          sender_id: user.id,
+          recipient_id: otherUserId,
+          content: msg.content || "",
+          image_url: msg.image_url || undefined,
+          image_type: msg.image_type || null,
+        })
+
+      if (error) throw error
+
+      removeMessage(tempId)
+
+      if (data) {
+        addMessage({
+          ...data,
+          status: "sent",
+        })
+      }
+    } catch (err: any) {
+      updateMessage({
+        ...retryMessage,
+        status: "failed",
+      })
+
+      toast({
+        title: "Send failed",
+        description: err.message,
+        variant: "destructive",
+      })
+    }
+
+    setSending(false)
+  }
+
   const handleEdit = async (id: string) => {
     const { data } =
       await directMessagesService.updateMessage({
@@ -276,6 +350,40 @@ const ConversationView: React.FC<
       {/* MESSAGES */}
       <ScrollArea className="flex-1 bg-muted/10 px-3 py-4">
         <div className="space-y-3">
+          {/* LOAD OLDER MESSAGES */}
+          {messages.length > 0 && hasMoreOlder && (
+            <div className="flex justify-center">
+              <button
+                onClick={async () => {
+                  setLoadingOlder(true)
+                  const prevCount = messages.length
+                  await fetchOlderMessages(
+                    user!.id,
+                    otherUserId
+                  )
+                  // If no new messages were added, there are no more
+                  const newCount =
+                    useMessagingStore.getState()
+                      .messagesByUserId[otherUserId]
+                      ?.length ?? 0
+                  if (
+                    newCount - prevCount <
+                    20
+                  ) {
+                    setHasMoreOlder(false)
+                  }
+                  setLoadingOlder(false)
+                }}
+                disabled={loadingOlder}
+                className="rounded-full border px-4 py-1.5 text-xs text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
+              >
+                {loadingOlder
+                  ? "Loading..."
+                  : "Load older messages"}
+              </button>
+            </div>
+          )}
+
           {conversationItems.map((item) => {
             if (item.type === "separator") {
               return (
@@ -458,6 +566,14 @@ const ConversationView: React.FC<
                           <span className="text-red-400">
                             {" "}
                             · Failed
+                            <button
+                              onClick={() =>
+                                handleRetry(msg)
+                              }
+                              className="ml-1.5 text-xs text-primary underline hover:text-primary/80"
+                            >
+                              Retry
+                            </button>
                           </span>
                         )}
                       </p>

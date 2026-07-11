@@ -65,6 +65,26 @@ export const directMessagesService = {
 		return { data, error }
 	},
 
+	// GET OLDER MESSAGES (pagination)
+	async getOlderMessages(
+		userId: string,
+		otherUserId: string,
+		before: string,
+		pageSize: number = 20
+	) {
+		const { data, error } = await supabase
+			.from("direct_messages")
+			.select("*")
+			.or(
+				`and(sender_id.eq.${userId},recipient_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},recipient_id.eq.${userId})`
+			)
+			.lt("created_at", before)
+			.order("created_at", { ascending: false })
+			.limit(pageSize)
+
+		return { data, error }
+	},
+
 	// ✅ DELETE MESSAGE
 	async deleteMessage(messageId: string) {
 		const { error } = await supabase
@@ -91,5 +111,48 @@ export const directMessagesService = {
 			.single()
 
 		return { data, error }
+	},
+
+	// ✅ MARK MESSAGES AS READ
+	async markMessagesAsRead(
+		currentUserId: string,
+		otherUserId: string
+	) {
+		const { error } = await supabase
+			.from("direct_messages")
+			.update({ read: true })
+			.eq("sender_id", otherUserId)
+			.eq("recipient_id", currentUserId)
+			.eq("read", false)
+
+		return { error }
+	},
+
+	// GET LAST MESSAGE PER CONVERSATION (single query, no N+1)
+	async getLastMessagesForUser(userId: string) {
+		const { data, error } = await supabase
+			.from("direct_messages")
+			.select("*")
+			.or(
+				`sender_id.eq.${userId},recipient_id.eq.${userId}`
+			)
+			.order("created_at", { ascending: false })
+			.limit(200)
+
+		if (error) return { data: null, error }
+
+		// Group by the other user, keep only the latest message per conversation
+		const lastMessages: Record<string, Message> = {}
+		for (const msg of data) {
+			const otherId =
+				msg.sender_id === userId
+					? msg.recipient_id
+					: msg.sender_id
+			if (!lastMessages[otherId]) {
+				lastMessages[otherId] = msg
+			}
+		}
+
+		return { data: lastMessages, error: null }
 	},
 }
