@@ -35,9 +35,10 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     (state) => state.messagesByUserId
   );
 
-  const fetchMessagesFromStore = useMessagingStore(
-    (state) => state.fetchMessages
-  );
+  // Local state for last message snippets (avoids N+1 prefetch)
+  const [lastMessages, setLastMessages] = useState<
+    Record<string, Message>
+  >({});
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -103,17 +104,17 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 
       setUsers(uniqueUsers);
 
-      setLoading(false);
+      // SINGLE BATCHED QUERY for last messages (replaces N+1 prefetch)
+      const { data: lastMsgs } =
+        await directMessagesService.getLastMessagesForUser(
+          user.id
+        );
 
-      // PREFETCH MESSAGES
-      uniqueUsers.forEach((u) => {
-        if (user && u.id) {
-          fetchMessagesFromStore(
-            user.id,
-            u.id
-          );
-        }
-      });
+      if (lastMsgs) {
+        setLastMessages(lastMsgs);
+      }
+
+      setLoading(false);
     };
 
     fetchConversations();
@@ -123,31 +124,34 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const getLastMessageSnippet = (
     otherUserId: string
   ): string => {
+    // Prefer batched lastMessages, fall back to store
+    const lastMsg = lastMessages[otherUserId];
     const conversationMessages =
       messagesByUserId[otherUserId];
 
-    if (
-      !conversationMessages ||
-      conversationMessages.length === 0
-    ) {
+    const message =
+      lastMsg ||
+      (conversationMessages &&
+        conversationMessages.length > 0
+        ? conversationMessages[
+            conversationMessages.length - 1
+          ]
+        : null);
+
+    if (!message) {
       return 'Click to open conversation';
     }
 
-    const lastMessage =
-      conversationMessages[
-        conversationMessages.length - 1
-      ];
-
     const prefix =
-      lastMessage.sender_id === user?.id
+      message.sender_id === user?.id
         ? 'You: '
         : '';
 
     const contentSnippet =
-      lastMessage.content.length > 40
-        ? lastMessage.content.substring(0, 40) +
+      message.content.length > 40
+        ? message.content.substring(0, 40) +
           '...'
-        : lastMessage.content;
+        : message.content;
 
     return prefix + contentSnippet;
   };
@@ -156,23 +160,25 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const getLastMessageTimestamp = (
     otherUserId: string
   ): string | null => {
+    const lastMsg = lastMessages[otherUserId];
     const conversationMessages =
       messagesByUserId[otherUserId];
 
-    if (
-      !conversationMessages ||
-      conversationMessages.length === 0
-    ) {
+    const message =
+      lastMsg ||
+      (conversationMessages &&
+        conversationMessages.length > 0
+        ? conversationMessages[
+            conversationMessages.length - 1
+          ]
+        : null);
+
+    if (!message) {
       return null;
     }
 
-    const lastMessage =
-      conversationMessages[
-        conversationMessages.length - 1
-      ];
-
     return formatTimestamp(
-      lastMessage.created_at,
+      message.created_at,
       false
     );
   };

@@ -5,25 +5,37 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { postsService } from '@/services/postsService';
 import { Post } from '@/types/database';
 
 interface ShareDialogProps {
   post: Post;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onShare?: (postId: string) => void;
 }
 
-const ShareDialog = ({ post, open, onOpenChange }: ShareDialogProps) => {
+const ShareDialog = ({ post, open, onOpenChange, onShare }: ShareDialogProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   
   const postUrl = `${window.location.origin}/post/${post.id}`;
   const shareText = `Check out this post by ${post.profiles?.full_name || 'Unknown'}: ${post.content.slice(0, 100)}${post.content.length > 100 ? '...' : ''}`;
   
+  const recordShare = async () => {
+    if (user) {
+      await postsService.sharePost(post.id, user.id);
+    }
+    onShare?.(post.id);
+  };
+
   const copyToClipboard = async () => {
     try {
       await navigator.clipboard.writeText(postUrl);
       setCopied(true);
+      await recordShare();
       toast({
         title: 'Link copied!',
         description: 'Post link copied to clipboard'
@@ -38,27 +50,32 @@ const ShareDialog = ({ post, open, onOpenChange }: ShareDialogProps) => {
     }
   };
 
-  const shareToWhatsApp = () => {
+  const shareToWhatsApp = async () => {
+    await recordShare();
     const url = `https://wa.me/?text=${encodeURIComponent(`${shareText}\n\n${postUrl}`)}`;
     window.open(url, '_blank');
   };
 
-  const shareToTwitter = () => {
+  const shareToTwitter = async () => {
+    await recordShare();
     const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(postUrl)}`;
     window.open(url, '_blank');
   };
 
-  const shareToFacebook = () => {
+  const shareToFacebook = async () => {
+    await recordShare();
     const url = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}`;
     window.open(url, '_blank');
   };
 
-  const shareToLinkedIn = () => {
+  const shareToLinkedIn = async () => {
+    await recordShare();
     const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(postUrl)}`;
     window.open(url, '_blank');
   };
 
-  const shareViaEmail = () => {
+  const shareViaEmail = async () => {
+    await recordShare();
     const subject = encodeURIComponent(`Interesting post from ${post.profiles?.full_name || 'someone'}`);
     const body = encodeURIComponent(`${shareText}\n\nRead more: ${postUrl}`);
     window.location.href = `mailto:?subject=${subject}&body=${body}`;

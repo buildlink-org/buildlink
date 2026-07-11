@@ -13,9 +13,10 @@ interface CommentsDialogProps {
 	isOpen: boolean
 	onClose: () => void
 	postId: string | null
+	onCommentAdded?: (postId: string) => void
 }
 
-const CommentsDialog = ({ isOpen, onClose, postId }: CommentsDialogProps) => {
+const CommentsDialog = ({ isOpen, onClose, postId, onCommentAdded }: CommentsDialogProps) => {
 	const { user } = useAuth()
 	const { toast } = useToast()
 	const [comments, setComments] = useState<any[]>([])
@@ -62,6 +63,7 @@ const CommentsDialog = ({ isOpen, onClose, postId }: CommentsDialogProps) => {
 
 			setComments((prev) => [data, ...prev])
 			setNewComment("")
+			onCommentAdded?.(postId!)
 			toast({
 				title: "Success",
 				description: "Comment added successfully",

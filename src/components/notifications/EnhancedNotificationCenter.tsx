@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Bell, Settings, CheckCheck } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
-import { NotificationService } from "@/services/notificationService"
+import { NotificationService, groupNotifications, type GroupedNotification } from "@/services/notificationService"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import NotificationPreferences from "./NotificationPreferences"
@@ -31,28 +31,53 @@ const EnhancedNotificationCenter: React.FC = () => {
 	const { toast } = useToast()
 	const [notifications, setNotifications] = useState<Notification[]>([])
 	const [loading, setLoading] = useState(true)
+	const [loadingMore, setLoadingMore] = useState(false)
+	const [hasMore, setHasMore] = useState(true)
+	const [page, setPage] = useState(0)
 	const [activeCategory, setActiveCategory] = useState("all")
 	const [showPreferences, setShowPreferences] = useState(false)
 	const openComments = useCommentsStore((state) => state.openComments)
+	const PAGE_SIZE = 20
 
 	useEffect(() => {
 		if (user) {
-			loadNotifications()
+			setPage(0)
+			setNotifications([])
+			setHasMore(true)
+			loadNotifications(0)
 			setupRealtimeSubscription()
 		}
 	}, [user])
 
-	const loadNotifications = async () => {
+	const loadNotifications = async (pageNum: number = 0) => {
 		if (!user) return
+		const isInitial = pageNum === 0
 		try {
-			const { data, error } = await NotificationService.getNotification(user.id)
+			if (isInitial) setLoading(true)
+			else setLoadingMore(true)
+
+			const offset = pageNum * PAGE_SIZE
+			const { data, error } = await NotificationService.getNotificationsPaginated(user.id, PAGE_SIZE, offset)
 			if (error) throw error
-			setNotifications(data || [])
+
+			if (isInitial) {
+				setNotifications(data || [])
+			} else {
+				setNotifications((prev) => [...prev, ...(data || [])])
+			}
+			setHasMore((data || []).length === PAGE_SIZE)
 		} catch (error) {
 			console.error("Error loading notifications:", error)
 		} finally {
 			setLoading(false)
+			setLoadingMore(false)
 		}
+	}
+
+	const loadMore = () => {
+		const nextPage = page + 1
+		setPage(nextPage)
+		loadNotifications(nextPage)
 	}
 
 	const setupRealtimeSubscription = () => {
@@ -126,6 +151,8 @@ const EnhancedNotificationCenter: React.FC = () => {
 		if (activeCategory === "unread") return !notification.read
 		return notification.category === activeCategory
 	})
+
+	const groupedNotifications = useMemo(() => groupNotifications(filteredNotifications), [filteredNotifications])
 
 	const getCategoryCount = (category: string) => {
 		if (category === "all") return notifications.length
@@ -215,41 +242,68 @@ const EnhancedNotificationCenter: React.FC = () => {
 							<div className="flex justify-center py-8">
 								<div className="h-6 w-6 animate-spin rounded-full border-b-2 border-primary"></div>
 							</div>
-						) : filteredNotifications.length > 0 ? (
-							filteredNotifications.map((notification) => (
-								<div
-									key={notification.id}
-									className={`p-3 rounded-lg border cursor-pointer transition-colors ${notification.read ? "bg-background border-border" : "bg-accent border-accent-foreground/20"}`}
-									onClick={async () => {
-										if (!notification.read) {
-											await markAsRead(notification.id)
-										}
-									}}
-								>
+						) : groupedNotifications.length > 0 ? (
+							<>
+								{groupedNotifications.map((notification) => (
+									<div
+										key={notification.id}
+										className={`p-3 rounded-lg border cursor-pointer transition-colors ${notification.read ? "bg-background border-border" : "bg-accent border-accent-foreground/20"}`}
+										onClick={async () => {
+											if (!notification.read) {
+												await markAsRead(notification.id)
+											}
+										}}
+									>
 
-									<div className="flex items-start justify-between">
-										<div className="flex-1">
-											<div className="mb-1 flex items-center gap-2">
-												<Badge
-													variant={notification.priority === "high" ? "destructive" : "secondary"}
-													className="text-xs">
-													{notification.category}
-												</Badge>
-												{notification.priority === "high" && (
+										<div className="flex items-start justify-between">
+											<div className="flex-1">
+												<div className="mb-1 flex items-center gap-2">
 													<Badge
-														variant="destructive"
+														variant={notification.priority === "high" ? "destructive" : "secondary"}
 														className="text-xs">
-														High Priority
+														{notification.category}
 													</Badge>
-												)}
+													{notification.priority === "high" && (
+														<Badge
+															variant="destructive"
+															className="text-xs">
+															High Priority
+														</Badge>
+													)}
+													{notification.groupCount && notification.groupCount > 1 && (
+														<Badge
+															variant="outline"
+															className="text-xs">
+															+{notification.groupCount - 1} more
+														</Badge>
+													)}
+												</div>
+												<p className="text-sm">{notification.content}</p>
+												<p className="mt-1 text-xs text-muted-foreground">{new Date(notification.created_at).toLocaleString()}</p>
 											</div>
-											<p className="text-sm">{notification.content}</p>
-											<p className="mt-1 text-xs text-muted-foreground">{new Date(notification.created_at).toLocaleString()}</p>
+											{!notification.read && <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
 										</div>
-										{!notification.read && <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />}
 									</div>
-								</div>
-							))
+								))}
+								{hasMore && (
+									<div className="flex justify-center pt-2">
+										<Button
+											variant="outline"
+											size="sm"
+											onClick={loadMore}
+											disabled={loadingMore}>
+											{loadingMore ? (
+												<>
+													<div className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>
+													Loading...
+												</>
+											) : (
+												"Load more"
+											)}
+										</Button>
+									</div>
+								)}
+							</>
 						) : (
 							<div className="py-8 text-center">
 								<Bell className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />

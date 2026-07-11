@@ -25,6 +25,7 @@ export interface Post {
   likes_count: number;
   comments_count: number;
   reposts_count: number;
+  shares_count: number;
   created_at: string;
   updated_at: string;
   user?: User;

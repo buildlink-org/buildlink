@@ -29,17 +29,17 @@ export const optimizedPostsService = {
     // Define field selections based on use case - now includes image_url, document_url and document_name
     const fieldSelections = {
       minimal: `
-        id, content, created_at, author_id, likes_count, comments_count, reposts_count, location, image_url, document_url, document_name,
+        id, content, created_at, author_id, likes_count, comments_count, reposts_count, shares_count, location, image_url, document_url, document_name,
         profiles!posts_author_id_fkey(id, full_name, avatar, profession)
       `,
       preview: `
-        id, content, created_at, author_id, likes_count, comments_count, reposts_count, location, image_url, document_url, document_name,
+        id, content, created_at, author_id, likes_count, comments_count, reposts_count, shares_count, location, image_url, document_url, document_name,
         profiles!posts_author_id_fkey(id, full_name, avatar, profession, organization)
       `,
       full: `
         *,
         profiles!posts_author_id_fkey(*),
-        likes_count, comments_count, reposts_count
+        likes_count, comments_count, reposts_count, shares_count
       `
     };
 
@@ -51,12 +51,15 @@ export const optimizedPostsService = {
     // Apply category filter
     if (category && category !== 'all' && category !== 'latest') {
       const categoryMap: { [key: string]: string } = {
-        'news': 'general',
-        'jobs': 'career', 
-        'portfolios': 'project'
+        'industry': 'industry',
+        'projects': 'project',
+        'opportunities': 'opportunity'
+        // 'news': 'general',
+        // 'jobs': 'career', 
+        // 'portfolios': 'project'
       };
       const dbCategory = categoryMap[category] || category;
-      query = query.ilike('content', `%${dbCategory}%`);
+      query = query.eq('location', dbCategory);
     }
     
     // Apply sorting
@@ -87,7 +90,7 @@ export const optimizedPostsService = {
         .select(`
           *,
           profiles!posts_author_id_fkey(*),
-          likes_count, comments_count, reposts_count
+          likes_count, comments_count, reposts_count, shares_count
         `)
         .eq('id', postId)
         .single();
