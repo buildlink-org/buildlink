@@ -38,3 +38,6 @@ Notes.MD
 .env.example
 
 fixplan.md
+
+# Supabase CLI local link cache
+supabase/.temp
