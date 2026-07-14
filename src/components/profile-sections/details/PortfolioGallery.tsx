@@ -275,7 +275,9 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 		<Dialog
 			open={open}
 			onOpenChange={setOpen}>
-			<DialogContent className="w-[calc(100vw-2rem)] max-w-4xl rounded-xl shadow-lg p-4 sm:p-6">
+			<DialogContent
+				className="w-[calc(100vw-2rem)] max-w-4xl rounded-xl shadow-lg p-4 sm:p-6"
+				description="View, rearrange, rename, or remove your portfolio projects">
 				<DialogHeader className="flex-row items-center justify-between gap-2 flex-wrap">
 					<DialogTitle className="text-lg font-semibold">Portfolio Projects</DialogTitle>
 					{canEdit && localOrder.length > 1 && (
@@ -299,7 +301,9 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 				{/* In-app PDF viewer */}
 				{activeItem?.type === "pdf" && (
 					<Dialog open={pdfViewerOpen} onOpenChange={setPdfViewerOpen}>
-						<DialogContent className="max-w-6xl h-[85vh] p-6">
+						<DialogContent
+							className="max-w-6xl h-[85vh] p-6"
+							description={`Viewing ${activeItem.name} PDF document`}>
 							<DialogHeader>
 								<DialogTitle className="text-lg font-semibold">
 									{activeItem.name}

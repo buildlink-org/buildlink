@@ -599,6 +599,7 @@ export type Database = {
           likes_count: number | null
           location: string | null
           reposts_count: number | null
+          shares_count: number | null
           updated_at: string | null
           visibility: string
         }
@@ -614,6 +615,7 @@ export type Database = {
           likes_count?: number | null
           location?: string | null
           reposts_count?: number | null
+          shares_count?: number | null
           updated_at?: string | null
           visibility?: string
         }
@@ -629,6 +631,7 @@ export type Database = {
           likes_count?: number | null
           location?: string | null
           reposts_count?: number | null
+          shares_count?: number | null
           updated_at?: string | null
           visibility?: string
         }
@@ -636,6 +639,45 @@ export type Database = {
           {
             foreignKeyName: "posts_author_id_fkey"
             columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      post_shares: {
+        Row: {
+          id: string
+          post_id: string
+          user_id: string
+          platform: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          post_id: string
+          user_id: string
+          platform?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          post_id?: string
+          user_id?: string
+          platform?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_shares_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_shares_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -1073,6 +1115,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_notification_for_user: {
+        Args: { input_user_id: string }
+        Returns: {
+          id: string
+          type: string
+          category: string
+          priority: string
+          content: string
+          read: boolean
+          created_at: string
+          from_user_id: string
+          link: string
+          full_name: string
+          avatar: string
+        }[]
+      }
       create_notification: {
         Args: {
           p_content: string

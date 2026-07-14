@@ -50,6 +50,9 @@ self.addEventListener('fetch', event => {
   // Skip non-GET requests
   if (request.method !== 'GET') return;
 
+  // Skip non-http/https schemes (chrome-extension, moz-extension, etc.)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+
   // Skip external requests (except images)
   if (url.origin !== location.origin && !request.destination === 'image') return;
 

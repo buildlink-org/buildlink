@@ -80,13 +80,19 @@ export const postsService = {
   },
   async likePost(postId: string, userId: string) {
     // First check if already liked
-    const { data: existingLike } = await supabase
+    // Use maybeSingle() instead of single() to avoid 406 error when no row exists
+    const { data: existingLike, error: checkError } = await supabase
       .from('post_interactions')
       .select('id')
       .eq('post_id', postId)
       .eq('user_id', userId)
       .eq('type', 'like')
-      .single();
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing like:', checkError);
+      return { data: null, error: checkError, action: 'none' };
+    }
 
     if (existingLike) {
       // Unlike
@@ -103,7 +109,7 @@ export const postsService = {
         .from('post_interactions')
         .insert({ post_id: postId, user_id: userId, type: 'like' })
         .select()
-        .single();
+        .maybeSingle();
       return { data, error, action: 'liked' };
     }
   },
@@ -176,12 +182,18 @@ export const postsService = {
   },
   async repostPost(postId: string, userId: string, comment?: string) {
     // Check if already reposted
-    const { data: existingRepost } = await supabase
+    // Use maybeSingle() instead of single() to avoid 406 error when no row exists
+    const { data: existingRepost, error: checkError } = await supabase
       .from('reposts')
       .select('id')
       .eq('post_id', postId)
       .eq('user_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (checkError) {
+      console.error('Error checking existing repost:', checkError);
+      return { data: null, error: checkError, action: 'none' };
+    }
 
     if (existingRepost) {
       // Remove repost
@@ -197,11 +209,11 @@ export const postsService = {
         .from('reposts')
         .insert({ post_id: postId, user_id: userId, comment })
         .select()
-        .single();
+        .maybeSingle();
       return { data, error, action: 'reposted' };
     }
   },
-  async sharePost(postId: string, userId?: string) {
+  async sharePost(postId: string, userId?: string, platform: string = 'internal') {
     // Get post data for sharing
     const { data: post, error } = await supabase
       .from('posts')
@@ -221,13 +233,23 @@ export const postsService = {
     if (error) return { data: null, error };
 
     // Record share in post_shares table if user is logged in
+    // Use upsert with onConflict to avoid duplicate share records.
+    // Falls back to plain insert if upsert fails (e.g. unique constraint missing).
     if (userId) {
-      await supabase
+      const { error: shareError } = await supabase
         .from('post_shares')
         .upsert(
-          { post_id: postId, user_id: userId },
+          { post_id: postId, user_id: userId, platform },
           { onConflict: 'post_id,user_id' }
         );
+
+      // If upsert fails (e.g. constraint not yet applied), try plain insert
+      if (shareError) {
+        console.warn('[postsService] Share upsert failed, trying plain insert:', shareError.message);
+        await supabase
+          .from('post_shares')
+          .insert({ post_id: postId, user_id: userId, platform });
+      }
     }
 
     // Create share URL
@@ -251,7 +273,7 @@ export const postsService = {
     
     if (error) {
       console.error('Error fetching post interactions:', error);
-      return { data: [], error };
+      return { data: { likes_count: 0, bookmarks_count: 0, reposts_count: 0 }, error };
     }
 
     // Convert to the expected format
@@ -298,6 +320,17 @@ export const postsService = {
       .from('posts')
       .delete()
       .eq('id', postId);
+    
+    return { data, error };
+  },
+  // Fetch the actual stored counts for a post (comments_count, shares_count, etc.)
+  // Used to sync optimistic UI updates with the DB-maintained values.
+  async getPostCounts(postId: string) {
+    const { data, error } = await supabase
+      .from('posts')
+      .select('likes_count, comments_count, reposts_count, shares_count')
+      .eq('id', postId)
+      .single();
     
     return { data, error };
   }

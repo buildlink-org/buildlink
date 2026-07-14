@@ -83,7 +83,9 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
         {children}
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="sm:max-w-[500px]"
+        description="Add or remove languages you speak and select your proficiency level">
         <DialogHeader>
           <DialogTitle>Edit Languages</DialogTitle>
         </DialogHeader>

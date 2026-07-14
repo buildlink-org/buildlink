@@ -1,4 +1,3 @@
-
 import { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
@@ -103,10 +102,8 @@ const AppRoutes = () => (
           <SearchResultsPage />
         }
       />
-
-
-
       <Route path="*" element={<NotFound />} />
+
     </Routes>
   </Suspense>
 );

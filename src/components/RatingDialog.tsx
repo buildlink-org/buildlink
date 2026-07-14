@@ -100,7 +100,9 @@ const RatingDialog = ({ isOpen, onClose, ratedUserId, ratedUserName, projectId }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        description={`Rate ${ratedUserName} on work quality, communication, timeliness, and professionalism`}>
         <DialogHeader>
           <DialogTitle>Rate {ratedUserName}</DialogTitle>
         </DialogHeader>

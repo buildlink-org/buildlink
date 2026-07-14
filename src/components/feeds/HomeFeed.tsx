@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { postsService } from "@/services/postsService"
 import { profileService } from "@/services/profileService"
@@ -17,6 +17,7 @@ import { useInfiniteScroll } from "@/hooks/useInfiniteScroll"
 import { useDataSaver } from "@/contexts/DataSaverContext"
 import { UserProfile as UserProfileType } from "@/types"
 import UserProfile from "../UserProfile"
+import { supabase } from "@/integrations/supabase/client"
 
 interface HomeFeedProps {
 	activeFilter: string
@@ -134,6 +135,31 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 		setCommentsDialog({ isOpen: true, postId })
 	}
 
+	const handleCommentAdded = useCallback(
+		async (postId: string) => {
+			// Optimistic update first for immediate feedback
+			const post = posts.find((p) => p.id === postId)
+			if (post) {
+				updatePostCounts(postId, {
+					comments_count: (post.comments_count || 0) + 1,
+				})
+			}
+
+			// Sync with actual DB count (trigger maintains the value)
+			try {
+				const { data: counts } = await postsService.getPostCounts(postId)
+				if (counts) {
+					updatePostCounts(postId, {
+						comments_count: counts.comments_count,
+					})
+				}
+			} catch (error) {
+				console.error("Error syncing comment count:", error)
+			}
+		},
+		[posts, updatePostCounts],
+	)
+
 	const handleShare = useCallback(
 		async (postId: string) => {
 			if (!user) {
@@ -183,6 +209,18 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 						title: "Success",
 						description: "Post URL copied to clipboard!",
 					})
+				}
+
+				// Sync with actual DB count (trigger maintains the value)
+				try {
+					const { data: counts } = await postsService.getPostCounts(postId)
+					if (counts) {
+						updatePostCounts(postId, {
+							shares_count: counts.shares_count,
+						})
+					}
+				} catch (error) {
+					console.error("Error syncing share count:", error)
 				}
 			} catch {
 				// Rollback on exception
@@ -238,6 +276,50 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 		}
 		refresh()
 	}, [refresh, repostDialog.post, updatePostCounts])
+
+	// Realtime subscription: update post counts when other users interact
+	// This ensures comments_count, shares_count, etc. stay in sync across users.
+	// We use a ref to track post IDs so the subscription isn't torn down and
+	// recreated on every optimistic count update (which changes `posts` state).
+	const postIdsRef = useRef<string[]>([]);
+	postIdsRef.current = posts.map((p) => p.id);
+
+	useEffect(() => {
+		if (!posts || posts.length === 0) return;
+
+		const postIds = postIdsRef.current;
+
+		// Subscribe to changes on the posts table for the currently loaded posts
+		const channel = supabase
+			.channel(`posts-realtime-${activeFilter}`)
+			.on(
+				'postgres_changes',
+				{
+					event: 'UPDATE',
+					schema: 'public',
+					table: 'posts',
+					filter: `id=in.(${postIds.join(',')})`,
+				},
+				(payload) => {
+					const updatedPost = payload.new as any;
+					if (updatedPost) {
+						updatePostCounts(updatedPost.id, {
+							comments_count: updatedPost.comments_count,
+							likes_count: updatedPost.likes_count,
+							reposts_count: updatedPost.reposts_count,
+							shares_count: updatedPost.shares_count,
+						});
+					}
+				}
+			)
+			.subscribe();
+
+		return () => {
+			supabase.removeChannel(channel);
+		};
+	// Only re-subscribe when the filter changes or the set of post IDs changes
+	// (not on every optimistic count update). We use a stringified key for stable comparison.
+	}, [activeFilter, updatePostCounts, posts.length]);
 
 	if (initialLoading) {
 		return (
@@ -388,19 +470,12 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 				/>
 			)}
 
-			<CommentsDialog
-				isOpen={commentsDialog.isOpen}
-				onClose={() => setCommentsDialog({ isOpen: false, postId: "" })}
-				postId={commentsDialog.postId}
-				onCommentAdded={(postId) => {
-					const post = posts.find((p) => p.id === postId)
-					if (post) {
-						updatePostCounts(postId, {
-							comments_count: (post.comments_count || 0) + 1,
-						})
-					}
-				}}
-			/>
+		<CommentsDialog
+			isOpen={commentsDialog.isOpen}
+			onClose={() => setCommentsDialog({ isOpen: false, postId: "" })}
+			postId={commentsDialog.postId}
+			onCommentAdded={handleCommentAdded}
+		/>
 
 			<RepostDialog
 				isOpen={repostDialog.isOpen}
