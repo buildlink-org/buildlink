@@ -80,7 +80,9 @@ const CertificationsEditDialog = ({ children, currentProfile, onProfileUpdated }
         {children}
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
+        description="Add, edit, or remove your professional certifications and credentials">
         <DialogHeader>
           <DialogTitle>Edit Certifications</DialogTitle>
         </DialogHeader>

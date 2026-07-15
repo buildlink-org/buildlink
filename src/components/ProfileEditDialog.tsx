@@ -68,7 +68,9 @@ const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: Profi
         {children}
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent
+        className="sm:max-w-[500px]"
+        description="Update your name, profession, job title, organization, and education level">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>

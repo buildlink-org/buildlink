@@ -10,8 +10,7 @@ import {
   Loader2,
   Paperclip,
   MoreVertical,
-  Plus,
-  PlusSquare,
+  MessageSquare,
 } from "lucide-react"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { formatTimestamp, compressImage, cn } from "@/lib/utils"
@@ -134,9 +133,6 @@ const ConversationView: React.FC<
     () => addDateSeparators(messages),
     [messages]
   )
-
-   const [selectedUser, setSelectedUser] = useState<ConversationItem | null>(null)
-  const [activeTab, setActiveTab] = useState<"inbox" | "chat">("chat")
 
   useEffect(() => {
     if (!user || !otherUserId) return
@@ -350,6 +346,21 @@ const ConversationView: React.FC<
       {/* MESSAGES */}
       <ScrollArea className="flex-1 bg-muted/10 px-3 py-4">
         <div className="space-y-3">
+          {/* EMPTY STATE */}
+          {messages.length === 0 && !loading && (
+            <div className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+                <MessageSquare className="h-7 w-7 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-foreground">
+                No messages yet
+              </p>
+              <p className="mt-1 max-w-[200px] text-xs text-muted-foreground">
+                Send a message below to start the conversation
+              </p>
+            </div>
+          )}
+
           {/* LOAD OLDER MESSAGES */}
           {messages.length > 0 && hasMoreOlder && (
             <div className="flex justify-center">
@@ -608,19 +619,6 @@ const ConversationView: React.FC<
         )}
 
         <div className="flex items-end gap-2">
-
-          {/* NEW BUTTON */}
-            <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setActiveTab("chat")
-                              setSelectedUser(null)
-                            }}
-                            title="New message"
-                          >
-                            <PlusSquare className="h-4 w-4" />
-                          </Button>
 
           {/* EMOJI */}
           <EmojiPickerButton

@@ -14,14 +14,40 @@ export interface Notification {
 		full_name: string
 		avatar: string
 	}
+	link?: string | null
 }
 
 export const NotificationService = {
+	/**
+	 * Fetch notifications for a user.
+	 * Tries the RPC function first, falls back to a direct query if the
+	 * function is missing or returns an error.
+	 */
 	async getNotification(userId: string) {
-		const { data, error } = await supabase.rpc("get_notification_for_user", { input_user_id: userId })
+		// Try the RPC function first
+		const { data: rpcData, error: rpcError } = await supabase.rpc(
+			"get_notification_for_user",
+			{ input_user_id: userId }
+		)
+
+		if (!rpcError && rpcData) {
+			return { data: rpcData, error: null }
+		}
+
+		// Fallback: direct query with join
+		const { data, error } = await supabase
+			.from("notifications")
+			.select("*, from_user:from_user_id(id, full_name, avatar)")
+			.eq("user_id", userId)
+			.order("created_at", { ascending: false })
+			.limit(50)
+
 		return { data, error }
 	},
 
+	/**
+	 * Paginated notifications query (direct table query).
+	 */
 	async getNotificationsPaginated(userId: string, limit: number = 20, offset: number = 0) {
 		const { data, error } = await supabase
 			.from("notifications")
@@ -32,13 +58,19 @@ export const NotificationService = {
 		return { data, error }
 	},
 
+	/**
+	 * Create a notification via the create_notification RPC.
+	 * Returns the notification ID on success, or null on failure.
+	 * Errors are logged but not thrown — callers should treat
+	 * notification creation as best-effort.
+	 */
 	async createNotification(params: {
 		user_id: string
 		type: string
 		content: string
 		from_user_id?: string
 		link?: string
-	}) {
+	}): Promise<{ data: string | null; error: any }> {
 		const { data, error } = await supabase.rpc("create_notification", {
 			p_user_id: params.user_id,
 			p_type: params.type,
@@ -46,16 +78,34 @@ export const NotificationService = {
 			p_from_user_id: params.from_user_id ?? null,
 			p_link: params.link ?? null,
 		})
+
+		if (error) {
+			console.warn("[NotificationService] create_notification RPC failed:", error.message)
+		}
+
 		return { data, error }
 	},
 
+	/**
+	 * Mark a single notification as read.
+	 */
 	async markAsRead(notificationId: string) {
-		const { data, error } = await supabase.from("notifications").update({ read: true }).eq("id", notificationId)
+		const { data, error } = await supabase
+			.from("notifications")
+			.update({ read: true })
+			.eq("id", notificationId)
 		return { data, error }
 	},
 
+	/**
+	 * Mark all unread notifications for a user as read.
+	 */
 	async markAllAsRead(userId: string) {
-		const { data, error } = await supabase.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false)
+		const { data, error } = await supabase
+			.from("notifications")
+			.update({ read: true })
+			.eq("user_id", userId)
+			.eq("read", false)
 		return { data, error }
 	},
 }
@@ -67,6 +117,10 @@ export interface GroupedNotification extends Notification {
 
 const GROUP_WINDOW_MS = 60 * 60 * 1000 // 1 hour
 
+/**
+ * Group like/comment/follow notifications by type + post_id within a time window.
+ * This collapses "X, Y, Z liked your post" into a single grouped notification.
+ */
 export function groupNotifications(notifications: Notification[]): GroupedNotification[] {
 	const groups = new Map<string, Notification[]>()
 	const singles: Notification[] = []
@@ -104,7 +158,7 @@ export function groupNotifications(notifications: Notification[]): GroupedNotifi
 			continue
 		}
 
-		const representative = { ...items[0] }
+		const representative: GroupedNotification = { ...items[0] }
 		const users = items.map((n) => n.from_user).filter(Boolean) as { full_name: string; avatar: string }[]
 		const uniqueUsers = users.filter((u, i, arr) => arr.findIndex((x) => x.full_name === u.full_name) === i)
 
@@ -123,8 +177,8 @@ export function groupNotifications(notifications: Notification[]): GroupedNotifi
 		}
 
 		representative.groupCount = items.length
-		;(representative as GroupedNotification).groupUsers = uniqueUsers
-		grouped.push(representative as GroupedNotification)
+		representative.groupUsers = uniqueUsers
+		grouped.push(representative)
 	}
 
 	// Sort singles by created_at descending

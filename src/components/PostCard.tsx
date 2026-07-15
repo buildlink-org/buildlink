@@ -56,7 +56,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 
 		setIsLiking(true)
 		try {
-			onLike?.()
+			await onLike?.()
 		} finally {
 			setIsLiking(false)
 		}

@@ -84,7 +84,9 @@ const ProfileEditForm = ({ isOpen, onClose, onSave }: ProfileEditFormProps) => {
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="max-w-md">
+        <DialogContent
+          className="max-w-md"
+          description="Update your profile details including name, profession, organization, and title">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>

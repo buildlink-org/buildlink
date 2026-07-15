@@ -94,7 +94,9 @@ const SocialLinksEditDialog: React.FC<SocialLinksEditDialogProps> = ({
         )}
       </DialogTrigger>
       
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        description="Add or update your LinkedIn, Twitter, GitHub, and website links">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Link className="h-5 w-5" />

@@ -31,7 +31,9 @@ const EnhancedSearchDialog = ({ isOpen, onClose }: EnhancedSearchDialogProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent
+        className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col"
+        description="Search for posts, people, and companies in Kenya's construction industry">
         <DialogHeader>
           <DialogTitle>Search BuildLink Kenya</DialogTitle>
         </DialogHeader>

@@ -39,7 +39,7 @@ const RepostDialog = ({ isOpen, onClose, post, onRepost }: RepostDialogProps) =>
         description: action === 'reposted' ? 'Post reposted!' : 'Repost removed!',
       });
 
-      onRepost(action);
+      onRepost(action as 'reposted' | 'unreposted');
       onClose();
       setComment('');
     } catch (error) {
@@ -61,7 +61,9 @@ const RepostDialog = ({ isOpen, onClose, post, onRepost }: RepostDialogProps) =>
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg">
+      <DialogContent
+        className="max-w-lg"
+        description="Share this post with your followers, with an optional comment">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Repeat2 className="h-5 w-5" />

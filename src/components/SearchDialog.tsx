@@ -97,7 +97,9 @@ const SearchDialog = ({ children }: SearchDialogProps) => {
 			onOpenChange={setOpen}>
 			<DialogTrigger asChild>{children}</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col">
+			<DialogContent
+				className="sm:max-w-[700px] max-h-[85vh] overflow-hidden flex flex-col"
+				description="Search for people, opportunities, and skills with optional filters">
 				<DialogHeader>
 					<DialogTitle className="flex items-center gap-2">
 						<Search className="h-5 w-5" />

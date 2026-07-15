@@ -8,7 +8,7 @@ export const profileService = {
 		return { data, error }
 	},
 
-	async updateProfile(userId: string, updates: { [bio: string]: string | string[] | UserProfile | Experiences[] }) {
+	async updateProfile(userId: string, updates: Record<string, any>) {
 		const { data, error } = await supabase
 			.from("profiles")
 			.update({

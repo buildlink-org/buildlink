@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare } from 'lucide-react';
 import { useMessagingStore } from '@/stores/messagingStore';
-import { formatTimestamp } from '@/lib/utils';
+import { formatTimestamp, cn } from '@/lib/utils';
 
 interface UserListItem {
   id: string;
@@ -33,6 +33,10 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   // STORE
   const messagesByUserId = useMessagingStore(
     (state) => state.messagesByUserId
+  );
+
+  const unreadCounts = useMessagingStore(
+    (state) => state.unreadCounts
   );
 
   // Local state for last message snippets (avoids N+1 prefetch)
@@ -250,29 +254,46 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               const lastMessage =
                 getLastMessageSnippet(u.id);
 
+              const unreadCount =
+                unreadCounts[u.id] || 0;
+
+              const hasUnread = unreadCount > 0;
+
               return (
                 <button
                   key={u.id}
                   onClick={() =>
                     onSelectUser(u)
                   }
-                  className="group flex w-full items-start gap-3 rounded-xl border border-border bg-card p-3 text-left transition hover:bg-muted/40"
+                  className={cn(
+                    "group flex w-full items-start gap-3 rounded-xl border p-3 text-left transition",
+                    hasUnread
+                      ? "border-primary/30 bg-primary/5 hover:bg-primary/10"
+                      : "border-border bg-card hover:bg-muted/40"
+                  )}
                 >
 
                   {/* AVATAR */}
-                  <Avatar className="h-12 w-12 shrink-0">
-                    <AvatarImage
-                      src={u.avatar}
-                      alt={u.name}
-                    />
+                  <div className="relative shrink-0">
+                    <Avatar className="h-12 w-12">
+                      <AvatarImage
+                        src={u.avatar}
+                        alt={u.name}
+                      />
 
-                    <AvatarFallback>
-                      {u.name
-                        ?.split(' ')
-                        .map((n) => n[0])
-                        .join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                      <AvatarFallback>
+                        {u.name
+                          ?.split(' ')
+                          .map((n) => n[0])
+                          .join('') || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Unread dot indicator */}
+                    {hasUnread && (
+                      <span className="absolute right-0 top-0 h-3 w-3 rounded-full bg-primary border-2 border-card" />
+                    )}
+                  </div>
 
                   {/* MESSAGE BODY */}
                   <div className="min-w-0 flex-1">
@@ -280,20 +301,39 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
                     {/* TOP */}
                     <div className="flex items-start justify-between gap-2">
 
-                      <h3 className="truncate text-sm font-semibold text-foreground">
+                      <h3 className={cn(
+                        "truncate text-sm",
+                        hasUnread
+                          ? "font-bold text-foreground"
+                          : "font-semibold text-foreground"
+                      )}>
                         {u.name ||
                           'Unknown User'}
                       </h3>
 
-                      {timestamp && (
-                        <span className="shrink-0 text-[10px] text-muted-foreground">
-                          {timestamp}
-                        </span>
-                      )}
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {hasUnread && (
+                          <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-bold text-primary-foreground">
+                            {unreadCount > 99 ? '99+' : unreadCount}
+                          </span>
+                        )}
+
+                        {timestamp && (
+                          <span className={cn(
+                            "text-[10px]",
+                            hasUnread ? "text-primary font-medium" : "text-muted-foreground"
+                          )}>
+                            {timestamp}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* LAST MESSAGE */}
-                    <p className="mt-1 truncate text-xs text-muted-foreground">
+                    <p className={cn(
+                      "mt-1 truncate text-xs",
+                      hasUnread ? "text-foreground font-medium" : "text-muted-foreground"
+                    )}>
                       {lastMessage}
                     </p>
                   </div>
