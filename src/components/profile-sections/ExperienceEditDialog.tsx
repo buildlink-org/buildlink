@@ -136,7 +136,9 @@ const ExperienceEditDialog = ({ children, currentProfile, onProfileUpdated }: Ex
 			onOpenChange={setOpen}>
 			<DialogTrigger asChild>{children}</DialogTrigger>
 
-			<DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
+			<DialogContent
+				className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]"
+				description="Add, edit, or remove your professional work experience entries">
 				<DialogHeader>
 					<DialogTitle>Edit Professional Experience</DialogTitle>
 				</DialogHeader>

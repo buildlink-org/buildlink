@@ -114,7 +114,9 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
   if (loading) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="max-w-md">
+        <DialogContent
+          className="max-w-md"
+          description="Loading your privacy settings">
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </div>
@@ -125,7 +127,9 @@ export const PrivacySettingsDialog = ({ open, onOpenChange }: PrivacySettingsDia
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
+      <DialogContent
+        className="max-w-md"
+        description="Control who can see your email, phone, experience, education, skills, and social links">
         <DialogHeader>
           <DialogTitle className="flex items-center space-x-2">
             <Shield className="h-5 w-5" />

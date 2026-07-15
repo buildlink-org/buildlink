@@ -84,7 +84,9 @@ const CommentsDialog = ({ isOpen, onClose, postId, onCommentAdded }: CommentsDia
 		<Dialog
 			open={isOpen}
 			onOpenChange={onClose}>
-			<DialogContent className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden">
+			<DialogContent
+				className="flex max-h-[80vh] max-w-2xl flex-col overflow-hidden"
+				description="View and add comments to this post">
 				<DialogHeader>
 					<DialogTitle>Comments</DialogTitle>
 				</DialogHeader>

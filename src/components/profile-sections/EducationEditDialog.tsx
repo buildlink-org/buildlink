@@ -109,7 +109,9 @@ const EducationEditDialog = ({ children, currentProfile, onProfileUpdated }: Edu
 			open={open}
 			onOpenChange={setOpen}>
 			<DialogTrigger asChild>{children}</DialogTrigger>
-			<DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]">
+			<DialogContent
+				className="max-h-[80vh] overflow-y-auto sm:max-w-[600px]"
+				description="Add, edit, or remove your education and training entries">
 				<DialogHeader>
 					<DialogTitle>Edit Education & Training</DialogTitle>
 				</DialogHeader>
