@@ -62,16 +62,20 @@ export default function RecipientInput({
 
   // SEARCH USERS
   useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!query.trim()) {
-        setResults([])
-        return
-      }
-      fetchUsers(query)
-    }, 300)
+  if (selectedUser) return
 
-    return () => clearTimeout(timeout)
-  }, [query])
+  const timeout = setTimeout(() => {
+    if (!query.trim()) {
+      setResults([])
+      setOpen(false)
+      return
+    }
+
+    fetchUsers(query)
+  }, 300)
+
+  return () => clearTimeout(timeout)
+}, [query, selectedUser])
 
   const fetchUsers = async (search: string) => {
     if (!currentUserId) return
@@ -86,24 +90,25 @@ export default function RecipientInput({
       .limit(10)
 
     if (data) {
-      setResults(
-        data.map((u) => ({
-          id: u.id,
-          name: u.full_name,
-          avatar: u.avatar,
-        }))
-      )
-      setOpen(true)
+      const users = data.map((u) => ({
+        id: u.id,
+        name: u.full_name,
+        avatar: u.avatar,
+      }))
+
+      setResults(users)
+      setOpen(users.length > 0)
     }
 
     setLoading(false)
   }
 
-  const handleSelectUser = (user: UserListItem) => {
-    setSelectedUser(user)
-    setQuery(user.name || "")
-    setOpen(false)
-  }
+ const handleSelectUser = (user: UserListItem) => {
+  setSelectedUser(user)
+  setQuery(user.name || "")
+  setResults([])
+  setOpen(false)
+}
 
   // SEND MESSAGE
   const handleStart = async () => {
@@ -173,6 +178,8 @@ export default function RecipientInput({
       setMessage("")
       setQuery("")
       setSelectedUser(null)
+      setResults([])
+      setOpen(false)
       setFile(null)
       
 
@@ -218,17 +225,43 @@ export default function RecipientInput({
 
         <div className="relative">
           <Input
+            autoComplete="off"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
+            name="recipient-search"
             placeholder="Search user..."
             value={query}
             onChange={(e) => {
-              setQuery(e.target.value)
-              setSelectedUser(null)
+              const value = e.target.value
+
+              setQuery(value)
+
+              if (selectedUser) {
+                setSelectedUser(null)
+              }
+
+              setOpen(value.trim().length > 0)
             }}
-            onFocus={() => query && setOpen(true)}
           />
 
           {open && (
-            <div className="absolute z-50 mt-1 max-h-52 w-full overflow-y-auto rounded-md border border-border bg-popover shadow-md">
+            <div className="
+            absolute
+            top-full
+            left-0
+            right-0
+            z-50
+            mt-2
+            max-h-72
+            overflow-y-auto
+            rounded-xl
+            border
+            border-border
+            bg-background/95
+            backdrop-blur-md
+            shadow-xl
+            ">
               {loading && (
                 <div className="flex justify-center p-3">
                   <Loader2 className="h-4 w-4 animate-spin" />
