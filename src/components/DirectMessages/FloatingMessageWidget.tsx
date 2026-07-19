@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import {
   MessageSquare,
   X,
@@ -15,6 +15,7 @@ import RecipientInput from "./NewChatInput"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { useAuth } from "@/contexts/AuthContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 
 interface UserListItem {
   id: string
@@ -37,6 +38,25 @@ const FloatingMessagingWidget: React.FC = () => {
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
   const [activeTab, setActiveTab] = useState<"inbox" | "chat">("chat")
   const [animate, setAnimate] = useState(false)
+
+          
+  const buttonRef = useRef<HTMLButtonElement>(null)
+
+
+  const [position, setPosition] = useState({
+    x: window.innerWidth - 70,
+    y: window.innerHeight - 140,
+  })
+
+  //draggable
+  const dragging = useRef(false)
+  const moved = useRef(false)
+  const start = useRef({
+    x: 0,
+    y: 0,
+    offsetX: 0,
+    offsetY: 0,
+  })
 
   const unreadCounts = useMessagingStore((state) => state.unreadCounts)
 
@@ -111,74 +131,113 @@ const FloatingMessagingWidget: React.FC = () => {
     }, 200)
   }
 
+
   const handleBack = () => {
     setSelectedUser(null)
     setActiveTab("inbox")
     clearRecipient()
   }
 
+
   const handleSelectUser = (user: UserListItem) => {
     setSelectedUser(user)
     setActiveTab("chat")
   }
+
+  //handle draggable
+  const handlePointerDown = (e: React.PointerEvent<HTMLButtonElement>) => {
+  if (window.innerWidth >= 640) return // Desktop = no dragging
+
+  dragging.current = true
+  moved.current = false
+
+  start.current = {
+    x: e.clientX,
+    y: e.clientY,
+    offsetX: e.clientX - position.x,
+    offsetY: e.clientY - position.y,
+  }
+
+  e.currentTarget.setPointerCapture(e.pointerId)
+}
+
+const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
+  if (!dragging.current) return
+
+  const dx = Math.abs(e.clientX - start.current.x)
+  const dy = Math.abs(e.clientY - start.current.y)
+
+  if (dx > 5 || dy > 5) {
+    moved.current = true
+  }
+
+  const size = 56
+
+  let x = e.clientX - start.current.offsetX
+  let y = e.clientY - start.current.offsetY
+
+  x = Math.max(8, Math.min(window.innerWidth - size - 8, x))
+  y = Math.max(8, Math.min(window.innerHeight - size - 8, y))
+
+  setPosition({ x, y })
+}
+
+const handlePointerUp = () => {
+  dragging.current = false
+
+  if (!moved.current) {
+    handleOpen()
+  }
+}
 
   return (
     <>
       {/* FLOATING BUTTON */}
       {!isOpen && (
        <button
-          onClick={handleOpen}
-          className="
-            fixed
-            bottom-16 right-3
-            sm:bottom-4 sm:right-4
-            md:bottom-6 md:right-4
-            z-50
-
-            flex items-center justify-center
-
-            h-12 w-12
-            sm:h-14 sm:w-14
-
-            rounded-full
-            bg-primary
-            text-primary-foreground
-
-            shadow-lg
-            transition-all duration-200
-            hover:scale-110
-            active:scale-95
+        ref={buttonRef}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+       
+        style={
+          window.innerWidth < 640
+            ? {
+                left: position.x,
+                top: position.y,
+              }
+            : undefined
+        }
+        className="
+          fixed
+          z-[999]
+          flex items-center justify-center
+          h-14 w-14
+          rounded-full
+          bg-primary
+          text-primary-foreground
+          shadow-2xl
+          ring-2 ring-background
+          transition-shadow
+          touch-none
+          select-none
+          sm:bottom-5
+          sm:right-5
           "
         >
-          <MessageSquare className="h-5 w-5 sm:h-6 sm:w-6" />
+          <MessageSquare className="h-6 w-6" />
 
           {unreadCount > 0 && (
-            <Badge
-              className="
-                absolute
-                -right-1 -top-1
-
-                flex items-center justify-center
-
-                h-5 w-5
-                sm:h-6 sm:w-6
-
-                rounded-full
-                bg-red-500
-                text-[10px]
-                sm:text-xs
-                text-white
-              "
-            >
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </Badge>
+              <Badge className="absolute -top-1 -right-1 bg-red-500">
+                  {unreadCount}
+              </Badge>
           )}
-       </button>
+      </button>
       )}
 
       {/* MODAL */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
 
           {/* BACKDROP */}
           <div
@@ -190,14 +249,19 @@ const FloatingMessagingWidget: React.FC = () => {
           {/* MODAL CONTENT */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`relative flex flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-2xl transition-all duration-300 w-full max-w-md mx-4 ${isMinimized
-              ? "h-12 scale-95 opacity-90"
-              : "h-[85vh] max-h-[600px]"
-              } ${animate
-                ? "scale-100 opacity-100 translate-y-0"
-                : "scale-95 opacity-0 translate-y-4"
-              }`}
-          >
+           className={`relative flex flex-col overflow-hidden border border-border bg-card shadow-2xl transition-all duration-300 w-screen sm:w-[430px] md:w-[460px] mx-0 sm:mx-4 rounded-t-2xl sm:rounded-2xl
+            ${
+              isMinimized
+                ? "h-12"
+                : "h-[92vh] sm:h-[85vh] max-h-[720px]"
+            }
+
+            ${
+              animate
+                ? "translate-y-0 opacity-100"
+                : "translate-y-[100%] sm:translate-y-4 opacity-0"
+            }
+          `}>
             {/* HEADER */}
             <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2 rounded-t-2xl">
               <div className="flex flex-1 items-center gap-2">
