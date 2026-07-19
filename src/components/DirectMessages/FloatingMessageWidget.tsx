@@ -243,148 +243,161 @@ const handlePointerUp = () => {
       {/* PANEL — Desktop: bottom-right anchored, non-modal */}
       {/* PANEL — Mobile: full-screen modal */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
 
-          {/* BACKDROP */}
+        <>
+          {/* Mobile backdrop */}
           <div
-            className={`md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${animate ? "opacity-100" : "opacity-0"}`}
+            className={`md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
+              animate ? "opacity-100" : "opacity-0"
+            }`}
             onClick={handleClose}
           />
 
-          {/* PANEL CONTAINER */}
+          {/* Messaging Panel */}
           <div
             onClick={(e) => e.stopPropagation()}
            className={`relative flex flex-col overflow-hidden border border-border bg-card shadow-2xl transition-all duration-300 w-screen sm:w-[430px] md:w-[460px] mx-0 sm:mx-4 rounded-t-2xl sm:rounded-2xl
-            ${
-              isMinimized
-                ? "h-12"
-                : "h-[92vh] sm:h-[85vh] max-h-[720px]"
-            }
+              h-[92vh] sm:h-[85vh] max-h-[720px]
+           
 
-            ${
-              animate
-                ? "translate-y-0 opacity-100"
-                : "translate-y-[100%] sm:translate-y-4 opacity-0"
-            }
-          `}>
-            {/* HEADER */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2.5">
-              <div className="flex flex-1 items-center gap-2 min-w-0">
-                {selectedUser && (
-                  <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                )}
 
-                {selectedUser ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className="relative shrink-0">
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage src={selectedUser.avatar} />
-                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                          {selectedUser.name?.[0] || "U"}
-                        </AvatarFallback>
-                      </Avatar>
-                      {/* Online status indicator */}
-                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card" />
+              inset-0
+
+              md:inset-auto
+              md:bottom-20
+              md:right-4
+              md:w-96
+              md:max-h-[600px]
+              md:rounded-2xl
+
+              ${
+                animate
+                  ? "opacity-100 translate-y-0"
+                  : "opacity-0 translate-y-8 md:translate-y-4"
+              }
+            `}
+          >
+
+
+                  {/* HEADER */}
+                  <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2.5">
+                    <div className="flex flex-1 items-center gap-2 min-w-0">
+                      {selectedUser && (
+                        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
+                          <ArrowLeft className="h-4 w-4" />
+                        </Button>
+                      )}
+
+                      {selectedUser ? (
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="relative shrink-0">
+                            <Avatar className="h-8 w-8">
+                              <AvatarImage src={selectedUser.avatar} />
+                              <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                                {selectedUser.name?.[0] || "U"}
+                              </AvatarFallback>
+                            </Avatar>
+                            {/* Online status indicator */}
+                            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card" />
+                          </div>
+
+                          <div className="flex flex-col leading-tight min-w-0">
+                            <span className="text-sm font-semibold text-foreground truncate">
+                              {selectedUser.name}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground">
+                              Active now
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-sm font-semibold text-foreground">
+                          {activeTab === "chat" ? "New Message" : "Messages"}
+                        </span>
+                      )}
                     </div>
 
-                    <div className="flex flex-col leading-tight min-w-0">
-                      <span className="text-sm font-semibold text-foreground truncate">
-                        {selectedUser.name}
-                      </span>
-                      <span className="text-[10px] text-muted-foreground">
-                        Active now
-                      </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                          setActiveTab("chat")
+                          setSelectedUser(null)
+                        }}
+                        title="New message"
+                      >
+                        <PlusSquare className="h-4 w-4" />
+                      </Button>
+
+                      <Button variant="ghost" size="icon" onClick={handleClose} title="Close">
+                        <X className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                ) : (
-                  <span className="text-sm font-semibold text-foreground">
-                    {activeTab === "chat" ? "New Message" : "Messages"}
-                  </span>
-                )}
-              </div>
 
-              <div className="flex items-center gap-1 shrink-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => {
-                    setActiveTab("chat")
-                    setSelectedUser(null)
-                  }}
-                  title="New message"
-                >
-                  <PlusSquare className="h-4 w-4" />
-                </Button>
+                  {/* TABS (only when no conversation is open) */}
+                  {!selectedUser && (
+                    <div className="flex shrink-0 border-b border-border bg-card">
+                      <button
+                        onClick={() => setActiveTab("inbox")}
+                        className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${activeTab === "inbox"
+                          ? "border-b-2 border-primary bg-muted/40 text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                          }`}
+                      >
+                        Inbox
+                        {unreadCount > 0 && (
+                          <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
+                      </button>
 
-                <Button variant="ghost" size="icon" onClick={handleClose} title="Close">
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-
-            {/* TABS (only when no conversation is open) */}
-            {!selectedUser && (
-              <div className="flex shrink-0 border-b border-border bg-card">
-                <button
-                  onClick={() => setActiveTab("inbox")}
-                  className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${activeTab === "inbox"
-                    ? "border-b-2 border-primary bg-muted/40 text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  Inbox
-                  {unreadCount > 0 && (
-                    <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
+                      <button
+                        onClick={() => setActiveTab("chat")}
+                        className={`flex-1 py-2.5 text-sm transition-colors ${activeTab === "chat"
+                          ? "border-b-2 border-primary text-primary"
+                          : "text-muted-foreground hover:text-foreground"
+                          }`}
+                      >
+                        New Chat
+                      </button>
+                    </div>
                   )}
-                </button>
 
-                <button
-                  onClick={() => setActiveTab("chat")}
-                  className={`flex-1 py-2.5 text-sm transition-colors ${activeTab === "chat"
-                    ? "border-b-2 border-primary text-primary"
-                    : "text-muted-foreground hover:text-foreground"
-                    }`}
-                >
-                  New Chat
-                </button>
-              </div>
+                  {/* CONTENT */}
+                  <div className="min-h-0 flex-1 overflow-hidden bg-card">
+
+                    {/* INBOX */}
+                    {activeTab === "inbox" && !selectedUser && (
+                      <ConversationsList onSelectUser={handleSelectUser} />
+                    )}
+
+                    {/* NEW CHAT */}
+                    {activeTab === "chat" && !selectedUser && (
+                      <RecipientInput
+                        onStartChat={(user) => {
+                          setSelectedUser(user)
+                        }}
+                      />
+                    )}
+
+                    {/* ACTIVE CHAT */}
+                    {selectedUser && (
+                      <ConversationView
+                        otherUserId={selectedUser.id}
+                        otherUserName={selectedUser.name}
+                        otherUserAvatar={selectedUser.avatar}
+                      />
+                    )}
+                  </div>
+                </div>
+              </>
             )}
 
-            {/* CONTENT */}
-            <div className="min-h-0 flex-1 overflow-hidden bg-card">
-
-              {/* INBOX */}
-              {activeTab === "inbox" && !selectedUser && (
-                <ConversationsList onSelectUser={handleSelectUser} />
-              )}
-
-              {/* NEW CHAT */}
-              {activeTab === "chat" && !selectedUser && (
-                <RecipientInput
-                  onStartChat={(user) => {
-                    setSelectedUser(user)
-                  }}
-                />
-              )}
-
-              {/* ACTIVE CHAT */}
-              {selectedUser && (
-                <ConversationView
-                  otherUserId={selectedUser.id}
-                  otherUserName={selectedUser.name}
-                  otherUserAvatar={selectedUser.avatar}
-                />
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
+          </>
+        )
 }
 
 export default FloatingMessagingWidget
