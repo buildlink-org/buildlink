@@ -100,7 +100,9 @@ const SkillsEditDialog = ({
       }}>
       <DialogTrigger asChild>{children}</DialogTrigger>
 
-      <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+      <DialogContent
+        className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto"
+        description="Add or remove skills that showcase your expertise and specialization">
         <DialogHeader>
           <DialogTitle>Edit Skills & Specialization</DialogTitle>
         </DialogHeader>

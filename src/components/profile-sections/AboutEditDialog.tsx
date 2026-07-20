@@ -85,7 +85,9 @@ const AboutEditDialog = ({ children, currentProfile, onProfileUpdated }: AboutEd
         {children}
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent
+        className="sm:max-w-[600px]"
+        description="Write a professional summary about your background, expertise, and career goals">
         <DialogHeader>
           <DialogTitle>Edit About Section</DialogTitle>
         </DialogHeader>

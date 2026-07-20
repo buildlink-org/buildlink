@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from "react"
 import {
   MessageSquare,
   X,
-  Minimize2,
   ArrowLeft,
   PlusSquare,
 } from "lucide-react"
@@ -34,7 +33,6 @@ const FloatingMessagingWidget: React.FC = () => {
   const unsubscribeFromMessages = useMessagingStore((state) => state.unsubscribeFromMessages)
 
   const [isOpen, setIsOpen] = useState(!!recipientId)
-  const [isMinimized, setIsMinimized] = useState(false)
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
   const [activeTab, setActiveTab] = useState<"inbox" | "chat">("chat")
   const [animate, setAnimate] = useState(false)
@@ -65,24 +63,31 @@ const FloatingMessagingWidget: React.FC = () => {
     0
   )
 
-  // 🔒 Prevent background scroll (no jump)
+  // 🔒 Refined scroll lock — only on mobile (full-screen mode)
+  // Desktop panel is non-modal, page remains interactive
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return
+
+    // Detect mobile via window width
+    const isMobile = window.innerWidth < 768
+
+    if (isMobile) {
       const scrollY = window.scrollY
       document.body.style.position = "fixed"
       document.body.style.top = `-${scrollY}px`
       document.body.style.width = "100%"
-    } else {
-      const scrollY = document.body.style.top
-      document.body.style.position = ""
-      document.body.style.top = ""
-      window.scrollTo(0, parseInt(scrollY || "0") * -1)
-    }
+      document.body.style.overflow = "hidden"
 
-    return () => {
-      document.body.style.position = ""
-      document.body.style.top = ""
+      return () => {
+        const scrollYValue = document.body.style.top
+        document.body.style.position = ""
+        document.body.style.top = ""
+        document.body.style.width = ""
+        document.body.style.overflow = ""
+        window.scrollTo(0, parseInt(scrollYValue || "0") * -1)
+      }
     }
+    // Desktop: no scroll lock, page remains interactive
   }, [isOpen])
 
   // Initialize real-time subscription when user is available
@@ -97,7 +102,7 @@ const FloatingMessagingWidget: React.FC = () => {
     }
   }, [user])
 
-  // ✨ Animate modal
+  // ✨ Animate panel
   useEffect(() => {
     if (isOpen) {
       setTimeout(() => setAnimate(true), 10)
@@ -235,18 +240,18 @@ const handlePointerUp = () => {
       </button>
       )}
 
-      {/* MODAL */}
+      {/* PANEL — Desktop: bottom-right anchored, non-modal */}
+      {/* PANEL — Mobile: full-screen modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
 
           {/* BACKDROP */}
           <div
-            className={`absolute inset-0 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${animate ? "opacity-100" : "opacity-0"
-              }`}
+            className={`md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${animate ? "opacity-100" : "opacity-0"}`}
             onClick={handleClose}
           />
 
-          {/* MODAL CONTENT */}
+          {/* PANEL CONTAINER */}
           <div
             onClick={(e) => e.stopPropagation()}
            className={`relative flex flex-col overflow-hidden border border-border bg-card shadow-2xl transition-all duration-300 w-screen sm:w-[430px] md:w-[460px] mx-0 sm:mx-4 rounded-t-2xl sm:rounded-2xl
@@ -263,25 +268,29 @@ const handlePointerUp = () => {
             }
           `}>
             {/* HEADER */}
-            <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2 rounded-t-2xl">
-              <div className="flex flex-1 items-center gap-2">
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2.5">
+              <div className="flex flex-1 items-center gap-2 min-w-0">
                 {selectedUser && (
-                  <Button variant="ghost" size="icon" onClick={handleBack}>
+                  <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                 )}
 
                 {selectedUser ? (
-                  <div className="flex items-center gap-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src={selectedUser.avatar} />
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
-                        {selectedUser.name?.[0] || "U"}
-                      </AvatarFallback>
-                    </Avatar>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="relative shrink-0">
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage src={selectedUser.avatar} />
+                        <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
+                          {selectedUser.name?.[0] || "U"}
+                        </AvatarFallback>
+                      </Avatar>
+                      {/* Online status indicator */}
+                      <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card" />
+                    </div>
 
-                    <div className="flex flex-col leading-tight">
-                      <span className="text-sm font-semibold text-foreground">
+                    <div className="flex flex-col leading-tight min-w-0">
+                      <span className="text-sm font-semibold text-foreground truncate">
                         {selectedUser.name}
                       </span>
                       <span className="text-[10px] text-muted-foreground">
@@ -296,7 +305,7 @@ const handlePointerUp = () => {
                 )}
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="ghost"
                   size="icon"
@@ -309,17 +318,6 @@ const handlePointerUp = () => {
                   <PlusSquare className="h-4 w-4" />
                 </Button>
 
-                {/* <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setIsMinimized(!isMinimized)}
-                  title={isMinimized ? "Expand" : "Minimise"}
-                >
-                  <Minimize2 className="h-4 w-4" />
-                </Button> */}
-
-                
-
                 <Button variant="ghost" size="icon" onClick={handleClose} title="Close">
                   <X className="h-4 w-4" />
                 </Button>
@@ -331,56 +329,59 @@ const handlePointerUp = () => {
               <div className="flex shrink-0 border-b border-border bg-card">
                 <button
                   onClick={() => setActiveTab("inbox")}
-                  className={`flex-1 py-2 text-sm font-semibold transition-colors ${activeTab === "inbox"
+                  className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${activeTab === "inbox"
                     ? "border-b-2 border-primary bg-muted/40 text-primary"
                     : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
                   Inbox
+                  {unreadCount > 0 && (
+                    <span className="ml-1.5 inline-flex items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] text-white">
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </button>
 
                 <button
                   onClick={() => setActiveTab("chat")}
-                  className={`flex-1 py-2 text-sm transition-colors ${activeTab === "chat"
+                  className={`flex-1 py-2.5 text-sm transition-colors ${activeTab === "chat"
                     ? "border-b-2 border-primary text-primary"
                     : "text-muted-foreground hover:text-foreground"
                     }`}
                 >
-                  Chat
+                  New Chat
                 </button>
               </div>
             )}
 
             {/* CONTENT */}
-            {!isMinimized && (
-              <div className="min-h-0 flex-1 overflow-hidden bg-card">
+            <div className="min-h-0 flex-1 overflow-hidden bg-card">
 
-                {/* INBOX */}
-                {activeTab === "inbox" && !selectedUser && (
-                  <ConversationsList onSelectUser={handleSelectUser} />
-                )}
+              {/* INBOX */}
+              {activeTab === "inbox" && !selectedUser && (
+                <ConversationsList onSelectUser={handleSelectUser} />
+              )}
 
-                {/* NEW CHAT */}
-                {activeTab === "chat" && !selectedUser && (
-                  <RecipientInput
-                    onStartChat={(user) => {
-                      setSelectedUser(user)
-                    }}
-                  />
-                )}
+              {/* NEW CHAT */}
+              {activeTab === "chat" && !selectedUser && (
+                <RecipientInput
+                  onStartChat={(user) => {
+                    setSelectedUser(user)
+                  }}
+                />
+              )}
 
-                {/* ACTIVE CHAT */}
-                {selectedUser && (
-                  <ConversationView
-                    otherUserId={selectedUser.id}
-                    otherUserName={selectedUser.name}
-                    otherUserAvatar={selectedUser.avatar}
-                  />
-                )}
-              </div>
-            )}
+              {/* ACTIVE CHAT */}
+              {selectedUser && (
+                <ConversationView
+                  otherUserId={selectedUser.id}
+                  otherUserName={selectedUser.name}
+                  otherUserAvatar={selectedUser.avatar}
+                />
+              )}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </>
   )

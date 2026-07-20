@@ -191,7 +191,9 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 				</Button>
 			</DialogTrigger>
 
-			<DialogContent className="sm:max-w-[600px]">
+			<DialogContent
+				className="sm:max-w-[600px]"
+				description="Create a new post with optional image or PDF attachment">
 				<DialogHeader>
 					<DialogTitle>Create New Post</DialogTitle>
 				</DialogHeader>

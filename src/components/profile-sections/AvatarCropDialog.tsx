@@ -52,7 +52,9 @@ const AvatarCropDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onCancel}>
-      <DialogContent className="sm:max-w-[400px]">
+      <DialogContent
+        className="sm:max-w-[400px]"
+        description="Adjust the crop and zoom of your profile photo, then save and upload">
         <DialogHeader>
           <DialogTitle>Crop Profile Photo</DialogTitle>
         </DialogHeader>

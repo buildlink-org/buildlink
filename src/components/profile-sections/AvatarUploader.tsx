@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Camera, X } from "lucide-react";
 import AvatarCropDialog from "./AvatarCropDialog";
-import { supabase } from "@/lib/supabase";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface AvatarUploaderProps {
@@ -119,7 +118,9 @@ const AvatarUploader: React.FC<AvatarUploaderProps> = ({
       {/* Task 5 — full-size avatar preview dialog */}
       {avatarUrl && (
         <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-          <DialogContent className="flex items-center justify-center bg-transparent border-0 shadow-none max-w-sm p-2">
+          <DialogContent
+            className="flex items-center justify-center bg-transparent border-0 shadow-none max-w-sm p-2"
+            description="Full-size preview of your profile photo">
             <img
               src={avatarUrl}
               alt={fullName}

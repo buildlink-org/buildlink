@@ -86,7 +86,9 @@ const SessionBookingDialog = ({ mentor, open, onOpenChange, onBookingComplete }:
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent
+        className="sm:max-w-[600px]"
+        description={`Book a mentorship session with ${mentor.user?.full_name}. Choose a date, time, and duration.`}>
         <DialogHeader>
           <DialogTitle>Book Session with {mentor.user?.full_name}</DialogTitle>
         </DialogHeader>

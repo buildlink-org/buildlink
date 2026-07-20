@@ -161,7 +161,9 @@ const BannerEditDialog = ({ children, currentProfile, onProfileUpdated }: Banner
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent
+        className="sm:max-w-[600px]"
+        description="Upload, crop, or remove your profile banner image. Recommended size: 1200x300px">
         <DialogHeader>
           <DialogTitle>Edit Profile Banner</DialogTitle>
         </DialogHeader>
