@@ -243,8 +243,9 @@ const handlePointerUp = () => {
       {/* PANEL — Desktop: bottom-right anchored, non-modal */}
       {/* PANEL — Mobile: full-screen modal */}
       {isOpen && (
-        <>
-          {/* Mobile backdrop */}
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+
+          {/* BACKDROP */}
           <div
             className={`md:hidden fixed inset-0 z-50 bg-black/60 backdrop-blur-sm transition-opacity duration-300 ${
               animate ? "opacity-100" : "opacity-0"
@@ -255,35 +256,26 @@ const handlePointerUp = () => {
           {/* Messaging Panel */}
           <div
             onClick={(e) => e.stopPropagation()}
-            className={`
-              fixed z-50 flex flex-col overflow-hidden border border-border bg-card shadow-2xl
-              transition-all duration-300
+           className={`relative flex flex-col overflow-hidden border border-border bg-card shadow-2xl transition-all duration-300 w-screen sm:w-[430px] md:w-[460px] mx-0 sm:mx-4 rounded-t-2xl sm:rounded-2xl
+            
+              
+                 "h-[92vh] sm:h-[85vh] max-h-[720px]"
+            
 
-              inset-0
-
-              md:inset-auto
-              md:bottom-20
-              md:right-4
-              md:w-96
-              md:max-h-[600px]
-              md:rounded-2xl
-
-              ${
-                animate
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-8 md:translate-y-4"
-              }
-            `}
-          >
-
-                  {/* HEADER */}
-                  <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2.5">
-                    <div className="flex flex-1 items-center gap-2 min-w-0">
-                      {selectedUser && (
-                        <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
-                          <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                      )}
+            ${
+              animate
+                ? "translate-y-0 opacity-100"
+                : "translate-y-[100%] sm:translate-y-4 opacity-0"
+            }
+          `}>
+            {/* HEADER */}
+            <div className="flex shrink-0 items-center justify-between border-b border-border bg-card px-3 py-2.5">
+              <div className="flex flex-1 items-center gap-2 min-w-0">
+                {selectedUser && (
+                  <Button variant="ghost" size="icon" onClick={handleBack} className="shrink-0">
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                )}
 
                       {selectedUser ? (
                         <div className="flex items-center gap-2 min-w-0">
