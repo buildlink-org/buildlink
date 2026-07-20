@@ -369,7 +369,7 @@ const renderButtons = () => {
             onClick={handleCancelRequest}
           >
             Decline
-          </Button>
+          </Button> 
         </>
       );
 
