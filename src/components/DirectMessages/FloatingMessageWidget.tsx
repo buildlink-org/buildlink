@@ -381,7 +381,7 @@ const handlePointerUp = () => {
               )}
             </div>
           </div>
-        </>
+        </div>
       )}
     </>
   )
