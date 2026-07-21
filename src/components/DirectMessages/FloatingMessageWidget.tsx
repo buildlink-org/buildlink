@@ -266,8 +266,11 @@ const handlePointerUp = () => {
         z-50
         flex
         items-end
+        justify-end
+        p-4
         md:items-center
-        justify-center
+        md:justify-center
+        pointer-events-none
       "
     >
       <div
@@ -284,22 +287,25 @@ const handlePointerUp = () => {
           transition-all
           duration-300
 
-          w-screen
-          sm:w-[430px]
+          pointer-events-auto
+
+          w-[55vw]
+          h-[55vh]
+
           md:w-[460px]
+          md:h-[720px]
 
-          h-[92vh]
-          sm:h-[85vh]
-          max-h-[720px]
+          min-w-[300px]
+          min-h-[360px]
 
+         
 
-          rounded-t-2xl
-          sm:rounded-2xl
+          rounded-2xl
 
           ${
             animate
-              ? "translate-y-0 opacity-100"
-              : "translate-y-full md:translate-y-4 opacity-0"
+              ? "translate-y-0 translate-x-0 scale-100 opacity-100"
+              : "translate-y-8 translate-x-8 scale-95 opacity-0"
           }
         `}
       >

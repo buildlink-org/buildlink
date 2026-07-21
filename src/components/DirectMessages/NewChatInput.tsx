@@ -230,7 +230,7 @@ export default function RecipientInput({
             autoCapitalize="none"
             spellCheck={false}
             name="recipient-search"
-            placeholder="Search user..."
+            placeholder="Add User..."
             value={query}
             onChange={(e) => {
               const value = e.target.value
