@@ -642,13 +642,11 @@ const ConversationView: React.FC<
           <div className="flex flex-1 items-end rounded-full border bg-background px-3 py-1">
             <Textarea
               value={content}
-              onChange={(e) =>
-                setContent(e.target.value)
-              }
+              onChange={(e) => setContent(e.target.value)}
               onKeyDown={(e) => {
                 if (
                   e.key === "Enter" &&
-                  !e.shiftKey
+                  (e.ctrlKey || e.metaKey)
                 ) {
                   e.preventDefault()
                   handleSend()
