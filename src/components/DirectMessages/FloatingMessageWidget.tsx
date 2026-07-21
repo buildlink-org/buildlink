@@ -290,7 +290,7 @@ const handlePointerUp = () => {
           pointer-events-auto
 
           w-[55vw]
-          h-[55vh]
+          h-[80vh]
 
           md:w-[460px]
           md:h-[720px]
