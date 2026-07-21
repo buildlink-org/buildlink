@@ -15,7 +15,20 @@ interface EmojiPickerButtonProps {
 export default function EmojiPickerButton({
 	onSelect,
 }: EmojiPickerButtonProps) {
-	const isMobile = window.innerWidth < 640
+	const [isMobile, setIsMobile] = useState(window.innerWidth < 640)
+
+		useEffect(() => {
+		const handleResize = () => {
+			setIsMobile(window.innerWidth < 640)
+		}
+
+		window.addEventListener("resize", handleResize)
+
+		return () => window.removeEventListener("resize", handleResize)
+		}, [])
+
+
+
 	const [isDark, setIsDark] = useState(
 		document.documentElement.classList.contains("dark")
 	)
@@ -39,36 +52,37 @@ export default function EmojiPickerButton({
 					size="icon"
 					variant="ghost"
 					className="
-						h-7 w-7
-						sm:h-8 sm:w-8
-						rounded-full
-						p-0
-						shrink-0
-						hover:bg-muted/50
-						transition-all
+					h-10
+					w-10
+					rounded-full
+					shrink-0
+					hover:bg-muted
+					transition-colors
 					"
 				>
 					<Smile className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
+				side="top"
 				align="start"
-				sideOffset={8}
+				sideOffset={10}
+				collisionPadding={16}
 				className="
-					w-auto
 					p-0
-					overflow-hidden
-					bg-background/30
-					backdrop-blur-xl
-					border
+					w-auto
+					overflow-visible
 					border-white/10
-					shadow-2xl
+					bg-transparent
+					backdrop-blur-xl
+					shadow-none
 					max-w-[95vw]
+					max-h-[80vh]
 				"
-			>
+				>
 				<EmojiPicker
-					width={isMobile ? 280 : 380}
-					height={isMobile ? 220 : 300}
+					width={isMobile ? 300 : 380}
+					height={isMobile ? 250 : 430}
 					lazyLoadEmojis
 					searchDisabled={false}
 					skinTonesDisabled={isMobile}

@@ -618,7 +618,7 @@ const ConversationView: React.FC<
           </div>
         )}
 
-        <div className="flex items-end gap-2">
+        <div className="flex items-end gap-2 w-full">
 
           {/* EMOJI */}
           <EmojiPickerButton
@@ -639,7 +639,7 @@ const ConversationView: React.FC<
           </Button>
 
           {/* INPUT */}
-          <div className="flex flex-1 items-end rounded-full border bg-background px-3 py-1">
+          <div className="flex flex-1 items-end rounded-2xl border bg-background px-3 py-2">
             <Textarea
               value={content}
               onChange={(e) => setContent(e.target.value)}
@@ -652,9 +652,21 @@ const ConversationView: React.FC<
                   handleSend()
                 }
               }}
-              placeholder="Message..."
-              className="min-h-[40px] max-h-32 resize-none border-0 bg-transparent shadow-none focus-visible:ring-0"
-              rows={1}
+              placeholder="Type a message..."
+              rows={5}
+              className="
+                min-h-[60px]
+                max-h-[160px]
+                resize-none
+                border-0
+                bg-transparent
+                shadow-none
+                focus-visible:ring-0
+                overflow-y-auto
+                leading-relaxed
+                text-sm
+                px-0
+              "
             />
           </div>
 
