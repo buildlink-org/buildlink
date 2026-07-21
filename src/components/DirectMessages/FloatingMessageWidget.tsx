@@ -78,10 +78,12 @@ useEffect(() => {
     // Detect mobile via window width
     const isMobile = window.innerWidth < 768
 
-    if (isMobile) {
+    
       const scrollY = window.scrollY
       document.body.style.position = "fixed"
       document.body.style.top = `-${scrollY}px`
+      document.body.style.left = "0"
+      document.body.style.right = "0"
       document.body.style.width = "100%"
       document.body.style.overflow = "hidden"
 
@@ -93,7 +95,7 @@ useEffect(() => {
         document.body.style.overflow = ""
         window.scrollTo(0, parseInt(scrollYValue || "0") * -1)
       }
-    }
+    
     // Desktop: no scroll lock, page remains interactive
   }, [isOpen])
 
