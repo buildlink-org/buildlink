@@ -96,7 +96,8 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 			})
 
 			try {
-				const { error, action } = await postsService.likePost(postId, user.id)
+				const { error } =
+    			await postsService.likePost(postId, user.id)
 
 				if (error) {
 					// Rollback on error
@@ -113,12 +114,14 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 				}
 
 				// Sync with actual DB count via getPostInteractions
-				const { data: counts } = await postsService.getPostInteractions(postId)
-				if (counts) {
-					updatePostCounts(postId, {
-						likes_count: counts.likes_count,
-					})
-				}
+				
+			const { data: counts } = await postsService.getPostCounts(postId);
+
+			if (counts) {
+			updatePostCounts(postId, {
+				likes_count: counts.likes_count,
+			});
+		}
 			} catch (error) {
 				// Rollback on exception
 				updatePostInteraction(postId, { liked: prevLiked })
@@ -298,18 +301,22 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 					event: 'UPDATE',
 					schema: 'public',
 					table: 'posts',
-					filter: `id=in.(${postIds.join(',')})`,
+					//filter: `id=in.(${postIds.join(',')})`,
 				},
 				(payload) => {
-					const updatedPost = payload.new as any;
-					if (updatedPost) {
-						updatePostCounts(updatedPost.id, {
-							comments_count: updatedPost.comments_count,
-							likes_count: updatedPost.likes_count,
-							reposts_count: updatedPost.reposts_count,
-							shares_count: updatedPost.shares_count,
-						});
-					}
+  const updatedPost = payload.new as any;
+
+  if (!updatedPost) return;
+
+				// Ignore posts not currently displayed
+				if (!postIdsRef.current.includes(updatedPost.id)) return;
+
+				updatePostCounts(updatedPost.id, {
+					likes_count: updatedPost.likes_count,
+					comments_count: updatedPost.comments_count,
+					reposts_count: updatedPost.reposts_count,
+					shares_count: updatedPost.shares_count,
+				});
 				}
 			)
 			.subscribe();

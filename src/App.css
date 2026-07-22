@@ -40,3 +40,11 @@
 .read-the-docs {
   color: #888;
 }
+
+.epr-main {
+    background: rgba(20,20,20,.35) !important;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,.08) !important;
+    border-radius: 18px;
+}
