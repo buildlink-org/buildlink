@@ -132,11 +132,39 @@ export const useInfiniteScroll = (options: UseInfiniteScrollOptions = {}) => {
   }, []);
 
   // Update post counts
-  const updatePostCounts = useCallback((postId: string, updates: any) => {
-    setPosts(prev => prev.map(post => 
-      post.id === postId ? { ...post, ...updates } : post
-    ));
-  }, []);
+ const updatePostCounts = useCallback(
+  (
+    postId: string,
+    counts: Partial<{
+      likes_count: number;
+      comments_count: number;
+      reposts_count: number;
+      shares_count: number;
+    }>
+  ) => {
+    setPosts((prev) =>
+      prev.map((post) => {
+        if (post.id !== postId) return post;
+
+        return {
+          ...post,
+          likes_count:
+            counts.likes_count ?? post.likes_count,
+          comments_count:
+            counts.comments_count ??
+            post.comments_count,
+          reposts_count:
+            counts.reposts_count ??
+            post.reposts_count,
+          shares_count:
+            counts.shares_count ??
+            post.shares_count,
+        };
+      })
+    );
+  },
+  []
+);
 
   return {
     posts,
