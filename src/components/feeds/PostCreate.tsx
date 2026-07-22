@@ -384,7 +384,7 @@ const PostCreate = () => {
 			// RESET FORM
 			setContent("")
 
-			setPostType("update")
+			setPostType("general")
 
 			setImageFile(null)
 
