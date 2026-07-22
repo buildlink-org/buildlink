@@ -1,9 +1,9 @@
 import { supabase } from '@/integrations/supabase/client';
 
 export const postsService = {
-  async getPosts(category?: string, sortBy: string = 'latest') {
+    async getPosts(category?: string, sortBy: string = "latest") {
     let query = supabase
-      .from('posts')
+      .from("posts")
       .select(`
         *,
         profiles:author_id (
@@ -13,37 +13,59 @@ export const postsService = {
           profession,
           user_type,
           title
-        ),
-        likes_count,
-        comments_count,
-        reposts_count,
-        shares_count
+        )
       `);
-    
-    if (category && category !== 'all' && category !== 'latest') {
-      // Map filter categories to database location values
+
+    if (category && category !== "all" && category !== "latest") {
       const categoryMap: { [key: string]: string } = {
-        'industry': 'industry',
-        'projects': 'project',
-        'opportunities': 'opportunity'
-        // 'news': 'general',
-        // 'jobs': 'career', 
-        // 'portfolios': 'project'
+        industry: "industry",
+        projects: "project",
+        opportunities: "opportunity",
       };
-      const dbCategory = categoryMap[category] || category;
-      query = query.eq('location', dbCategory);
+
+      query = query.eq(
+        "location",
+        categoryMap[category] || category
+      );
     }
-    
-    if (sortBy === 'latest') {
-      query = query.order('created_at', { ascending: false });
-    } else if (sortBy === 'popular') {
-      query = query.order('likes_count', { ascending: false });
+
+    if (sortBy === "latest") {
+      query = query.order("created_at", {
+        ascending: false,
+      });
+    } else if (sortBy === "popular") {
+      query = query.order("created_at", {
+        ascending: false,
+      });
     }
-    
+
     const { data, error } = await query;
-    
-    return { data, error };
-  },
+
+    if (error || !data) {
+      return { data, error };
+    }
+
+    // Fetch REAL interaction counts
+    const posts = await Promise.all(
+      data.map(async (post) => {
+        const { data: counts } =
+          await this.getPostInteractions(post.id);
+
+        return {
+          ...post,
+          likes_count: counts?.likes_count ?? 0,
+          reposts_count: counts?.reposts_count ?? 0,
+        };
+      })
+    );
+
+    return {
+      data: posts,
+      error: null,
+    };
+},
+
+
   async createPost(post: {
     title?: string;
     content: string;
@@ -79,40 +101,52 @@ export const postsService = {
     return { data, error };
   },
   async likePost(postId: string, userId: string) {
-    // First check if already liked
-    // Use maybeSingle() instead of single() to avoid 406 error when no row exists
-    const { data: existingLike, error: checkError } = await supabase
-      .from('post_interactions')
-      .select('id')
-      .eq('post_id', postId)
-      .eq('user_id', userId)
-      .eq('type', 'like')
+
+   const { data: existingLike } = await supabase
+      .from("post_interactions")
+      .select("id")
+      .eq("post_id", postId)
+      .eq("user_id", userId)
+      .eq("type", "like")
       .maybeSingle();
 
-    if (checkError) {
-      console.error('Error checking existing like:', checkError);
-      return { data: null, error: checkError, action: 'none' };
-    }
+   let action;
 
-    if (existingLike) {
-      // Unlike
-      const { data, error } = await supabase
-        .from('post_interactions')
-        .delete()
-        .eq('post_id', postId)
-        .eq('user_id', userId)
-        .eq('type', 'like');
-      return { data, error, action: 'unliked' };
-    } else {
-      // Like
-      const { data, error } = await supabase
-        .from('post_interactions')
-        .insert({ post_id: postId, user_id: userId, type: 'like' })
-        .select()
-        .maybeSingle();
-      return { data, error, action: 'liked' };
-    }
-  },
+   if(existingLike){
+
+      await supabase
+      .from("post_interactions")
+      .delete()
+      .eq("post_id", postId)
+      .eq("user_id", userId)
+      .eq("type","like");
+
+      action="unliked";
+
+   }else{
+
+      await supabase
+      .from("post_interactions")
+      .insert({
+         post_id:postId,
+         user_id:userId,
+         type:"like"
+      });
+
+      action="liked";
+
+   }
+
+   const { data: counts } =
+      await this.getPostInteractions(postId);
+
+   return {
+      data: counts,
+      error:null,
+      action: existingLike ? "unliked" : "liked",
+      counts
+   };
+},
   // SECURE: Use new privacy-focused function to get user interactions
   async getUserInteractions(postId: string, userId: string) {
     if (!userId) {
@@ -326,12 +360,17 @@ export const postsService = {
   // Fetch the actual stored counts for a post (comments_count, shares_count, etc.)
   // Used to sync optimistic UI updates with the DB-maintained values.
   async getPostCounts(postId: string) {
-    const { data, error } = await supabase
-      .from('posts')
-      .select('likes_count, comments_count, reposts_count, shares_count')
-      .eq('id', postId)
-      .single();
-    
-    return { data, error };
-  }
+  const { data, error } = await supabase
+    .from("posts")
+    .select(`
+      likes_count,
+      comments_count,
+      reposts_count,
+      shares_count
+    `)
+    .eq("id", postId)
+    .single();
+
+  return { data, error };
+}
 };

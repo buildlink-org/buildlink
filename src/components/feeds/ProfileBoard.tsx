@@ -13,7 +13,7 @@ import { useProfile } from "@/hooks/useProfile"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import ProfileCompletionIndicator from "@/components/profile/ProfileCompletionIndicator"
-import { BookOpen, Users } from "lucide-react"
+import { BookOpen, Users, Edit } from "lucide-react"
 import { UserProfile } from "@/types"
 import AboutActivitySection from "../profile-sections/details/AboutActivitySection"
 

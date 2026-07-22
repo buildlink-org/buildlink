@@ -46,8 +46,8 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-[#ff7f7f] dark:bg-[#ff7f7f]",
-				borderColor: "border-[#ff7f7f] dark:border-[#ff7f7f]",
+				bgColor: "bg-[#f0433d] dark:bg-[#f0433d]",
+				borderColor: "border-[#f0433d] dark:border-[#f0433d]",
 				titleColor: "text-black",
 				descColor: "text-black",
 				iconEmoji: "",

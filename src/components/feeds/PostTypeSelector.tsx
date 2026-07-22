@@ -16,9 +16,24 @@ interface PostTypeSelectorProps {
 }
 
 const postTypes: PostType[] = [
-	{ id: "update", label: "Express Yourself", icon: FileText, description: "Share & discuss industry insights & experiences" },
-	{ id: "project", label: "Showcase Project", icon: Camera, description: "Display & highlight your latest and past work" },
-	{ id: "job", label: "Post Opportunity", icon: Briefcase, description: "Advertise gigs, job openings & any other opportunities" },
+  {
+    id: "general",
+    label: "Express Yourself",
+    icon: FileText,
+    description: "Share & discuss industry insights & experiences",
+  },
+  {
+    id: "project",
+    label: "Showcase Project",
+    icon: Camera,
+    description: "Display & highlight your latest and past work",
+  },
+  {
+    id: "career",
+    label: "Post Opportunity",
+    icon: Briefcase,
+    description: "Advertise jobs, gigs & opportunities",
+  },
 ]
 
 const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType, setPostType }) => {
