@@ -67,8 +67,8 @@ const ProfileBoard = () => {
 	if (!profile) {
 		return (
 			<div className="py-12 text-center">
-				<h3 className="mb-2 text-lg font-semibold text-gray-600">Profile not found</h3>
-				<p className="text-gray-500">Unable to load profile data</p>
+				<h3 className="mb-2 text-lg font-semibold text-foreground">Profile not found</h3>
+				<p className="text-muted-foreground">Unable to load profile data</p>
 			</div>
 		)
 	}
@@ -86,38 +86,47 @@ const ProfileBoard = () => {
 				handleProfileUpdate={handleProfileUpdate}
 			/>
 
-			{/* Stats Cards - Keep existing */}
-			<div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-				<Card className="md:col-span-1 border border-border">
-					<CardContent className="p-4">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-sm text-muted-foreground">{userType === "company" ? "Staff" : "Portfolio Items"}</p>
-								<p className="text-4xl font-bold">{userType === "company" ? 0 : profile.portfolio?.length || 0}</p>
+		{/* Stats Cards */}
+			<div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+				<Card className="border border-border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
+					<CardContent className="p-3 sm:p-4 relative">
+						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-green-500/10 dark:bg-green-500/5" />
+						<div className="relative flex items-center justify-between">
+							<div className="min-w-0">
+								<p className="text-xs sm:text-sm text-muted-foreground truncate">{userType === "company" ? "Staff" : "Portfolio Items"}</p>
+								<p className="text-2xl sm:text-4xl font-bold text-foreground">{userType === "company" ? 0 : profile.portfolio?.length || 0}</p>
 							</div>
-							<BookOpen className="h-8 w-8 text-green-500" />
+							<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-green-500/15 dark:bg-green-500/10 flex-shrink-0">
+								<BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="md:col-span-1 border border-border">
-					<CardContent className="p-4">
-						<div className="flex items-center justify-between">
-							<div>
-								<p className="text-sm text-muted-foreground">{userType === "company" ? "Following" : "Connections"}</p>
-								<p className="text-4xl font-bold">0</p>
+				<Card className="border border-border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
+					<CardContent className="p-3 sm:p-4 relative">
+						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-purple-500/10 dark:bg-purple-500/5" />
+						<div className="relative flex items-center justify-between">
+							<div className="min-w-0">
+								<p className="text-xs sm:text-sm text-muted-foreground truncate">{userType === "company" ? "Following" : "Connections"}</p>
+								<p className="text-2xl sm:text-4xl font-bold text-foreground">0</p>
 							</div>
-							<Users className="h-8 w-8 text-purple-500" />
+							<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-purple-500/15 dark:bg-purple-500/10 flex-shrink-0">
+								<Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
+							</div>
 						</div>
 					</CardContent>
 				</Card>
 
-				<Card className="md:col-span-2 border border-border">
-					<CardContent className="p-4">
-						<ProfileCompletionIndicator
-							score={profile?.profile_completion_score || 0}
-							showDetails
-						/>
+				<Card className="col-span-2 md:col-span-2 border border-border overflow-hidden transition-all hover:shadow-md">
+					<CardContent className="p-3 sm:p-4 relative">
+						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-primary/10 dark:bg-primary/5" />
+						<div className="relative">
+							<ProfileCompletionIndicator
+								score={profile?.profile_completion_score || 0}
+								showDetails
+							/>
+						</div>
 					</CardContent>
 				</Card>
 			</div>
@@ -211,33 +220,33 @@ const ProfileBoard = () => {
 						<CardContent className="p-6">
 							<div className="flex items-center justify-between mb-6">
 								<h3 className="text-lg font-semibold text-foreground">Featured (3/3 items uploaded)</h3>
-								<div className="flex items-center gap-3">
-									<Button variant="outline" size="sm" className="rounded-md border-black text-black px-4 py-1 h-auto text-xs">
+				<div className="flex items-center gap-3">
+									<Button variant="outline" size="sm" className="rounded-md border-border text-foreground hover:bg-accent hover:text-accent-foreground dark:border-border dark:text-foreground dark:hover:bg-accent px-4 py-1 h-auto text-xs">
 										+ Add Item
 									</Button>
 									<Edit className="h-4 w-4 text-foreground cursor-pointer" />
 								</div>
 							</div>
-							<div className="flex flex-row justify-center items-end gap-6">
+							<div className="flex flex-row justify-center items-end gap-4 sm:gap-6">
 								{/* Item 3 */}
-								<div className="flex flex-col w-[140px]">
-									<div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-									<div className="h-[160px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 3</div>
+								<div className="flex flex-col w-[120px] sm:w-[140px]">
+									<div className="h-3 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
+									<div className="h-[160px] bg-[#dcfce7] dark:bg-green-950/60 border border-gray-400 dark:border-green-800/50 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full">Item 3</div>
 									</div>
 								</div>
 								{/* Item 1 */}
-								<div className="flex flex-col w-[140px]">
-									<div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-									<div className="h-[140px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 1</div>
+								<div className="flex flex-col w-[120px] sm:w-[140px]">
+									<div className="h-3 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
+									<div className="h-[140px] bg-[#dcfce7] dark:bg-green-950/60 border border-gray-400 dark:border-green-800/50 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full">Item 1</div>
 									</div>
 								</div>
 								{/* Item 2 */}
-								<div className="flex flex-col w-[140px]">
-									<div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-									<div className="h-[150px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 2</div>
+								<div className="flex flex-col w-[120px] sm:w-[140px]">
+									<div className="h-3 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
+									<div className="h-[150px] bg-[#dcfce7] dark:bg-green-950/60 border border-gray-400 dark:border-green-800/50 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
+										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full">Item 2</div>
 									</div>
 								</div>
 							</div>

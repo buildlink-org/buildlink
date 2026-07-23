@@ -16,11 +16,14 @@ export const useProfile = () => {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
-  const loadUserData = useCallback(async (forceRefresh = false) => {
+  const loadUserData = useCallback(async (forceRefresh = false, silent = false) => {
     if (!user) return;
     
     try {
-      setLoading(true);
+      // Only show loading spinner on initial load or forced refresh, not on silent updates
+      if (!silent) {
+        setLoading(true);
+      }
       
       // Use Promise.all for concurrent requests
       const [profileResult, postsResult] = await Promise.all([
@@ -50,7 +53,9 @@ export const useProfile = () => {
         });
       }
     } finally {
-      setLoading(false);
+      if (!silent) {
+        setLoading(false);
+      }
     }
   }, [user, toast, profileService, postsService]);
 
@@ -61,7 +66,8 @@ export const useProfile = () => {
   }, [user, loadUserData]);
 
   const handleProfileUpdate = stableCallback(() => {
-    loadUserData(true);
+    // Use silent refresh to avoid full page loading state/flicker
+    loadUserData(true, true);
     // Update profile completion score
     if (user) {
       publicProfileService.updateProfileCompletion(user.id);
