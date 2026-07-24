@@ -38,18 +38,23 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 
 	const userType = profile.user_type?.toLowerCase() || "student"
 
-	let badgeClasses = "bg-student-100 text-student-900 border border-student-border"
+	let badgeClasses = "bg-student-100 text-student-900 border border-student-border dark:bg-student-900/40 dark:text-student-50 dark:border-student-700/50"
 	if (userType === "professional") {
-		badgeClasses = "bg-professional-100 text-professional-900 border border-professional-border"
+		badgeClasses = "bg-professional-100 text-professional-900 border border-professional-border dark:bg-professional-900/40 dark:text-professional-50 dark:border-professional-700/50"
 	} else if (userType === "company") {
-		badgeClasses = "bg-company-100 text-company-900 border border-company-border"
+		badgeClasses = "bg-company-100 text-company-900 border border-company-border dark:bg-company-900/40 dark:text-company-50 dark:border-company-700/50"
 	}
 
 	return (
-		<Card className="border border-border shadow-sm">
-			<CardContent className="rounded-md px-4 py-4 shadow-sm">
+		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
+			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-foreground">Languages</h2>
+					<div className="flex items-center gap-2">
+						<h2 className="text-lg font-semibold text-foreground">Languages</h2>
+						{languages.length > 0 && (
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{languages.length}</span>
+						)}
+					</div>
 					<LanguagesEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
 						<Button variant="ghost" size="sm" className="px-2" type="button" aria-label="Edit languages">
 							<Edit className="h-4 w-4" />
@@ -59,9 +64,14 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 
 				<div className="space-y-3">
 					{languages.length === 0 ? (
-						<p className="text-sm italic text-muted-foreground">
-							No languages added yet. Click edit to showcase the languages you speak.
-						</p>
+						<div className="flex flex-col items-center justify-center py-6 text-center">
+							<div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+								<Edit className="h-5 w-5 text-muted-foreground" />
+							</div>
+							<p className="text-sm text-muted-foreground">
+								No languages added yet. Click edit to showcase the languages you speak.
+							</p>
+						</div>
 					) : (
 						<div className="flex flex-wrap gap-2">
 							{languages.map((lang, idx) => {
@@ -73,7 +83,7 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 									<Badge
 										key={`${lang.name}-${idx}`}
 										variant="secondary"
-										className={`${badgeClasses} rounded-full px-4 py-1 text-sm font-medium capitalize transition-colors hover:brightness-95`}
+										className={`${badgeClasses} rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all hover:scale-105 hover:shadow-sm cursor-default`}
 									>
 										{label}
 									</Badge>

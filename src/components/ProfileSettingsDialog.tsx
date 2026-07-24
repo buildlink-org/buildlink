@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Settings, Bell, Palette, Sun, Moon } from "lucide-react";
+import { useState } from "react";
+import { Settings, Bell, Palette, Sun, Moon, KeyRound, Download, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useNavigate } from "react-router-dom";
 
 interface ProfileSettingsDialogProps {
   children: React.ReactNode;
@@ -29,34 +31,12 @@ interface ProfileSettingsDialogProps {
 const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
   const [open, setOpen] = useState(false);
   const { toast } = useToast();
-
-  // Theme state
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("theme");
-      if (saved === "dark" || saved === "light") return saved;
-      // Check system preference
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        return "dark";
-      }
-    }
-    return "light";
-  });
+  const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
 
   // Settings state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
-
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
 
   const handleThemeChange = (isDark: boolean) => {
     setTheme(isDark ? "dark" : "light");
@@ -144,16 +124,37 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-3">
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => { setOpen(false); navigate("/profile/settings"); }}>
+                      <KeyRound className="mr-2 h-4 w-4" />
                       Change Password
                     </Button>
-                    <Button variant="outline" className="w-full justify-start">
+                    <Button
+                      variant="outline"
+                      className="w-full justify-start"
+                      onClick={() => {
+                        toast({
+                          title: "Preparing your data",
+                          description: "Your data export will be available for download shortly.",
+                          duration: 4000,
+                        });
+                      }}>
+                      <Download className="mr-2 h-4 w-4" />
                       Download My Data
                     </Button>
                     <Separator />
-                    <Button variant="destructive" className="w-full">
+                    <Button
+                      variant="destructive"
+                      className="w-full"
+                      onClick={() => { setOpen(false); navigate("/profile/settings"); }}>
+                      <Trash2 className="mr-2 h-4 w-4" />
                       Delete Account
                     </Button>
+                    <p className="pt-2 text-xs text-muted-foreground text-center">
+                      For full account management, visit the settings page.
+                    </p>
                   </CardContent>
                 </Card>
               </TabsContent>

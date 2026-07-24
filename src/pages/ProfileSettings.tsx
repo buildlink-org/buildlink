@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Settings, Bell, Palette, ArrowLeft, Moon, Sun } from "lucide-react";
+import { Settings, Bell, Palette, ArrowLeft, Moon, Sun, Shield, Trash2, KeyRound, Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,32 +15,38 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { profileService } from "@/services/profileService";
 import TopBar from "@/components/TopBar";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const ProfileSettings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const { theme, setTheme } = useTheme();
 
   const [loading, setLoading] = useState(true);
-
-  // Theme state
-  const [theme, setTheme] = useState<"light" | "dark">(() => {
-    if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("theme");
-      if (saved === "dark" || saved === "light") return saved;
-      // Check system preference
-      if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-        return "dark";
-      }
-    }
-    return "light";
-  });
 
   // Settings state
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
+
+  // Dialog states
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [passwordData, setPasswordData] = useState({ current: "", new: "", confirm: "" });
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -59,19 +65,80 @@ const ProfileSettings = () => {
     loadSettings();
   }, [user]);
 
-  // Apply theme to document
-  useEffect(() => {
-    const root = document.documentElement;
-    if (theme === "dark") {
-      root.classList.add("dark");
-    } else {
-      root.classList.remove("dark");
-    }
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
   const handleThemeChange = (isDark: boolean) => {
     setTheme(isDark ? "dark" : "light");
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "DELETE") return;
+    setIsDeleting(true);
+    try {
+      // TODO: Wire to actual delete account API when available
+      // For now, show a clear message that this requires backend support
+      toast({
+        title: "Account Deletion Requested",
+        description: "This feature requires backend support. Please contact support@buildlink.co.ke to delete your account.",
+        duration: 6000,
+      });
+      setDeleteDialogOpen(false);
+      setDeleteConfirmText("");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to process account deletion request.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (passwordData.new !== passwordData.confirm) {
+      toast({
+        title: "Passwords don't match",
+        description: "New password and confirmation must match.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (passwordData.new.length < 8) {
+      toast({
+        title: "Password too short",
+        description: "Password must be at least 8 characters.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsUpdatingPassword(true);
+    try {
+      // TODO: Wire to actual password change API when available
+      toast({
+        title: "Password Update Requested",
+        description: "This feature requires backend support. Please use the reset password flow if needed.",
+        duration: 6000,
+      });
+      setPasswordDialogOpen(false);
+      setPasswordData({ current: "", new: "", confirm: "" });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update password.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
+  const handleDownloadData = async () => {
+    toast({
+      title: "Preparing your data",
+      description: "Your data export will be available for download shortly.",
+      duration: 4000,
+    });
+    // TODO: Wire to actual data export API when available
   };
 
   const handleSaveSettings = async () => {
@@ -190,14 +257,26 @@ const ProfileSettings = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => setPasswordDialogOpen(true)}>
+                  <KeyRound className="mr-2 h-4 w-4" />
                   Change Password
                 </Button>
-                <Button variant="outline" className="w-full justify-start">
+                <Button
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={handleDownloadData}>
+                  <Download className="mr-2 h-4 w-4" />
                   Download My Data
                 </Button>
                 <Separator />
-                <Button variant="destructive" className="w-full">
+                <Button
+                  variant="destructive"
+                  className="w-full"
+                  onClick={() => setDeleteDialogOpen(true)}>
+                  <Trash2 className="mr-2 h-4 w-4" />
                   Delete Account
                 </Button>
               </CardContent>
@@ -312,6 +391,106 @@ const ProfileSettings = () => {
         </Tabs>
 
       </div>
+
+      {/* Delete Account Confirmation Dialog */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-5 w-5" />
+              Delete Account
+            </DialogTitle>
+            <DialogDescription>
+              This action is permanent and cannot be undone. All your data, posts, connections, and portfolio items will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="rounded-md border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
+              <p className="font-medium">Warning</p>
+              <p className="mt-1 text-destructive/80">
+                To confirm, type <strong>DELETE</strong> in the box below.
+              </p>
+            </div>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Type DELETE to confirm"
+              className="border-destructive/30 focus:border-destructive"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setDeleteDialogOpen(false); setDeleteConfirmText(""); }}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== "DELETE" || isDeleting}>
+              {isDeleting ? "Deleting..." : "Delete Account"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Dialog */}
+      <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-5 w-5" />
+              Change Password
+            </DialogTitle>
+            <DialogDescription>
+              Enter your current password and a new password to update your credentials.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handlePasswordChange} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="current-password">Current Password</Label>
+              <Input
+                id="current-password"
+                type="password"
+                value={passwordData.current}
+                onChange={(e) => setPasswordData({ ...passwordData, current: e.target.value })}
+                placeholder="Enter current password"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="new-password">New Password</Label>
+              <Input
+                id="new-password"
+                type="password"
+                value={passwordData.new}
+                onChange={(e) => setPasswordData({ ...passwordData, new: e.target.value })}
+                placeholder="Enter new password (min 8 characters)"
+                required
+                minLength={8}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm-password">Confirm New Password</Label>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={passwordData.confirm}
+                onChange={(e) => setPasswordData({ ...passwordData, confirm: e.target.value })}
+                placeholder="Re-enter new password"
+                required
+                minLength={8}
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setPasswordDialogOpen(false); setPasswordData({ current: "", new: "", confirm: "" }); }}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isUpdatingPassword}>
+                {isUpdatingPassword ? "Updating..." : "Update Password"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

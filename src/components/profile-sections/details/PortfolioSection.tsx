@@ -47,24 +47,24 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 
 		if (userType === "student") {
 			return {
-				bgColor: "bg-[#fde68a] dark:bg-yellow-900",
-				borderColor: "border-[#fde68a] dark:border-yellow-700",
+				bgColor: "bg-[#fde68a] dark:bg-yellow-950/60",
+				borderColor: "border-[#fde68a] dark:border-yellow-800/50",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-professional-100 dark:bg-orange-950",
-				borderColor: "border-professional-border dark:border-orange-800",
+				bgColor: "bg-professional-100 dark:bg-orange-950/60",
+				borderColor: "border-professional-border dark:border-orange-800/50",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-company-100 dark:bg-green-950",
-				borderColor: "border-company-border dark:border-green-800",
+				bgColor: "bg-company-100 dark:bg-green-950/60",
+				borderColor: "border-company-border dark:border-green-800/50",
 			}
 		}
 		// Default fallback
 		return {
-			bgColor: "bg-[#fed7aa] dark:bg-orange-950",
-			borderColor: "border-orange-200 dark:border-orange-800",
+			bgColor: "bg-[#fed7aa] dark:bg-orange-950/60",
+			borderColor: "border-orange-200 dark:border-orange-800/50",
 		}
 	}
 
@@ -199,15 +199,15 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	if (!portfolioList || (!canEdit && portfolioList.length === 0 && profile.user_type !== "professional" && profile.user_type !== "student")) return null
 
 	return (
-		<Card className="border-0 shadow-sm">
+		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
 			<CardContent className="px-2 py-6">
 				<div className="mb-6 flex flex-wrap items-center justify-between gap-y-2">
 					<div className="flex items-center space-x-2">
 						<h3 className="text-lg font-semibold text-foreground">Portfolio</h3>
 						{(profile.user_type === "professional" || profile.user_type === "student") && portfolioList.length === 0 ? (
-							<span className="text-sm text-foreground">({canEdit ? "3/3 items uploaded" : "3 items"})</span>
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{canEdit ? "3/3 items" : "3 items"}</span>
 						) : (
-							<span className="text-sm text-muted-foreground">({portfolioList.length}/3 items uploaded)</span>
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{portfolioList.length}/3 items</span>
 						)}
 					</div>
 					{canEdit && (
@@ -215,7 +215,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 								<Button
 									variant="outline"
 									size="sm"
-									className="gap-2 rounded-md border-black text-black px-4 py-1 h-auto text-xs"
+									className="gap-2 rounded-md border-border text-foreground hover:bg-accent hover:text-accent-foreground dark:border-border dark:text-foreground dark:hover:bg-accent px-4 py-1 h-auto text-xs"
 									onClick={() => setEditorOpen(true)}
 									disabled={updating}>
 									+ Add Project
@@ -253,26 +253,26 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 				{portfolioList.length === 0 ? (
 					profile.user_type === "professional" || profile.user_type === "student" ? (
 						<div className="space-y-6">
-							<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+							<div className="grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
 								{/* Project 3 */}
 								<div className="flex flex-col relative w-full max-w-[140px] mb-6 mx-auto sm:mx-0">
-									<div className="h-4 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-									<div className={`h-[160px] ${profile.user_type === "student" ? "bg-[#fde68a]" : "bg-[#fed7aa]"} border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
-										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full font-medium">Project 3</div>
+									<div className="h-4 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
+									<div className={`h-[160px] ${profile.user_type === "student" ? "bg-[#fde68a] dark:bg-yellow-950/60" : "bg-[#fed7aa] dark:bg-orange-950/60"} border border-gray-400 dark:border-border rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
+										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full font-medium">Project 3</div>
 									</div>
 								</div>
 								{/* Project 1 */}
 								<div className="flex flex-col relative w-full max-w-[140px] mt-6 mx-auto sm:mx-0">
-									<div className="h-4 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-									<div className={`h-[140px] ${profile.user_type === "student" ? "bg-[#fde68a]" : "bg-[#fed7aa]"} border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
-										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full font-medium">Project 1</div>
+									<div className="h-4 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
+									<div className={`h-[140px] ${profile.user_type === "student" ? "bg-[#fde68a] dark:bg-yellow-950/60" : "bg-[#fed7aa] dark:bg-orange-950/60"} border border-gray-400 dark:border-border rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
+										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full font-medium">Project 1</div>
 									</div>
 								</div>
 								{/* Project 2 */}
 								<div className="flex flex-col relative w-full max-w-[140px] mb-6 mx-auto sm:mx-0">
-									<div className="h-4 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-									<div className={`h-[150px] ${profile.user_type === "student" ? "bg-[#fde68a]" : "bg-[#fed7aa]"} border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
-										<div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full font-medium">Project 2</div>
+									<div className="h-4 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
+									<div className={`h-[150px] ${profile.user_type === "student" ? "bg-[#fde68a] dark:bg-yellow-950/60" : "bg-[#fed7aa] dark:bg-orange-950/60"} border border-gray-400 dark:border-border rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
+										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full font-medium">Project 2</div>
 									</div>
 								</div>
 							</div>
@@ -294,9 +294,9 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 						</div>
 					)
 				) : (
-					<div className="space-y-6">
+				<div className="space-y-6">
 						{/* Portfolio Grid styled as folder cards */}
-						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+						<div className="grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
 							{portfolioList.map((item, index) => {
 								// Determine card positioning: middle card (index 1) gets mt-6, others get mb-6
 								const isMiddleCard = index === 1 && portfolioList.length === 3
@@ -473,14 +473,14 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 					asIconButton={false}
 					disabled={updating}
 				/>
-				{updating && (
-					<div className="fixed inset-0 z-40 flex items-center justify-center bg-black/20">
-						<div className="flex animate-fade-in items-center gap-2 rounded-lg bg-white p-4 text-sm text-gray-400 shadow-lg">
-							<Loader2 className="h-5 w-5 animate-spin" />
-							Saving changes...
-						</div>
+			{updating && (
+				<div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 dark:bg-black/60">
+					<div className="flex animate-fade-in items-center gap-2 rounded-lg bg-card p-4 text-sm text-foreground shadow-lg border border-border">
+						<Loader2 className="h-5 w-5 animate-spin text-primary" />
+						Saving changes...
 					</div>
-				)}
+				</div>
+			)}
 			</CardContent>
 		</Card>
 	)

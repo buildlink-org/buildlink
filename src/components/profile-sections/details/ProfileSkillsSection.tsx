@@ -31,10 +31,15 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 	}
 
 	return (
-		<Card className="border border-border shadow-sm">
-			<CardContent className="rounded-md px-4 py-4 shadow-sm">
+		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
+			<CardContent className="px-4 py-4">
 				<div className="mb-3 flex items-center justify-between">
-					<h2 className="text-base font-semibold text-foreground">{userType === "company" ? "Expertise" : "Skills"}</h2>
+					<div className="flex items-center gap-2">
+						<h2 className="text-base font-semibold text-foreground">{userType === "company" ? "Expertise" : "Skills"}</h2>
+						{skills.length > 0 && (
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{skills.length}</span>
+						)}
+					</div>
 					{canEdit && (
 						<SkillsEditDialog
 							currentProfile={profile}
@@ -52,8 +57,13 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 				</div>
 				<div className="space-y-3">
 					{skills.length === 0 ? (
-						<div className="text-sm text-muted-foreground">
-							{canEdit ? "No skills added yet." : "This user hasn't listed any skills yet."}
+						<div className="flex flex-col items-center justify-center py-6 text-center">
+							<div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+								<Edit className="h-5 w-5 text-muted-foreground" />
+							</div>
+							<p className="text-sm text-muted-foreground">
+								{canEdit ? "No skills added yet. Click edit to showcase your skills." : "This user hasn't listed any skills yet."}
+							</p>
 						</div>
 					) : (
 						<div className="flex flex-wrap gap-2">
@@ -61,7 +71,7 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 								<Badge
 								key={idx}
 								variant="outline"
-								className={`${badgeClasses} px-3 py-1 text-sm transition-colors hover:brightness-95`}>
+								className={`${badgeClasses} px-3 py-1.5 text-sm font-medium transition-all hover:scale-105 hover:shadow-sm cursor-default`}>
 								{skill.name}
 								</Badge>
 							))}
