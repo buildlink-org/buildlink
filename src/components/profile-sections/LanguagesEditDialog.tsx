@@ -127,13 +127,13 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
 
           <div className="space-y-2">
             <Label>Your Languages</Label>
-            <div className="space-y-2 min-h-[100px] p-3 border rounded-md">
+            <div className="space-y-2 min-h-[100px] p-3 border border-border rounded-md bg-card/50">
               {languages.length > 0 ? (
                 languages.map((language, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div key={index} className="flex items-center justify-between p-2 bg-muted rounded-md">
                     <div>
-                      <span className="font-medium">{language.name}</span>
-                      <span className="text-sm text-gray-500 ml-2">({language.proficiency})</span>
+                      <span className="font-medium text-foreground">{language.name}</span>
+                      <span className="text-sm text-muted-foreground ml-2">({language.proficiency})</span>
                     </div>
                     <Button
                       type="button"
@@ -146,7 +146,7 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
                   </div>
                 ))
               ) : (
-                <p className="text-gray-500 text-sm">No languages added yet. Add some languages above.</p>
+                <p className="text-muted-foreground text-sm">No languages added yet. Add some languages above.</p>
               )}
             </div>
           </div>

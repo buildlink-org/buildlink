@@ -1,191 +1,103 @@
-import * as React from "react"
+import { toast as sonnerToast } from "sonner";
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast"
+/**
+ * Lightweight wrapper around Sonner to maintain backward compatibility
+ * with the previous Radix-based useToast API (`toast({ title, description, variant })`).
+ *
+ * Why: The app previously mounted TWO toast systems (Radix Toaster + Sonner),
+ * causing duplicate notifications. Sonner now handles everything with proper
+ * auto-dismiss and smooth animations.
+ */
 
-const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+export type ToastVariant = "default" | "destructive";
 
-type ToasterToast = ToastProps & {
-  id: string
-  title?: React.ReactNode
-  description?: React.ReactNode
-  action?: ToastActionElement
+export interface ToastProps {
+  title?: React.ReactNode;
+  description?: React.ReactNode;
+  variant?: ToastVariant;
+  /** Optional action element (kept for API compatibility) */
+  action?: React.ReactElement;
+  /** Override auto-dismiss duration (ms) */
+  duration?: number;
+  [key: string]: unknown;
 }
 
-const actionTypes = {
-  ADD_TOAST: "ADD_TOAST",
-  UPDATE_TOAST: "UPDATE_TOAST",
-  DISMISS_TOAST: "DISMISS_TOAST",
-  REMOVE_TOAST: "REMOVE_TOAST",
-} as const
-
-let count = 0
-
-function genId() {
-  count = (count + 1) % Number.MAX_SAFE_INTEGER
-  return count.toString()
+interface ToastReturn {
+  id: string | number;
+  dismiss: () => void;
+  update: (props: Partial<ToastProps>) => void;
 }
 
-type ActionType = typeof actionTypes
+const DEFAULT_DURATION = 4000;
+const DESTRUCTIVE_DURATION = 6000;
 
-type Action =
-  | {
-      type: ActionType["ADD_TOAST"]
-      toast: ToasterToast
-    }
-  | {
-      type: ActionType["UPDATE_TOAST"]
-      toast: Partial<ToasterToast>
-    }
-  | {
-      type: ActionType["DISMISS_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
-  | {
-      type: ActionType["REMOVE_TOAST"]
-      toastId?: ToasterToast["id"]
-    }
+/**
+ * Drop-in replacement for the old imperative `toast()` function.
+ * Maps `{ title, description, variant }` to Sonner's API.
+ */
+function toast(props: ToastProps): ToastReturn {
+  const {
+    title,
+    description,
+    variant,
+    duration,
+    action,
+    ...rest
+  } = props;
 
-interface State {
-  toasts: ToasterToast[]
-}
+  const resolvedDuration =
+    duration ?? (variant === "destructive" ? DESTRUCTIVE_DURATION : DEFAULT_DURATION);
 
-const toastTimeouts = new Map<string, ReturnType<typeof setTimeout>>()
+  const options: Record<string, unknown> = {
+    description,
+    duration: resolvedDuration,
+    ...rest,
+  };
 
-const addToRemoveQueue = (toastId: string) => {
-  if (toastTimeouts.has(toastId)) {
-    return
+  // Map destructive variant to Sonner's error toast for visual distinction
+  let id: string | number;
+  if (variant === "destructive") {
+    id = sonnerToast.error(title, options);
+  } else {
+    id = sonnerToast(title, options);
   }
 
-  const timeout = setTimeout(() => {
-    toastTimeouts.delete(toastId)
-    dispatch({
-      type: "REMOVE_TOAST",
-      toastId: toastId,
-    })
-  }, TOAST_REMOVE_DELAY)
-
-  toastTimeouts.set(toastId, timeout)
-}
-
-export const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "ADD_TOAST":
-      return {
-        ...state,
-        toasts: [action.toast, ...state.toasts].slice(0, TOAST_LIMIT),
-      }
-
-    case "UPDATE_TOAST":
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === action.toast.id ? { ...t, ...action.toast } : t
-        ),
-      }
-
-    case "DISMISS_TOAST": {
-      const { toastId } = action
-
-      // ! Side effects ! - This could be extracted into a dismissToast() action,
-      // but I'll keep it here for simplicity
-      if (toastId) {
-        addToRemoveQueue(toastId)
+  return {
+    id,
+    dismiss: () => sonnerToast.dismiss(id),
+    update: (newProps: Partial<ToastProps>) => {
+      const {
+        title: newTitle,
+        description: newDesc,
+        variant: newVariant,
+        ...newRest
+      } = newProps;
+      const mergedOptions = {
+        id,
+        description: newDesc ?? description,
+        duration: newProps.duration ?? resolvedDuration,
+        ...newRest,
+      };
+      if (newVariant === "destructive") {
+        sonnerToast.error(newTitle ?? title, mergedOptions);
       } else {
-        state.toasts.forEach((toast) => {
-          addToRemoveQueue(toast.id)
-        })
+        sonnerToast(newTitle ?? title, mergedOptions);
       }
-
-      return {
-        ...state,
-        toasts: state.toasts.map((t) =>
-          t.id === toastId || toastId === undefined
-            ? {
-                ...t,
-                open: false,
-              }
-            : t
-        ),
-      }
-    }
-    case "REMOVE_TOAST":
-      if (action.toastId === undefined) {
-        return {
-          ...state,
-          toasts: [],
-        }
-      }
-      return {
-        ...state,
-        toasts: state.toasts.filter((t) => t.id !== action.toastId),
-      }
-  }
-}
-
-const listeners: Array<(state: State) => void> = []
-
-let memoryState: State = { toasts: [] }
-
-function dispatch(action: Action) {
-  memoryState = reducer(memoryState, action)
-  listeners.forEach((listener) => {
-    listener(memoryState)
-  })
-}
-
-type Toast = Omit<ToasterToast, "id">
-
-function toast({ ...props }: Toast) {
-  const id = genId()
-
-  const update = (props: ToasterToast) =>
-    dispatch({
-      type: "UPDATE_TOAST",
-      toast: { ...props, id },
-    })
-  const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
-
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
-      },
     },
-  })
-
-  return {
-    id: id,
-    dismiss,
-    update,
-  }
+  };
 }
 
+/**
+ * Backward-compatible hook. Previously returned reactive `toasts` array;
+ * now returns an empty array since Sonner manages its own rendering.
+ * `toast` and `dismiss` still work as before.
+ */
 function useToast() {
-  const [state, setState] = React.useState<State>(memoryState)
-
-  React.useEffect(() => {
-    listeners.push(setState)
-    return () => {
-      const index = listeners.indexOf(setState)
-      if (index > -1) {
-        listeners.splice(index, 1)
-      }
-    }
-  }, [state])
-
   return {
-    ...state,
+    toasts: [] as never[],
     toast,
-    dismiss: (toastId?: string) => dispatch({ type: "DISMISS_TOAST", toastId }),
-  }
+    dismiss: (id?: string | number) => sonnerToast.dismiss(id),
+  };
 }
 
-export { useToast, toast }
+export { useToast, toast };

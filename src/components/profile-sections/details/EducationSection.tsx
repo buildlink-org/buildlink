@@ -34,10 +34,15 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 
 	if (!canEdit && education.length === 0) return null
 	return (
-		<Card className="rounded-lg border border-border shadow-sm">
+		<Card className="rounded-lg border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
-					<h2 className="text-lg font-semibold text-foreground">Education & Training</h2>
+					<div className="flex items-center gap-2">
+						<h2 className="text-lg font-semibold text-foreground">Education & Training</h2>
+						{education.length > 0 && (
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{education.length}</span>
+						)}
+					</div>
 					{canEdit && (
 						<EducationEditDialog
 							currentProfile={profile}
@@ -51,20 +56,35 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 						</EducationEditDialog>
 					)}
 				</div>
-				<div className="space-y-4">
+				<div className="space-y-1">
 					{education.length > 0 ? (
 						<>
 							{visibleEducation.map((edu: Education, index: number) => (
 								<div
 									key={index}
-									className="flex space-x-4">
-									<div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg ${iconBg}`}>
+									className="relative flex gap-4 pb-6 last:pb-0">
+									{/* Timeline line */}
+									{index < visibleEducation.length - 1 && (
+										<div className="absolute left-6 top-14 bottom-0 w-px bg-border" />
+									)}
+									<div className={`relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${iconBg} shadow-sm`}>
 										<GraduationCap className={`h-6 w-6 ${iconText}`} />
 									</div>
-									<div className="min-w-0 flex-1">
-										<h3 className="font-semibold text-foreground">{edu.degree || "[Degree/Certificate]"}</h3>
-										<p className="text-muted-foreground">{edu.institution || "[Institution]"}</p>
-										<p className="text-sm text-muted-foreground">{edu.year || "[Year]"}</p>
+									<div className="min-w-0 flex-1 rounded-lg border border-border/50 bg-card/50 p-3 transition-all hover:border-border hover:shadow-sm">
+										<div className="flex items-start justify-between gap-2">
+											<div className="min-w-0 flex-1">
+												<h3 className="font-semibold text-foreground">{edu.degree || "[Degree/Certificate]"}</h3>
+												<p className="text-sm text-muted-foreground">{edu.institution || "[Institution]"}</p>
+											</div>
+											{edu.year && (
+												<span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
+													{edu.year}
+												</span>
+											)}
+										</div>
+										{(!edu.year) && (
+											<p className="mt-0.5 text-sm text-muted-foreground">[Year]</p>
+										)}
 										{edu.description && (
 											<p className="mt-2 text-sm text-muted-foreground">
 												<ReadMoreText
@@ -79,7 +99,7 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 							{hasMore && (
 								<button
 									type="button"
-									className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80"
+									className="flex items-center gap-1 text-sm font-medium text-primary transition-colors hover:text-primary/80 mt-2"
 									onClick={() => setIsExpanded(!isExpanded)}>
 									{isExpanded ? (
 										<>
@@ -96,7 +116,12 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 							)}
 						</>
 					) : (
-						<p className="text-muted-foreground">No education added yet. Click edit to add your educational background.</p>
+						<div className="flex flex-col items-center justify-center py-6 text-center">
+							<div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+								<GraduationCap className="h-5 w-5 text-muted-foreground" />
+							</div>
+							<p className="text-sm text-muted-foreground">No education added yet. Click edit to add your educational background.</p>
+						</div>
 					)}
 				</div>
 			</CardContent>

@@ -110,8 +110,8 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden block fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border">
-        <div className="flex items-center justify-around pt-2 pb-1 max-w-6xl mx-auto">
+      <div className="md:hidden block fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+        <div className="flex items-center justify-around pt-2 pb-2 max-w-6xl mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
