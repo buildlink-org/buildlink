@@ -75,7 +75,8 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
         )}
       </div>
     */} 
-         </div>
+      
+    </div>
   );
 };
 
