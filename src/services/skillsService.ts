@@ -24,15 +24,34 @@ export const skillsService = {
   },
 
   async getStats() {
-    const { count: coursesCount, error: coursesError } = await supabase
-      .from('skill_resources')
-      .select('*', { count: 'exact', head: true })
-      .eq('type', 'course');
-    
-    if (coursesError) {
-      return { data: null, error: coursesError };
+    const types = ['course', 'webinar', 'article', 'certification'] as const;
+
+    const results = await Promise.all(
+      types.map(async (type) => {
+        const { count, error } = await supabase
+          .from('skill_resources')
+          .select('*', { count: 'exact', head: true })
+          .eq('type', type);
+        return { type, count, error };
+      })
+    );
+
+    const firstError = results.find((r) => r.error)?.error;
+    if (firstError) {
+      return { data: null, error: firstError };
     }
 
-    return { data: { coursesCount }, error: null };
+    const toCount = (type: string) =>
+      results.find((r) => r.type === type)?.count ?? 0;
+
+    return {
+      data: {
+        coursesCount: toCount('course'),
+        webinarsCount: toCount('webinar'),
+        articlesCount: toCount('article'),
+        certificationsCount: toCount('certification'),
+      },
+      error: null,
+    };
   },
 };
