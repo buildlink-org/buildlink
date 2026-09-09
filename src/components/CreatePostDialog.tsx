@@ -15,7 +15,7 @@ interface CreatePostDialogProps {
 	onPostCreated?: () => void
 }
 
-type PostCategory = "project" | "industry" | "opportunity"
+type PostCategory = "general" | "project" | "career"
 
 
 
@@ -31,7 +31,7 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 	const [isLoading, setIsLoading] = useState(false)
 	const [formData, setFormData] = useState<FormData>({
 		content: "",
-		category: "project",
+		category: "general",
 	})
 	const [imageFile, setImageFile] = useState<File | null>(null)
 	const [documentFile, setDocumentFile] = useState<File | null>(null)
@@ -43,15 +43,39 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 	const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const file = e.target.files?.[0]
 		if (file) {
+			// Validate MIME type
+			if (!file.type.startsWith("image/")) {
+				toast({
+					title: "Invalid File Type",
+					description: "Only image files are supported (JPEG, PNG, WebP, etc.).",
+					variant: "destructive",
+				})
+				e.target.value = ""
+				return
+			}
+			// Validate size (max 10MB)
+			if (file.size > 10 * 1024 * 1024) {
+				toast({
+					title: "File Too Large",
+					description: "Images must be less than 10MB.",
+					variant: "destructive",
+				})
+				e.target.value = ""
+				return
+			}
+			// Revoke previous preview URL
+			if (imagePreview) {
+				URL.revokeObjectURL(imagePreview)
+			}
 			setImageFile(file)
 			setImagePreview(URL.createObjectURL(file))
 		}
 	}
 
   const placeholders: Record<string, string> = {
+		general: "Share your thoughts, insights or questions...",
 		project: "Display & highlight your work...",
-		industry: "Share your thoughts, insights or questions...",
-		opportunity: "Post gigs, job openings & any other opportunities...",
+		career: "Post gigs, job openings & any other opportunities...",
   }
   
 	const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -67,8 +91,24 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 					description: "Only PDF documents are supported for upload.",
 					variant: "destructive",
 				})
-				e.target.value = "" // Clear the input
+				e.target.value = ""
 				return
+			}
+
+			// Validate size (max 20MB)
+			if (file.size > 20 * 1024 * 1024) {
+				toast({
+					title: "File Too Large",
+					description: "PDF documents must be less than 20MB.",
+					variant: "destructive",
+				})
+				e.target.value = ""
+				return
+			}
+
+			// Revoke previous preview URL
+			if (documentPreviewUrl) {
+				URL.revokeObjectURL(documentPreviewUrl)
 			}
 
 			setDocumentFile(file)
@@ -88,11 +128,26 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 		if (documentInputRef.current) documentInputRef.current.value = ""
 	}
 
+	// Cleanup object URLs on unmount and dialog close
+	useEffect(() => {
+		if (!open) {
+			// Cleanup on close
+			if (imagePreview) URL.revokeObjectURL(imagePreview)
+			if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
+			setImageFile(null)
+			setImagePreview(null)
+			setDocumentFile(null)
+			setDocumentPreviewUrl(null)
+			setFormData({ content: "", category: "general" })
+		}
+	}, [open])
+
 	useEffect(() => {
 		return () => {
+			if (imagePreview) URL.revokeObjectURL(imagePreview)
 			if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
 		}
-	}, [documentPreviewUrl])
+	}, [imagePreview, documentPreviewUrl])
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -150,11 +205,15 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 			if (error) throw error
 
 			toast({
-				title: "Success",
-				description: "Your post has been created successfully!",
+				title: "Post created!",
+				description: "Your post has been published successfully.",
 			})
 
-			setFormData({ content: "", category: "project" })
+			// Cleanup object URLs
+			if (imagePreview) URL.revokeObjectURL(imagePreview)
+			if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
+
+			setFormData({ content: "", category: "general" })
 			setImageFile(null)
 			setDocumentFile(null)
 			setImagePreview(null)
@@ -162,9 +221,13 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 			setOpen(false)
 			onPostCreated?.()
 		} catch (error) {
+			const message =
+				error && typeof error === "object" && "message" in error
+					? String((error as { message: unknown }).message)
+					: "Failed to create post. Please try again."
 			toast({
 				title: "Error",
-				description: "Failed to create post. Please try again.",
+				description: message,
 				variant: "destructive",
 			})
 		} finally {
@@ -210,9 +273,9 @@ const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 								<SelectValue />
 							</SelectTrigger>
 							<SelectContent>
+								<SelectItem value="general">General</SelectItem>
 								<SelectItem value="project">Project</SelectItem>
-								<SelectItem value="industry">Industry</SelectItem>
-								<SelectItem value="opportunity">Opportunity</SelectItem>
+								<SelectItem value="career">Career</SelectItem>
 							</SelectContent>
 						</Select>
 					</div>

@@ -27,8 +27,8 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <div className="md:block hidden fixed md:w-30 lg:w-60 xl:w-72 h-full">
+      {/* Desktop Sidebar — explicit widths that work across breakpoints */}
+      <div className="md:block hidden fixed md:w-[7.5rem] lg:w-60 xl:w-72 h-full">
         <nav className="p-4 space-y-2 h-full overflow-y-auto text-foreground">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -55,7 +55,8 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
             );
           })}
 
-          <div className="fixed bottom-4">
+          {/* Desktop quick links */}
+          <div className="mt-8 space-y-4">
             {/* Quick Links */}
             <div className="flex flex-row justify-start space-x-6">
               <a
@@ -75,7 +76,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
             </div>
 
             {/* Contact Icons */}
-            <div className="flex justify-start space-x-4 mt-4 text-foreground/80">
+            <div className="flex justify-start space-x-4 text-foreground/80">
               <a
                 title="Email"
                 href="mailto:info@buildlink.co.ke"
@@ -109,9 +110,9 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
         </nav>
       </div>
 
-      {/* Mobile Bottom Navigation */}
-      <div className="md:hidden block fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div className="flex items-center justify-around pt-2 pb-2 max-w-6xl mx-auto">
+      {/* Mobile Bottom Navigation — equal-width items with safe-area padding */}
+      <div className="md:hidden block fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg" style={{ paddingBottom: "env(safe-area-inset-bottom, 0px)" }}>
+        <div className="flex items-stretch max-w-6xl mx-auto">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -120,7 +121,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                 key={item.id}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center min-w-[60px] transition-colors",
+                  "relative flex flex-col items-center justify-center flex-1 min-w-0 py-3 px-1 transition-colors",
                   active
                     ? "text-primary"
                     : "text-muted-foreground hover:text-primary",
@@ -134,9 +135,9 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                       "bg-primary text-primary-foreground rounded-full p-1 h-8 w-8"
                   )}
                 />
-                <span className="text-xs font-medium">{item.title}</span>
+                <span className="text-[11px] font-medium leading-tight text-center truncate w-full">{item.title}</span>
                 {loading && active && (
-                  <div className="absolute -top-1 -right-1 animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                  <div className="absolute -top-1 right-1/4 animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
                 )}
               </Link>
             );

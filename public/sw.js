@@ -54,7 +54,7 @@ self.addEventListener('fetch', event => {
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
 
   // Skip external requests (except images)
-  if (url.origin !== location.origin && !request.destination === 'image') return;
+  if (url.origin !== location.origin && request.destination !== 'image') return;
 
   // Handle different types of requests
   if (request.destination === 'image') {

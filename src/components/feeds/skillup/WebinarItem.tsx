@@ -7,6 +7,7 @@ interface Webinar {
     id: string;
     title: string;
     provider: string;
+    link?: string;
 }
 
 interface WebinarItemProps {
@@ -19,11 +20,13 @@ const WebinarItem = ({ webinar }: WebinarItemProps) => {
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h3 className="font-medium text-gray-800 mb-1">{webinar.title}</h3>
-            <p className="text-sm text-gray-600">{webinar.provider}</p>
+            <h3 className="font-medium text-foreground mb-1">{webinar.title}</h3>
+            <p className="text-sm text-muted-foreground">{webinar.provider}</p>
           </div>
-          <Button size="sm" variant="outline">
-            Register Free
+          <Button size="sm" variant="outline" asChild>
+            <a href={webinar.link || "#"} target="_blank" rel="noopener noreferrer">
+              Register Free
+            </a>
           </Button>
         </div>
         <div className="mt-3">

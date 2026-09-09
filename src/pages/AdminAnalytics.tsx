@@ -74,7 +74,7 @@ export default function AdminAnalyticsPage() {
 	return (
 		<>
 			<TopBar onLogoClick={handleGoBack} />
-			<div className="mx-auto mt-10 max-w-5xl space-y-6 p-4 md:p-8">
+			<div className="mx-auto mt-16 max-w-5xl space-y-6 p-4 md:p-8">
 				<h2 className="text-2xl font-bold">Platform Analytics</h2>
 
 				{/* Metrics Grid */}

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 import { Card, CardContent } from "../ui/card"
 import { Button } from "../ui/button"
 import { Textarea } from "../ui/textarea"
-import { Camera, FileText, MapPin, X } from "lucide-react"
+import { Camera, FileText, X, MapPin, Save } from "lucide-react"
 import {
 	useState,
 	useRef,
@@ -15,11 +15,14 @@ import PostTypeSelector from "./PostTypeSelector"
 import UserAvatarHeader from "./UserAvatarHeader"
 import { useAuth } from "@/contexts/AuthContext"
 import { postsService } from "@/services/postsService"
+import { draftsService } from "@/services/draftsService"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import MediaPreview from "@/components/ui/media-preview"
 import { postContentSchema } from "@/lib/validationSchemas"
-import { z } from "zod"
+import { validateImageFile, validatePdfFile, uploadFile, revokeObjectUrl } from "@/lib/fileUtils"
+import { useLocation } from "@/hooks/useLocation"
+import type { PostCategory } from "@/types/posts"
 
 const PostCreate = () => {
 
@@ -50,6 +53,10 @@ const PostCreate = () => {
 
 	const [isLoading, setIsLoading] =
 		useState(false)
+	const [draftId, setDraftId] =
+		useState<string | null>(null)
+
+	const { location: postLocation, requestLocation, setManualLocation, clearLocation } = useLocation()
 
 	const fileInputRef =
 		useRef<HTMLInputElement>(null)
@@ -58,127 +65,98 @@ const PostCreate = () => {
 		useRef<HTMLInputElement>(null)
 
 	// =====================================
-	// IMAGE CHANGE
+	// IMAGE CHANGE (centralized validation)
 	// =====================================
 	const handleImageChange = useCallback(
-
 		(e: React.ChangeEvent<HTMLInputElement>) => {
-
 			const file = e.target.files?.[0]
-
 			if (!file) return
 
-			// cleanup old preview
-			if (imagePreview) {
-				URL.revokeObjectURL(imagePreview)
+			const validation = validateImageFile(file)
+			if (!validation.valid) {
+				toast({
+					title: "Invalid File",
+					description: validation.error,
+					variant: "destructive",
+				})
+				e.target.value = ""
+				return
 			}
 
+			revokeObjectUrl(imagePreview)
 			setImageFile(file)
-
-			const previewUrl =
-				URL.createObjectURL(file)
-
-			setImagePreview(previewUrl)
+			setImagePreview(URL.createObjectURL(file))
 		},
-
-		[imagePreview]
+		[imagePreview, toast]
 	)
 
 	// =====================================
 	// REMOVE IMAGE
 	// =====================================
 	const handleRemoveImage = useCallback(() => {
-
-		if (imagePreview) {
-			URL.revokeObjectURL(imagePreview)
-		}
-
+		revokeObjectUrl(imagePreview)
 		setImageFile(null)
-
 		setImagePreview(null)
-
 		if (fileInputRef.current) {
 			fileInputRef.current.value = ""
 		}
-
 	}, [imagePreview])
 
 	// =====================================
-	// DOCUMENT CHANGE
+	// DOCUMENT CHANGE (centralized validation)
 	// =====================================
 	const handleDocumentChange = useCallback(
-
 		(e: React.ChangeEvent<HTMLInputElement>) => {
-
 			const file = e.target.files?.[0]
-
 			if (!file) return
 
-			const fileType = file.type
-
-			const fileExtension =
-				file.name
-					.split(".")
-					.pop()
-					?.toLowerCase()
-
-			const isPdf =
-				fileType === "application/pdf" ||
-				fileExtension === "pdf"
-
-			if (!isPdf) {
-
+			const validation = validatePdfFile(file)
+			if (!validation.valid) {
 				toast({
-					title: "Invalid File Type",
-					description:
-						"Only PDF documents are supported.",
+					title: "Invalid File",
+					description: validation.error,
 					variant: "destructive",
 				})
-
 				e.target.value = ""
-
 				return
 			}
 
-			// cleanup old preview
-			if (documentPreviewUrl) {
-				URL.revokeObjectURL(
-					documentPreviewUrl
-				)
-			}
-
+			revokeObjectUrl(documentPreviewUrl)
 			setDocumentFile(file)
-
-			const previewUrl =
-				URL.createObjectURL(file)
-
-			setDocumentPreviewUrl(previewUrl)
+			setDocumentPreviewUrl(URL.createObjectURL(file))
 		},
-
-		[toast, documentPreviewUrl]
+		[documentPreviewUrl, toast]
 	)
 
 	// =====================================
 	// CLEANUP MEMORY
 	// =====================================
 	useEffect(() => {
-
 		return () => {
-
-			if (imagePreview) {
-				URL.revokeObjectURL(
-					imagePreview
-				)
-			}
-
-			if (documentPreviewUrl) {
-				URL.revokeObjectURL(
-					documentPreviewUrl
-				)
-			}
+			revokeObjectUrl(imagePreview)
+			revokeObjectUrl(documentPreviewUrl)
 		}
-
 	}, [imagePreview, documentPreviewUrl])
+
+	// =====================================
+	// SAVE DRAFT (Create Later)
+	// =====================================
+	const handleSaveDraft = useCallback(async () => {
+		if (!user) return
+		setIsLoading(true)
+		const { data, error } = await draftsService.saveDraft({
+			id: draftId ?? undefined,
+			content,
+			category: postType as PostCategory,
+		})
+		setIsLoading(false)
+		if (error) {
+			toast({ title: "Error", description: "Could not save draft.", variant: "destructive" })
+			return
+		}
+		if (data?.id) setDraftId(data.id)
+		toast({ title: "Draft Saved", description: "Your draft has been saved. You can resume it later." })
+	}, [user, draftId, content, postType, toast])
 
 	// =====================================
 	// CANCEL POST
@@ -186,37 +164,31 @@ const PostCreate = () => {
 	const cancelCreatePost = (
 		e: React.MouseEvent<HTMLButtonElement>
 	) => {
-
 		e.preventDefault()
-
-		if (imagePreview) {
-			URL.revokeObjectURL(imagePreview)
-		}
-
-		if (documentPreviewUrl) {
-			URL.revokeObjectURL(
-				documentPreviewUrl
-			)
-		}
-
+		revokeObjectUrl(imagePreview)
+		revokeObjectUrl(documentPreviewUrl)
 		setContent("")
-
 		setImageFile(null)
-
 		setDocumentFile(null)
-
 		setImagePreview(null)
-
 		setDocumentPreviewUrl(null)
-
-		if (fileInputRef.current) {
-			fileInputRef.current.value = ""
-		}
-
-		if (documentInputRef.current) {
-			documentInputRef.current.value = ""
-		}
+		setDraftId(null)
+		clearLocation()
+		if (fileInputRef.current) fileInputRef.current.value = ""
+		if (documentInputRef.current) documentInputRef.current.value = ""
 	}
+
+	// =====================================
+	// ADD LOCATION
+	// =====================================
+	const handleAddLocation = useCallback(() => {
+		if (postLocation.lat && postLocation.lng) {
+			// Already have a location, clear it
+			clearLocation()
+		} else {
+			requestLocation()
+		}
+	}, [postLocation, requestLocation, clearLocation])
 
 	// =====================================
 	// SUBMIT POST
@@ -247,106 +219,35 @@ const PostCreate = () => {
 				| undefined
 
 			// =====================================
-			// IMAGE UPLOAD
+			// IMAGE UPLOAD (centralized)
 			// =====================================
 			if (imageFile) {
-
-				const fileExt =
-					imageFile.name
-						.split(".")
-						.pop()
-
-				const filePath =
-					`user-${user.id}/${Date.now()}.${fileExt}`
-
-				const {
-					error: uploadError,
-				} = await supabase.storage
-					.from("post-media")
-					.upload(
-						filePath,
-						imageFile,
-						{
-							upsert: false,
-						}
-					)
-
+				const { url, error: uploadError } = await uploadFile(imageFile)
 				if (uploadError) {
-
-					console.error(
-						"Upload error:",
-						uploadError
-					)
-
 					toast({
-						title:
-							"Upload Failed",
-						description:
-							"Could not upload image.",
-						variant:
-							"destructive",
+						title: "Upload Failed",
+						description: "Could not upload image.",
+						variant: "destructive",
 					})
-
 					return
 				}
-
-				const {
-					data: publicUrlData,
-				} = supabase.storage
-					.from("post-media")
-					.getPublicUrl(filePath)
-
-				image_url =
-					publicUrlData.publicUrl
+				image_url = url ?? undefined
 			}
 
 			// =====================================
-			// DOCUMENT UPLOAD
+			// DOCUMENT UPLOAD (centralized)
 			// =====================================
 			if (documentFile) {
-
-				const filePath =
-					`user-${user.id}/${Date.now()}_${documentFile.name}`
-
-				const {
-					error: uploadError,
-				} = await supabase.storage
-					.from("post-media")
-					.upload(
-						filePath,
-						documentFile,
-						{
-							upsert: false,
-						}
-					)
-
+				const { url, error: uploadError } = await uploadFile(documentFile)
 				if (uploadError) {
-
-					console.error(
-						"Document upload error:",
-						uploadError
-					)
-
 					toast({
-						title:
-							"Upload Failed",
-						description:
-							"Could not upload document.",
-						variant:
-							"destructive",
+						title: "Upload Failed",
+						description: "Could not upload document.",
+						variant: "destructive",
 					})
-
 					return
 				}
-
-				const {
-					data: publicUrlData,
-				} = supabase.storage
-					.from("post-media")
-					.getPublicUrl(filePath)
-
-				document_url =
-					publicUrlData.publicUrl
+				document_url = url ?? undefined
 			}
 
 			// =====================================
@@ -383,41 +284,43 @@ const PostCreate = () => {
 
 			// RESET FORM
 			setContent("")
-
 			setPostType("general")
-
 			setImageFile(null)
-
 			setDocumentFile(null)
-
 			setImagePreview(null)
-
 			setDocumentPreviewUrl(null)
+			setDraftId(null)
+			clearLocation()
+
+		// If draft exists, delete it after successful publish
+			if (draftId) {
+				await draftsService.deleteDraft(draftId)
+				setDraftId(null)
+			}
 
 		} catch (error) {
 
-			if (error instanceof z.ZodError) {
-
+			if (error instanceof Error && 'errors' in error) {
+				const zodError = error as { errors: [{ message: string }] }
 				toast({
-					title:
-						"Validation Error",
-
-					description:
-						error.errors[0].message,
-
-					variant:
-						"destructive",
+					title: "Validation Error",
+					description: zodError.errors[0].message,
+					variant: "destructive",
 				})
 
 			} else {
 
 				console.error(error)
 
+				const message =
+					error && typeof error === "object" && "message" in error
+						? String((error as { message: unknown }).message)
+						: "Failed to create post."
+
 				toast({
 					title: "Error",
 
-					description:
-						"Failed to create post.",
+					description: message,
 
 					variant:
 						"destructive",
@@ -444,6 +347,8 @@ const PostCreate = () => {
 		postType,
 		imageFile,
 		documentFile,
+		draftId,
+		clearLocation,
 		toast,
 	])
 
@@ -457,7 +362,7 @@ const PostCreate = () => {
 
 				<CardContent className="p-6 text-center">
 
-					<p className="text-gray-600">
+					<p className="text-muted-foreground">
 						Please sign in to create posts
 					</p>
 
@@ -526,6 +431,16 @@ const PostCreate = () => {
 						)}
 					/>
 
+					{/* CHARACTER COUNT */}
+					<div className="flex justify-end">
+						<span className={cn(
+							"text-xs",
+							content.length > 4800 ? "text-destructive" : "text-muted-foreground"
+						)}>
+							{content.length}/5000
+						</span>
+					</div>
+
 					{/* IMAGE PREVIEW */}
 					{imagePreview && (
 
@@ -546,13 +461,13 @@ const PostCreate = () => {
 							<button
 								type="button"
 								aria-label="Remove image"
-								className="absolute right-1 top-1 rounded-full bg-white p-1 shadow hover:bg-gray-100"
+								className="absolute right-1 top-1 rounded-full bg-background p-1 shadow hover:bg-accent"
 								onClick={
 									handleRemoveImage
 								}
 							>
 
-								<X className="h-5 w-5 text-gray-600" />
+								<X className="h-5 w-5 text-muted-foreground" />
 
 							</button>
 
@@ -678,93 +593,102 @@ const PostCreate = () => {
 							}
 						/>
 
-						{/* LOCATION */}
-						<Button
-							variant="ghost"
-							size="sm"
-							className="text-muted-foreground hover:text-foreground"
-							disabled
-						>
-
-							<MapPin className="mr-2 h-4 w-4" />
-
-							<span
-								className={
-									isMobile
-										? "sr-only"
-										: ""
-								}
-							>
-								Add Location
-							</span>
-
-						</Button>
-
 					</div>
 
 					
-					{/* ACTION BUTTONS */}
+					{/* LOCATION DISPLAY */}
+					{postLocation.name && (
+						<div className="mt-2 flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 rounded-md p-2">
+							<MapPin className="h-4 w-4 text-primary" />
+							<span>{postLocation.name}</span>
+							<button
+								type="button"
+								onClick={clearLocation}
+								className="ml-auto text-destructive hover:text-destructive/80"
+								aria-label="Remove location"
+							>
+								<X className="h-4 w-4" />
+							</button>
+						</div>
+					)}
+					
+					{/* MEDIA BUTTONS & DRAFT/LOCATION */}
 					<div
 						className={cn(
-							"flex flex-col md:flex-row md:justify-end mt-4 gap-3 sticky bottom-0 bg-background pt-4 border-t",
-							isMobile && "mt-2"
+							"flex items-center justify-between mt-4 pt-4 border-t",
+							isMobile && "flex-col gap-2"
 						)}
 					>
 
-						{/* CREATE LATER */}
-						<Button
-							variant="outline"
-							disabled
-							className={cn(
-								isMobile &&
-									"w-full py-3 text-base"
-							)}
-						>
-							Create Later
-						</Button>
+						<div className="flex items-center gap-2">
+							{/* SAVE DRAFT BUTTON */}
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={!content.trim() || isLoading}
+								onClick={handleSaveDraft}
+								title="Save as draft for later"
+							>
+								<Save className="h-4 w-4 mr-1" />
+								Save Draft
+							</Button>
 
-						{/* CANCEL */}
-						<Button
-							variant="link"
-							className={cn(
-								"text-muted-foreground hover:text-foreground",
-								isMobile &&
-									"w-full py-3 text-base"
-							)}
-							disabled={isLoading}
-							onClick={
-								cancelCreatePost
-							}
-						>
+							{/* ADD LOCATION BUTTON */}
+							<Button
+								variant="outline"
+								size="sm"
+								disabled={isLoading}
+								onClick={handleAddLocation}
+								title={postLocation.lat ? "Remove location" : "Add your location"}
+							>
+								<MapPin className="h-4 w-4 mr-1" />
+								{postLocation.lat ? "Location Set" : "Add Location"}
+							</Button>
+						</div>
 
-							{isLoading
-								? "Canceling..."
-								: "Cancel"}
+						<div className="flex gap-2">
+							{/* CANCEL */}
+							<Button
+								variant="link"
+								className={cn(
+									"text-muted-foreground hover:text-foreground",
+									isMobile &&
+										"py-3 text-base"
+								)}
+								disabled={isLoading}
+								onClick={
+									cancelCreatePost
+								}
+							>
 
-						</Button>
+								{isLoading
+									? "Canceling..."
+									: "Cancel"}
 
-						{/* SUBMIT */}
-						<Button
-							className={cn(
-								"bg-primary text-primary-foreground hover:bg-primary-800 font-medium",
-								isMobile &&
-									"w-full py-3 text-base"
-							)}
-							disabled={
-								!content.trim() ||
-								isLoading
-							}
-							onClick={
-								handleSubmit
-							}
-						>
+							</Button>
 
-							{isLoading
-								? "Posting..."
-								: "Share Update"}
+							{/* SUBMIT */}
+							<Button
+								className={cn(
+									"bg-primary text-primary-foreground hover:bg-primary/90 font-medium",
+									isMobile &&
+										"py-3 text-base"
+								)}
+								disabled={
+									!content.trim() ||
+									isLoading
+								}
+								onClick={
+									handleSubmit
+								}
+							>
 
-						</Button>
+								{isLoading
+									? "Posting..."
+									: "Share Update"}
 
+							</Button>
+						</div>
 					</div>
 
 				</CardContent>

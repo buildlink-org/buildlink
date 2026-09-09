@@ -6,6 +6,8 @@ import { useCallback, useRef } from 'react';
  */
 export const useStableState = () => {
   const cleanupRef = useRef<(() => void)[]>([]);
+  const fnRef = useRef<(...args: any[]) => any>(() => {});
+  const depsRef = useRef<any[]>([]);
 
   const addCleanup = useCallback((cleanup: () => void) => {
     cleanupRef.current.push(cleanup);
@@ -26,18 +28,15 @@ export const useStableState = () => {
     fn: (...args: T) => R,
     deps: any[] = []
   ) => {
-    const fnRef = useRef(fn);
-    const depsRef = useRef(deps);
-    
     // Update function if dependencies changed
     if (!depsRef.current || deps.some((dep, index) => dep !== depsRef.current[index])) {
-      fnRef.current = fn;
+      fnRef.current = fn as (...args: any[]) => any;
       depsRef.current = deps;
     }
-    
-    return useCallback((...args: T): R => {
+
+    return ((...args: T): R => {
       return fnRef.current(...args);
-    }, []);
+    }) as (...args: T) => R;
   }, []);
 
   return {

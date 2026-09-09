@@ -25,7 +25,7 @@ export const DataSaverProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   // Monitor network conditions
   useEffect(() => {
     const updateNetworkInfo = () => {
-      // @ts-ignore - navigator.connection is experimental
+      // @ts-expect-error - navigator.connection is experimental
       const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
       
       if (connection) {
@@ -47,7 +47,7 @@ export const DataSaverProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     updateNetworkInfo();
 
     // Listen for connection changes
-    // @ts-ignore
+    // @ts-expect-error - navigator.connection is not in standard TS types
     const connection = navigator.connection;
     if (connection) {
       connection.addEventListener('change', updateNetworkInfo);
