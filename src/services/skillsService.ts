@@ -24,31 +24,15 @@ export const skillsService = {
   },
 
   async getStats() {
-    const [
-      { count: coursesCount, error: coursesError },
-      { count: webinarsCount, error: webinarsError },
-      { count: articlesCount, error: articlesError },
-      { count: certificationsCount, error: certsError },
-    ] = await Promise.all([
-      supabase.from('skill_resources').select('*', { count: 'exact', head: true }).eq('type', 'course'),
-      supabase.from('skill_resources').select('*', { count: 'exact', head: true }).eq('type', 'webinar'),
-      supabase.from('skill_resources').select('*', { count: 'exact', head: true }).eq('type', 'article'),
-      supabase.from('skill_resources').select('*', { count: 'exact', head: true }).eq('type', 'certification'),
-    ]);
-
-    const error = coursesError || webinarsError || articlesError || certsError;
-    if (error) {
-      return { data: null, error };
+    const { count: coursesCount, error: coursesError } = await supabase
+      .from('skill_resources')
+      .select('*', { count: 'exact', head: true })
+      .eq('type', 'course');
+    
+    if (coursesError) {
+      return { data: null, error: coursesError };
     }
 
-    return {
-      data: {
-        coursesCount: coursesCount ?? 0,
-        webinarsCount: webinarsCount ?? 0,
-        articlesCount: articlesCount ?? 0,
-        certificationsCount: certificationsCount ?? 0,
-      },
-      error: null,
-    };
+    return { data: { coursesCount }, error: null };
   },
 };

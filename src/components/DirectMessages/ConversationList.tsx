@@ -92,9 +92,7 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               avatar: profile.avatar,
             };
           }
-        } catch (e) {
-          console.warn('Failed to fetch profile', e);
-        }
+        } catch (e) {}
 
         return {
           id: otherUserId,

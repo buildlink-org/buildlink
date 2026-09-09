@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Play, Clock, Users, Award, Download, Star, X } from "lucide-react";
+import { Play, Clock, Users, Award, Download, Star } from "lucide-react";
 import ResourceReviewForm from "./ResourceReviewForm";
 import ResourceReviewsList from "./ResourceReviewsList";
 
@@ -22,36 +22,34 @@ interface CourseItemProps {
   course: Course;
   enrolledCourses: string[];
   handleEnroll: (courseId: string) => void;
-  handleUnenroll?: (courseId: string) => void;
 }
 
-const CourseItem = ({ course, enrolledCourses, handleEnroll, handleUnenroll }: CourseItemProps) => {
-  const isEnrolled = enrolledCourses.includes(course.id);
+const CourseItem = ({ course, enrolledCourses, handleEnroll }: CourseItemProps) => {
   return (
     <Card key={course.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
       <CardContent className="p-6">
         <div className="flex items-start space-x-4">
-          <div className="w-24 h-20 bg-muted rounded-lg flex items-center justify-center">
+          <div className="w-24 h-20 bg-gray-100 rounded-lg flex items-center justify-center">
             <Play className="h-8 w-8 text-primary" />
           </div>
           <div className="flex-1">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <h3 className="font-semibold text-foreground mb-1">{course.title}</h3>
-                <p className="text-sm text-muted-foreground">{course.provider}</p>
+                <h3 className="font-semibold text-gray-800 mb-1">{course.title}</h3>
+                <p className="text-sm text-gray-600">{course.provider}</p>
               </div>
               <Badge variant="outline" className={`text-xs capitalize ${
-                course.difficulty_level === 'beginner' ? 'border-green-300 text-green-700 dark:text-green-400' :
-                course.difficulty_level === 'intermediate' ? 'border-yellow-300 text-yellow-700 dark:text-yellow-400' :
-                'border-red-300 text-red-700 dark:text-red-400'
+                course.difficulty_level === 'beginner' ? 'border-green-300 text-green-700' :
+                course.difficulty_level === 'intermediate' ? 'border-yellow-300 text-yellow-700' :
+                'border-red-300 text-red-700'
               }`}>
                 {course.difficulty_level}
               </Badge>
             </div>
             
-            <p className="text-sm text-muted-foreground mb-3">{course.description}</p>
+            <p className="text-sm text-gray-700 mb-3">{course.description}</p>
             
-            <div className="flex items-center space-x-4 mb-3 text-xs text-muted-foreground">
+            <div className="flex items-center space-x-4 mb-3 text-xs text-gray-600">
               <div className="flex items-center">
                 <Clock className="h-3 w-3 mr-1" />
                 {course.duration}
@@ -86,33 +84,18 @@ const CourseItem = ({ course, enrolledCourses, handleEnroll, handleUnenroll }: C
             <div className="flex items-center justify-between">
               <span className="text-lg font-bold text-primary">{course.price ? `KSh ${course.price}`: 'Free'}</span>
               <div className="flex space-x-2">
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={() => handleEnroll(course.id)}
-                >
+                <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-1" />
                   Syllabus
                 </Button>
-                {isEnrolled && handleUnenroll ? (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={() => handleUnenroll(course.id)}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Unenroll
-                  </Button>
-                ) : (
-                  <Button 
-                    size="sm" 
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => handleEnroll(course.id)}
-                    disabled={isEnrolled}
-                  >
-                    {isEnrolled ? "Enrolled" : "Enroll Now"}
-                  </Button>
-                )}
+                <Button 
+                  size="sm" 
+                  className="bg-primary hover:bg-primary-800"
+                  onClick={() => handleEnroll(course.id)}
+                  disabled={enrolledCourses.includes(course.id)}
+                >
+                  {enrolledCourses.includes(course.id) ? "Enrolled" : "Enroll Now"}
+                </Button>
               </div>
             </div>
             {/* Show resource reviews */}

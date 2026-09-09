@@ -34,18 +34,6 @@ const postTypes: PostType[] = [
     icon: Briefcase,
     description: "Advertise jobs, gigs & opportunities",
   },
-  {
-    id: "technical",
-    label: "Technical",
-    icon: FileText,
-    description: "Share technical tips, tutorials & how-tos",
-  },
-  {
-    id: "news",
-    label: "News & Updates",
-    icon: FileText,
-    description: "Share industry news, updates & announcements",
-  },
 ]
 
 const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType, setPostType }) => {

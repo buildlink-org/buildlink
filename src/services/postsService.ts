@@ -17,17 +17,14 @@ export const postsService = {
       `);
 
     if (category && category !== "all" && category !== "latest") {
-      // Map UI filter ids to the canonical `category` values stored on posts.
-      // Create flows store: general | project | career | technical | news.
-      // "Post Opportunity" in the composer maps to `career`.
       const categoryMap: { [key: string]: string } = {
         industry: "industry",
         projects: "project",
-        opportunities: "career",
+        opportunities: "opportunity",
       };
 
       query = query.eq(
-        "category",
+        "location",
         categoryMap[category] || category
       );
     }
@@ -81,7 +78,7 @@ export const postsService = {
     const insertObj: any = {
       author_id: post.user_id,
       content: post.content,
-      category: post.category,
+      location: post.category,
       likes_count: 0,
       comments_count: 0,
       reposts_count: 0,
@@ -100,16 +97,12 @@ export const postsService = {
       .insert(insertObj)
       .select()
       .single();
-    if (error) {
-      // Surface the actual PostgREST error (code + message) so schema/RLS
-      // problems are immediately visible instead of a generic 400.
-      console.error(`Create post failed [${error.code}]:`, error.message, error.details ?? '', error.hint ?? '');
-    }
+    console.log('Create post result:', { data, error });
     return { data, error };
   },
   async likePost(postId: string, userId: string) {
 
-   const { data: existingLike, error: checkError } = await supabase
+   const { data: existingLike } = await supabase
       .from("post_interactions")
       .select("id")
       .eq("post_id", postId)
@@ -117,25 +110,22 @@ export const postsService = {
       .eq("type", "like")
       .maybeSingle();
 
-   if (checkError) {
-     return { data: null, error: checkError, action: 'none' };
-   }
-
    let action;
-   let actionError = null;
 
    if(existingLike){
-      const { error: deleteError } = await supabase
+
+      await supabase
       .from("post_interactions")
       .delete()
       .eq("post_id", postId)
       .eq("user_id", userId)
       .eq("type","like");
 
-      actionError = deleteError ?? null;
       action="unliked";
+
    }else{
-      const { error: insertError } = await supabase
+
+      await supabase
       .from("post_interactions")
       .insert({
          post_id:postId,
@@ -143,12 +133,8 @@ export const postsService = {
          type:"like"
       });
 
-      actionError = insertError ?? null;
       action="liked";
-   }
 
-   if (actionError) {
-     return { data: null, error: actionError, action };
    }
 
    const { data: counts } =
@@ -156,8 +142,8 @@ export const postsService = {
 
    return {
       data: counts,
-      error: null,
-      action,
+      error:null,
+      action: existingLike ? "unliked" : "liked",
       counts
    };
 },

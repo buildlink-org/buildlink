@@ -1,50 +1,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Building2, Users, Briefcase, TrendingUp, Eye, Plus, Calendar } from "lucide-react"
+import { Building2, Users, Briefcase, TrendingUp, Eye, Plus } from "lucide-react"
 import AccountTypeFeatures from "./AccountTypeFeatures"
 import { UserProfile } from "@/types"
-import { useAuth } from "@/contexts/AuthContext"
-import { useQuery } from "@tanstack/react-query"
-import { useNavigate } from "react-router-dom"
-import { companyProjectsService } from "@/services/companyProjectsService"
-import { companyJobsService } from "@/services/companyJobsService"
-import { companyEventsService } from "@/services/companyEventsService"
-import { companyTeamService } from "@/services/companyTeamService"
 
 interface CompanyDashboardProps {
 	profile: UserProfile
 }
 
 const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
-	const { user } = useAuth()
-	const navigate = useNavigate()
-	const companyId = user?.id || ""
-
-	// Live counts from Supabase
-	const { data: projectsCount, isLoading: projectsLoading } = useQuery({
-		queryKey: ['company-projects-count', companyId],
-		queryFn: () => companyProjectsService.getProjectCount(companyId),
-		enabled: !!companyId,
-	});
-
-	const { data: jobsCount, isLoading: jobsLoading } = useQuery({
-		queryKey: ['company-jobs-count', companyId],
-		queryFn: () => companyJobsService.getJobCount(companyId),
-		enabled: !!companyId,
-	});
-
-	const { data: membersCount, isLoading: membersLoading } = useQuery({
-		queryKey: ['company-members-count', companyId],
-		queryFn: () => companyTeamService.getMemberCount(companyId),
-		enabled: !!companyId,
-	});
-
-	const { data: eventsCount, isLoading: eventsLoading } = useQuery({
-		queryKey: ['company-events-count', companyId],
-		queryFn: () => companyEventsService.getEventCount(companyId),
-		enabled: !!companyId,
-	});
+	return (
 		<div className="space-y-6">
 			{/* Welcome Message */}
 			<Card className="border border-border bg-gradient-to-r from-primary/20 via-primary/10 to-background">
@@ -57,16 +23,14 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 				</CardHeader>
 			</Card>
 
-			{/* Quick Stats - Live from Supabase */}
+			{/* Quick Stats */}
 			<div className="grid grid-cols-1 gap-4 md:grid-cols-4">
 				<Card>
 					<CardContent className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-muted-foreground">Active Projects</p>
-								<p className="text-2xl font-bold">
-									{projectsLoading ? "..." : (projectsCount?.count ?? 0)}
-								</p>
+								<p className="text-sm text-muted-foreground">Project Views</p>
+								<p className="text-2xl font-bold">0</p>
 							</div>
 							<Eye className="h-8 w-8 text-purple-500" />
 						</div>
@@ -78,9 +42,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 						<div className="flex items-center justify-between">
 							<div>
 								<p className="text-sm text-muted-foreground">Active Jobs</p>
-								<p className="text-2xl font-bold">
-									{jobsLoading ? "..." : (jobsCount?.count ?? 0)}
-								</p>
+								<p className="text-2xl font-bold">0</p>
 							</div>
 							<Briefcase className="h-8 w-8 text-blue-500" />
 						</div>
@@ -92,9 +54,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 						<div className="flex items-center justify-between">
 							<div>
 								<p className="text-sm text-muted-foreground">Team Members</p>
-								<p className="text-2xl font-bold">
-									{membersLoading ? "..." : (membersCount?.count ?? 0)}
-								</p>
+								<p className="text-2xl font-bold">0</p>
 							</div>
 							<Users className="h-8 w-8 text-green-500" />
 						</div>
@@ -105,18 +65,16 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 					<CardContent className="p-4">
 						<div className="flex items-center justify-between">
 							<div>
-								<p className="text-sm text-muted-foreground">Events & Tenders</p>
-								<p className="text-2xl font-bold">
-									{eventsLoading ? "..." : (eventsCount?.count ?? 0)}
-								</p>
+								<p className="text-sm text-muted-foreground">Engagement</p>
+								<p className="text-2xl font-bold">0%</p>
 							</div>
-							<Calendar className="h-8 w-8 text-orange-500" />
+							<TrendingUp className="h-8 w-8 text-orange-500" />
 						</div>
 					</CardContent>
 				</Card>
 			</div>
 
-			{/* Action Cards - Real navigation */}
+			{/* Action Cards */}
 			<div className="grid grid-cols-1 gap-6 md:grid-cols-2">
 				<Card>
 					<CardHeader>
@@ -127,7 +85,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 						<CardDescription>Feature your built works, proposals, and competitions on the homepage</CardDescription>
 					</CardHeader>
 					<CardContent>
-						<Button className="w-full" onClick={() => navigate("/create-post?type=project")}>
+						<Button className="w-full">
 							<Plus className="mr-2 h-4 w-4" />
 							Add Project
 						</Button>
@@ -145,8 +103,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 					<CardContent>
 						<Button
 							variant="outline"
-							className="w-full"
-							onClick={() => navigate("/create-post?type=career")}>
+							className="w-full">
 							<Plus className="mr-2 h-4 w-4" />
 							Post Job
 						</Button>
@@ -164,8 +121,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 					<CardContent>
 						<Button
 							variant="outline"
-							className="w-full"
-							onClick={() => navigate("/profile/settings")}>
+							className="w-full">
 							Manage Team
 						</Button>
 					</CardContent>
@@ -182,9 +138,7 @@ const CompanyDashboard = ({ profile }: CompanyDashboardProps) => {
 					<CardContent>
 						<Button
 							variant="outline"
-							className="w-full"
-							onClick={() => navigate("/create-post")}>
-							<Plus className="mr-2 h-4 w-4" />
+							className="w-full">
 							Create Event
 						</Button>
 					</CardContent>

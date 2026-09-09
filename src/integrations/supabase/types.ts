@@ -586,67 +586,9 @@ export type Database = {
           },
         ]
       }
-      post_drafts: {
-        Row: {
-          id: string
-          user_id: string
-          content: string
-          category: string
-          image_url: string | null
-          document_url: string | null
-          document_name: string | null
-          location_lat: number | null
-          location_lng: number | null
-          location_name: string | null
-          saved_at: string
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          content?: string
-          category?: string
-          image_url?: string | null
-          document_url?: string | null
-          document_name?: string | null
-          location_lat?: number | null
-          location_lng?: number | null
-          location_name?: string | null
-          saved_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          content?: string
-          category?: string
-          image_url?: string | null
-          document_url?: string | null
-          document_name?: string | null
-          location_lat?: number | null
-          location_lng?: number | null
-          location_name?: string | null
-          saved_at?: string
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "post_drafts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedSchema: "auth"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       posts: {
         Row: {
           author_id: string
-          category: string
           comments_count: number | null
           content: string
           created_at: string | null
@@ -663,7 +605,6 @@ export type Database = {
         }
         Insert: {
           author_id: string
-          category?: string
           comments_count?: number | null
           content: string
           created_at?: string | null
@@ -680,7 +621,6 @@ export type Database = {
         }
         Update: {
           author_id?: string
-          category?: string
           comments_count?: number | null
           content?: string
           created_at?: string | null

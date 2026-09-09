@@ -50,19 +50,16 @@ export const optimizedPostsService = {
     
     // Apply category filter
     if (category && category !== 'all' && category !== 'latest') {
-      // Map UI filter ids to the canonical `category` values stored on posts.
-      // Create flows store: general | project | career | technical | news.
-      // "Post Opportunity" in the composer maps to `career`.
       const categoryMap: { [key: string]: string } = {
         'industry': 'industry',
         'projects': 'project',
-        'opportunities': 'career'
+        'opportunities': 'opportunity'
         // 'news': 'general',
-        // 'jobs': 'career',
+        // 'jobs': 'career', 
         // 'portfolios': 'project'
       };
       const dbCategory = categoryMap[category] || category;
-      query = query.eq('category', dbCategory);
+      query = query.eq('location', dbCategory);
     }
     
     // Apply sorting

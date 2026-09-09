@@ -36,10 +36,10 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 						navigate("/")
 						break
 					case "post":
-						navigate("/create-post")
+						navigate("/post")
 						break
 					case "skillup":
-						navigate("/resource-hub")
+						navigate("/skillup")
 						break
 					case "profile":
 						navigate("/profile")
@@ -100,7 +100,7 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 			<OfflineIndicator />
 
 			{/* Main Content */}
-		<div className="relative top-12 mx-auto grid min-h-[calc(100vh-3rem)] w-full max-w-screen-xl grid-cols-12 px-4 pb-28 md:pb-8" style={{ paddingBottom: "calc(4rem + env(safe-area-inset-bottom, 0px))" }}>
+		<div className="relative top-12 mx-auto grid h-screen w-full max-w-screen-xl grid-cols-12 px-4 pb-24 md:pb-8">
 				{showNavigation && (
 					<div className="col-span-3 bg-background/80">
 						<ResponsiveNavigation loading={loading} />

@@ -8,19 +8,33 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Camera, FileText, X } from "lucide-react";
+import { Camera, FileText, X, ArrowLeft, ArrowRight, Star } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { postsService } from "@/services/postsService";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import MediaPreview from "@/components/ui/media-preview";
 import { Post } from "@/types/database";
+import {
+  uploadPostImage,
+  uploadPostDocument,
+  parsePostImages,
+  validateUploadFile,
+  ALLOWED_MIME,
+  MAX_SIZE,
+} from "@/lib/uploadUtils";
 
 interface EditPostDialogProps {
   post: Post;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onPostUpdated?: () => void;
+}
+
+interface ImageEntry {
+  id: string;
+  url?: string;
+  file?: File;
+  previewUrl: string;
 }
 
 const EditPostDialog = ({
@@ -33,64 +47,124 @@ const EditPostDialog = ({
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [content, setContent] = useState(post?.content || "");
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageEntries, setImageEntries] = useState<ImageEntry[]>([]);
   const [documentFile, setDocumentFile] = useState<File | null>(null);
-  const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(
-    null
-  );
-  const [imagePreview, setImagePreview] = useState<string | null>(
-    post?.image_url || null
-  );
-  const [removeExistingImage, setRemoveExistingImage] = useState(false);
+  const [documentPreviewUrl, setDocumentPreviewUrl] = useState<string | null>(null);
   const [removeExistingDocument, setRemoveExistingDocument] = useState(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const documentInputRef = useRef<HTMLInputElement>(null);
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setRemoveExistingImage(false);
+  // Sync post state when dialog opens or post prop updates
+  useEffect(() => {
+    if (open && post) {
+      setContent(post.content || "");
+      const existingUrls = parsePostImages(post.image_url);
+      setImageEntries(
+        existingUrls.map((url, idx) => ({
+          id: `existing-${idx}-${url}`,
+          url,
+          previewUrl: url,
+        }))
+      );
+      setDocumentFile(null);
+      setDocumentPreviewUrl(null);
+      setRemoveExistingDocument(false);
     }
+  }, [open, post]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    if (imageEntries.length + files.length > 10) {
+      toast({
+        title: "Limit Exceeded",
+        description: "You can attach up to 10 images per post.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const newEntries: ImageEntry[] = [];
+    files.forEach((file) => {
+      const { valid, error } = validateUploadFile(file, ALLOWED_MIME.image, MAX_SIZE.postImage);
+      if (!valid && error) {
+        toast({
+          title: "Invalid File",
+          description: error,
+          variant: "destructive",
+        });
+        return;
+      }
+      newEntries.push({
+        id: `new-${Date.now()}-${Math.random()}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+      });
+    });
+
+    if (newEntries.length > 0) {
+      setImageEntries((prev) => [...prev, ...newEntries]);
+    }
+
+    if (imageInputRef.current) imageInputRef.current.value = "";
+  };
+
+  const handleRemoveImage = (id: string) => {
+    setImageEntries((prev) => {
+      const itemToRemove = prev.find((item) => item.id === id);
+      if (itemToRemove && itemToRemove.file) {
+        URL.revokeObjectURL(itemToRemove.previewUrl);
+      }
+      return prev.filter((item) => item.id !== id);
+    });
+  };
+
+  const moveImage = (index: number, direction: "left" | "right") => {
+    setImageEntries((prev) => {
+      const newArr = [...prev];
+      const targetIndex = direction === "left" ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= newArr.length) return prev;
+      const temp = newArr[index];
+      newArr[index] = newArr[targetIndex];
+      newArr[targetIndex] = temp;
+      return newArr;
+    });
+  };
+
+  const makeCoverImage = (index: number) => {
+    if (index === 0) return;
+    setImageEntries((prev) => {
+      const newArr = [...prev];
+      const [selected] = newArr.splice(index, 1);
+      newArr.unshift(selected);
+      return newArr;
+    });
   };
 
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Check if file is PDF
-      const fileType = file.type;
-      const fileExtension = file.name.split(".").pop()?.toLowerCase();
-
-      if (fileType !== "application/pdf" && fileExtension !== "pdf") {
+      const { valid, error } = validateUploadFile(file, ALLOWED_MIME.pdf, MAX_SIZE.document);
+      if (!valid && error) {
         toast({
-          title: "Invalid File Type",
-          description: "Only PDF documents are supported for upload.",
+          title: "Invalid Document",
+          description: error,
           variant: "destructive",
         });
-        e.target.value = ""; // Clear the input
+        e.target.value = "";
         return;
       }
 
+      if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl);
       setDocumentFile(file);
       setDocumentPreviewUrl(URL.createObjectURL(file));
+      setRemoveExistingDocument(false);
     }
   };
 
-  useEffect(() => {
-    return () => {
-      if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl);
-    };
-  }, [documentPreviewUrl]);
-
-  const handleRemoveImage = () => {
-    setImageFile(null);
-    setImagePreview(null);
-    setRemoveExistingImage(true);
-    if (imageInputRef.current) imageInputRef.current.value = "";
-  };
-
   const handleRemoveDocument = () => {
+    if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl);
     setDocumentFile(null);
     setDocumentPreviewUrl(null);
     setRemoveExistingDocument(true);
@@ -103,63 +177,47 @@ const EditPostDialog = ({
 
     setIsLoading(true);
     try {
-      let image_url = post.image_url;
+      // Process images (upload new ones, retain existing ones in order)
+      const finalImageUrls: string[] = [];
 
-      // Handle image upload
-      if (imageFile) {
-        const fileExt = imageFile.name.split(".").pop();
-        const filePath = `user-${user.id}/${Date.now()}.${fileExt}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("post-media")
-          .upload(filePath, imageFile);
-
-        if (uploadError) {
-          throw uploadError;
+      for (const entry of imageEntries) {
+        if (entry.url) {
+          finalImageUrls.push(entry.url);
+        } else if (entry.file) {
+          const { url, error: uploadError } = await uploadPostImage(entry.file, user.id);
+          if (uploadError || !url) {
+            toast({
+              title: "Image Upload Failed",
+              description: uploadError ?? `Could not upload ${entry.file.name}.`,
+              variant: "destructive",
+            });
+            setIsLoading(false);
+            return;
+          }
+          finalImageUrls.push(url);
         }
-
-        const { data: publicUrlData } = supabase.storage
-          .from("post-media")
-          .getPublicUrl(filePath);
-        image_url = publicUrlData?.publicUrl;
-      } else if (removeExistingImage) {
-        image_url = null;
       }
 
-      let document_url = post.document_url;
+      let image_url: string | null = null;
+      if (finalImageUrls.length === 1) {
+        image_url = finalImageUrls[0];
+      } else if (finalImageUrls.length > 1) {
+        image_url = JSON.stringify(finalImageUrls);
+      }
 
-      // Handle document upload
+      let document_url: string | null = post.document_url || null;
       if (documentFile) {
-        const filePath = `user-${user.id}/${Date.now()}_${documentFile.name}`;
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from("post-media")
-          .upload(filePath, documentFile, { upsert: false });
-
-        if (uploadError) {
-          console.error("Document upload error:", uploadError);
+        const { url, error: uploadError } = await uploadPostDocument(documentFile, user.id);
+        if (uploadError || !url) {
           toast({
-            title: "Upload Failed",
-            description: "Could not upload document. Please try again.",
+            title: "Document Upload Failed",
+            description: uploadError ?? "Could not upload document.",
             variant: "destructive",
           });
           setIsLoading(false);
           return;
         }
-
-        const { data: publicUrlData } = supabase.storage
-          .from("post-media")
-          .getPublicUrl(filePath);
-        
-        if (!publicUrlData?.publicUrl) {
-          toast({
-            title: "Document URL Error",
-            description: "Could not get document URL. Please try again.",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-        
-        document_url = publicUrlData.publicUrl;
+        document_url = url;
       } else if (removeExistingDocument) {
         document_url = null;
       }
@@ -180,10 +238,7 @@ const EditPostDialog = ({
         description: "Your post has been updated successfully!",
       });
 
-      // Close dialog first
       onOpenChange(false);
-
-      // Then trigger parent update after a brief delay
       setTimeout(() => {
         onPostUpdated?.();
       }, 200);
@@ -200,23 +255,9 @@ const EditPostDialog = ({
   };
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={(isOpen) => {
-        if (!isOpen) {
-          // Reset form state on close
-          setContent(post?.content || "");
-          setImageFile(null);
-          setDocumentFile(null);
-          setDocumentPreviewUrl(null);
-          setImagePreview(post?.image_url || null);
-          setRemoveExistingImage(false);
-          setRemoveExistingDocument(false);
-        }
-        onOpenChange(isOpen);
-      }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="sm:max-w-[600px]"
+        className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto"
         description="Edit your post content, image, or PDF attachment">
         <DialogHeader>
           <DialogTitle>Edit Post</DialogTitle>
@@ -235,20 +276,84 @@ const EditPostDialog = ({
             />
           </div>
 
-          {/* Image Preview */}
-          {imagePreview && (
-            <div className="relative w-full max-w-xs">
-              <img
-                src={imagePreview}
-                className="w-full h-40 rounded-md object-cover border"
-                alt="Preview"
-              />
-              <button
-                type="button"
-                className="absolute top-1 right-1 bg-white rounded-full p-1 shadow hover:bg-gray-100"
-                onClick={handleRemoveImage}>
-                <X className="h-4 w-4 text-gray-600" />
-              </button>
+          {/* Image Previews & Arrangement */}
+          {imageEntries.length > 0 && (
+            <div className="space-y-2 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <Label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Images ({imageEntries.length}/10)
+                </Label>
+                <span className="text-xs text-muted-foreground">First image is cover thumbnail</span>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                {imageEntries.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    className={`group relative h-28 rounded-lg border overflow-hidden bg-slate-100 ${
+                      idx === 0 ? "ring-2 ring-primary" : ""
+                    }`}
+                  >
+                    <img
+                      src={item.previewUrl}
+                      alt={`Post image ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+
+                    {/* Cover Badge */}
+                    {idx === 0 && (
+                      <span className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
+                        Cover
+                      </span>
+                    )}
+
+                    {/* Overlay Controls */}
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                      <div className="flex items-center justify-between">
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => makeCoverImage(idx)}
+                            className="bg-white/90 hover:bg-white text-yellow-600 p-1 rounded-full text-xs"
+                            title="Set as Cover"
+                          >
+                            <Star className="h-3 w-3 fill-yellow-500" />
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(item.id)}
+                          className="ml-auto bg-white/90 hover:bg-white text-destructive p-1 rounded-full"
+                          title="Remove image"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <button
+                          type="button"
+                          disabled={idx === 0}
+                          onClick={() => moveImage(idx, "left")}
+                          className="bg-white/90 hover:bg-white disabled:opacity-30 p-1 rounded-full text-gray-700"
+                          title="Move left"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={idx === imageEntries.length - 1}
+                          onClick={() => moveImage(idx, "right")}
+                          className="bg-white/90 hover:bg-white disabled:opacity-30 p-1 rounded-full text-gray-700"
+                          title="Move right"
+                        >
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
@@ -259,13 +364,15 @@ const EditPostDialog = ({
               variant="ghost"
               size="sm"
               className="text-gray-600"
+              disabled={imageEntries.length >= 10}
               onClick={() => imageInputRef.current?.click()}>
               <Camera className="h-4 w-4 mr-2" />
-              {imagePreview ? "Change Image" : "Add Image"}
+              {imageEntries.length > 0 ? "Add More Photos" : "Add Images"}
               <input
                 ref={imageInputRef}
                 type="file"
                 accept="image/*"
+                multiple
                 className="hidden"
                 onChange={handleImageChange}
               />
@@ -276,6 +383,7 @@ const EditPostDialog = ({
               variant="ghost"
               size="sm"
               className="text-gray-600"
+              disabled={Boolean(documentFile || (post?.document_url && !removeExistingDocument))}
               onClick={() => documentInputRef.current?.click()}>
               <FileText className="h-4 w-4 mr-2" />
               Add PDF
@@ -289,9 +397,8 @@ const EditPostDialog = ({
             </Button>
           </div>
 
-          {/* PDF Preview - Show for both new files and existing PDFs */}
-          {(documentFile ||
-            (post?.document_url && !removeExistingDocument)) && (
+          {/* PDF Preview */}
+          {(documentFile || (post?.document_url && !removeExistingDocument)) && (
             <div className="pt-4 border-t">
               <div className="flex items-center justify-between mb-2">
                 <h4 className="text-sm font-medium">PDF Document</h4>

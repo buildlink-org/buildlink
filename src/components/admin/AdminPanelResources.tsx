@@ -130,7 +130,7 @@ const AdminPanelResources = () => {
 	return (
 		<>
 			<TopBar onLogoClick={handleGoBack} />
-			<div className="mx-auto mt-16 max-w-3xl space-y-8 p-4">
+			<div className="mx-auto my-12 max-w-3xl space-y-8 p-4">
 				<Card>
 					<CardHeader>
 						<CardTitle>{isNew ? "Create New Resource" : "Update Resource"}</CardTitle>

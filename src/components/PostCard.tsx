@@ -1,11 +1,12 @@
 import { useState } from "react"
-import { Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare, Repeat2 } from "lucide-react"
+import { Share2, MoreHorizontal, Edit, Trash2, ExternalLink, ThumbsUp, MessageSquare, Repeat2, FileText, Eye, Download } from "lucide-react"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { formatDistanceToNow } from "date-fns"
 import { Post } from "@/types/database"
 import { useAuth } from "@/contexts/AuthContext"
@@ -16,8 +17,10 @@ import EditPostDialog from "./EditPostDialog"
 import ShareDialog from "./ShareDialog"
 import { OptimizedImage } from "@/components/ui/optimized-image"
 import { useNavigate } from "react-router-dom"
-import { getFilenameFromUrl, handleProfileClick } from "@/lib/utils"
+import { getFilenameFromUrl, handleProfileClick, downloadFile } from "@/lib/utils"
 import ReadMoreText from "./ReadMore"
+import { parsePostImages } from "@/lib/uploadUtils"
+import MediaLightbox from "@/components/ui/media-lightbox"
 
 interface PostCardProps {
 	post: Post
@@ -40,8 +43,20 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 	const [showEditDialog, setShowEditDialog] = useState(false)
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 	const [showShareDialog, setShowShareDialog] = useState(false)
+	const [pdfModalOpen, setPdfModalOpen] = useState(false)
 	const [isDeleting, setIsDeleting] = useState(false)
 	const [isPrefetching, setIsPrefetching] = useState(false)
+
+	// Lightbox state
+	const [lightboxOpen, setLightboxOpen] = useState(false)
+	const [lightboxIndex, setLightboxIndex] = useState(0)
+
+	const postImages = parsePostImages(post.image_url)
+
+	const openLightboxAt = (index: number) => {
+		setLightboxIndex(index)
+		setLightboxOpen(true)
+	}
 
 	// Prefetch post data on hover
 	const handleMouseEnter = async () => {
@@ -114,15 +129,10 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 
 	const isOwnPost = user && post.author_id === user.id
 
-	const handleDownload = () => {
-		const link = document.createElement("a")
-		link.href = post.document_url
-		link.download = post.document_name || `document-${post.id.slice(0, 8)}.pdf`
-		link.target = "_blank"
-		link.rel = "noopener noreferrer"
-		document.body.appendChild(link)
-		link.click()
-		document.body.removeChild(link)
+	const handleDownload = async () => {
+		if (!post.document_url) return
+		const fileName = post.document_name || getFilenameFromUrl(post.document_url) || `document-${post.id.slice(0, 8)}.pdf`
+		await downloadFile(post.document_url, fileName)
 	}
 
 	const handlePreview = () => {
@@ -202,40 +212,96 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 						</p>
 					</div>
 
-					{post.image_url && (
+					{postImages.length > 0 && (
 						<div className="overflow-hidden rounded-lg">
-							<OptimizedImage
-								src={post.image_url}
-								alt="Post content"
-								className="h-auto w-full object-cover"
-								width={dataSaver ? 300 : 600}
-								quality={dataSaver ? 50 : 75}
-								priority={priority}
-								dataSaver={dataSaver}
-							/>
+							{postImages.length === 1 ? (
+								<div
+									className="cursor-zoom-in group relative overflow-hidden rounded-lg border bg-slate-950/5"
+									onClick={() => openLightboxAt(0)}
+								>
+									<OptimizedImage
+										src={postImages[0]}
+										alt="Post content"
+										className="h-auto w-full max-h-[500px] object-cover transition-transform duration-300 group-hover:scale-[1.01]"
+										width={dataSaver ? 300 : 600}
+										quality={dataSaver ? 50 : 75}
+										priority={priority}
+										dataSaver={dataSaver}
+									/>
+									<div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">
+										<span className="opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm font-medium">
+											Click to expand & zoom
+										</span>
+									</div>
+								</div>
+							) : (
+								<div className={`grid gap-1.5 ${postImages.length === 2 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-3"}`}>
+									{postImages.slice(0, 6).map((imgUrl, idx) => {
+										const isMore = idx === 5 && postImages.length > 6
+										return (
+											<div
+												key={idx}
+												className="cursor-zoom-in group relative aspect-square overflow-hidden rounded-md border bg-slate-950/5"
+												onClick={() => openLightboxAt(idx)}
+											>
+												<img
+													src={imgUrl}
+													alt={`Post image ${idx + 1}`}
+													className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.03]"
+												/>
+												{isMore && (
+													<div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-lg font-bold">
+														+{postImages.length - 5} more
+													</div>
+												)}
+											</div>
+										)
+									})}
+								</div>
+							)}
 						</div>
 					)}
 
-					{/* Document Preview */}
+					{/* Presentable PDF Attachment Card */}
 					{post.document_url && (
-						<div className="mt-3">
-							{/* Simple iframe - same as media-preview */}
-							<iframe
-								src={post.document_url}
-								className="h-96 w-full rounded-lg border"
-								title={getFilenameFromUrl(post.document_url)}
-							/>
+						<div className="mt-3 rounded-xl border bg-slate-50 dark:bg-slate-900/50 p-3.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
+							<div className="flex items-center justify-between gap-3">
+								<div className="flex items-center space-x-3 min-w-0 flex-1">
+									<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400">
+										<FileText className="h-5 w-5" />
+									</div>
+									<div className="min-w-0 flex-1">
+										<p className="truncate text-sm font-semibold text-foreground">
+											{post.document_name || getFilenameFromUrl(post.document_url) || "Attachment Document.pdf"}
+										</p>
+										<div className="flex items-center space-x-2 text-xs text-muted-foreground mt-0.5">
+											<span className="inline-flex items-center rounded bg-red-100 dark:bg-red-950/60 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-red-800 dark:text-red-300">
+												PDF Document
+											</span>
+										</div>
+									</div>
+								</div>
 
-							{/* Quick actions */}
-							<div className="mt-2 flex gap-2">
-								<Button
-									variant="outline"
-									size="sm"
-									onClick={handlePreview}
-									className="flex items-center gap-2">
-									<ExternalLink className="h-4 w-4" />
-									Open PDF
-								</Button>
+								<div className="flex items-center space-x-1.5 shrink-0">
+									<Button
+										variant="outline"
+										size="sm"
+										onClick={() => setPdfModalOpen(true)}
+										className="h-8 px-2.5 text-xs font-medium gap-1.5 shadow-sm"
+									>
+										<Eye className="h-3.5 w-3.5" />
+										<span>View PDF</span>
+									</Button>
+									<Button
+										variant="ghost"
+										size="icon"
+										onClick={handleDownload}
+										className="h-8 w-8 text-muted-foreground hover:text-foreground"
+										title="Download PDF"
+									>
+										<Download className="h-4 w-4" />
+									</Button>
+								</div>
 							</div>
 						</div>
 					)}
@@ -316,6 +382,38 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 					</AlertDialogFooter>
 				</AlertDialogContent>
 			</AlertDialog>
+
+			<MediaLightbox
+				images={postImages}
+				initialIndex={lightboxIndex}
+				open={lightboxOpen}
+				onOpenChange={setLightboxOpen}
+			/>
+
+			{/* Full PDF View Modal */}
+			{post.document_url && (
+				<Dialog open={pdfModalOpen} onOpenChange={setPdfModalOpen}>
+					<DialogContent className="max-w-5xl h-[85vh] p-6 flex flex-col justify-between" description={`Viewing document ${post.document_name}`}>
+						<DialogHeader className="flex-row items-center justify-between border-b pb-3">
+							<DialogTitle className="text-base font-semibold truncate max-w-xl flex items-center gap-2">
+								<FileText className="h-5 w-5 text-red-500" />
+								<span>{post.document_name || getFilenameFromUrl(post.document_url) || "PDF Document"}</span>
+							</DialogTitle>
+							<div className="flex items-center space-x-2 shrink-0">
+								<Button variant="outline" size="sm" onClick={handleDownload} className="gap-1.5 text-xs">
+									<Download className="h-3.5 w-3.5" /> Download
+								</Button>
+								<Button variant="outline" size="sm" onClick={handlePreview} className="gap-1.5 text-xs">
+									<ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
+								</Button>
+							</div>
+						</DialogHeader>
+						<div className="flex-1 min-h-0 mt-4 rounded-lg overflow-hidden border bg-slate-900">
+							<iframe src={post.document_url} className="w-full h-full border-0" title={post.document_name || "PDF Document"} />
+						</div>
+					</DialogContent>
+				</Dialog>
+			)}
 		</Card>
 	)
 }

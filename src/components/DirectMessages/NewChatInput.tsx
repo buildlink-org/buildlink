@@ -126,9 +126,7 @@ export default function RecipientInput({
         if (file.type.startsWith("image/")) {
           try {
             fileToUpload = await compressImage(file)
-          } catch {
-            console.warn('Image compression failed, using original');
-          }
+          } catch { }
         }
 
         if (fileToUpload.size > 10 * 1024 * 1024) {
