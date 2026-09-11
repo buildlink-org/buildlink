@@ -3,10 +3,13 @@ import { Card, CardContent } from "@/components/ui/card"
 import PortfolioGallery from "./PortfolioGallery"
 import PortfolioEditorDialog from "./PortfolioEditorDialog"
 import { supabase } from "@/integrations/supabase/client"
+import { portfolioService } from "@/services/portfolioService"
 import { Button } from "@/components/ui/button"
-import { Plus, Loader2, FolderOpen, Edit, GripVertical, Check, X, Image as ImageIcon, ArrowLeftRight } from "lucide-react"
+import { Plus, Loader2, FolderOpen, Edit, ArrowLeftRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { PortfolioItem, UserProfile } from "@/types"
+import EmptyState from "@/components/profile/EmptyState"
+import FeaturedProjectCard from "./FeaturedProjectCard"
 
 interface PortfolioSectionProps {
 	profile: UserProfile
@@ -23,14 +26,6 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	const [arrangeMode, setArrangeMode] = useState(false)
 	const { toast } = useToast()
 
-	// Inline edit state: maps item id → draft name
-	const [editingId, setEditingId] = useState<string | null>(null)
-	const [editDraft, setEditDraft] = useState("")
-
-	// Drag-to-reorder state
-	const dragItem = useRef<number | null>(null)
-	const dragOverItem = useRef<number | null>(null)
-
 	// Thumbnail swap state: maps item id
 	const [swappingId, setSwappingId] = useState<string | null>(null)
 	const thumbInputRef = useRef<HTMLInputElement | null>(null)
@@ -41,41 +36,24 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 
 	const canEdit = canEditProp !== undefined ? canEditProp : false
 
-	// Get account-type-specific colors matching ProfileHeader
-	const getColorConfig = () => {
-		const userType = profile?.user_type?.toLowerCase() || "student"
-
-		if (userType === "student") {
-			return {
-				bgColor: "bg-[#fde68a] dark:bg-yellow-950/60",
-				borderColor: "border-[#fde68a] dark:border-yellow-800/50",
-			}
-		} else if (userType === "professional") {
-			return {
-				bgColor: "bg-professional-100 dark:bg-orange-950/60",
-				borderColor: "border-professional-border dark:border-orange-800/50",
-			}
-		} else if (userType === "company") {
-			return {
-				bgColor: "bg-company-100 dark:bg-green-950/60",
-				borderColor: "border-company-border dark:border-green-800/50",
-			}
-		}
-		// Default fallback
-		return {
-			bgColor: "bg-[#fed7aa] dark:bg-orange-950/60",
-			borderColor: "border-orange-200 dark:border-orange-800/50",
-		}
-	}
-
-	const colorConfig = getColorConfig()
-
-	const persistPortfolio = async (updated: PortfolioItem[]) => {
+	// Fix #2 — persistence now surfaces Supabase errors and reverts optimistic UI on failure
+	const persistPortfolio = async (updated: PortfolioItem[]): Promise<boolean> => {
 		setUpdating(true)
+		const previous = portfolioList
 		setPortfolioList(updated)
-		await supabase.from("profiles").update({ portfolio: updated }).eq("id", profile.id)
+		const { error } = await portfolioService.save(profile.id, updated)
 		setUpdating(false)
-		handleProfileUpdate()
+		if (error) {
+			setPortfolioList(previous)
+			toast({
+				title: "Save failed",
+				description: "We couldn't save your portfolio changes. Please try again.",
+				variant: "destructive",
+			})
+			return false
+		}
+		handleProfileUpdate?.()
+		return true
 	}
 
 	const handlePortfolioAdd = async (item: PortfolioItem) => {
@@ -89,12 +67,8 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 			return
 		}
 
-		setUpdating(true)
-		const newPortfolio = [...portfolioList, item]
-		setPortfolioList(newPortfolio)
-		await supabase.from("profiles").update({ portfolio: newPortfolio }).eq("id", profile.id)
-		setUpdating(false)
-		handleProfileUpdate()
+		const saved = await persistPortfolio([...portfolioList, item])
+		if (!saved) return
 		toast({
 			title: "Portfolio updated",
 			description: "Your new project was added.",
@@ -104,12 +78,8 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 
 	// Remove (with UI feedback)
 	const handleRemove = async (id: string) => {
-		setUpdating(true)
-		const newPortfolio = portfolioList.filter((item) => item.id !== id)
-		setPortfolioList(newPortfolio)
-		await supabase.from("profiles").update({ portfolio: newPortfolio }).eq("id", profile.id)
-		setUpdating(false)
-		handleProfileUpdate()
+		const saved = await persistPortfolio(portfolioList.filter((item) => item.id !== id))
+		if (!saved) return
 		toast({
 			title: "Removed",
 			description: "The project has been removed.",
@@ -117,32 +87,8 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 		})
 	}
 
-	// ── Inline rename ──────────────────────────────────────────────────────────
-	const startEdit = (item: PortfolioItem, e: React.MouseEvent) => {
-		e.stopPropagation()
-		setEditingId(item.id)
-		setEditDraft(item.name)
-	}
-
-	const commitEdit = async (e?: React.MouseEvent | React.KeyboardEvent) => {
-		e?.stopPropagation()
-		if (!editingId) return
-		const updated = portfolioList.map((it) =>
-			it.id === editingId ? { ...it, name: editDraft.trim() || it.name } : it
-		)
-		setEditingId(null)
-		await persistPortfolio(updated)
-		toast({ title: "Title updated", variant: "default" })
-	}
-
-	const cancelEdit = (e?: React.MouseEvent) => {
-		e?.stopPropagation()
-		setEditingId(null)
-	}
-
 	// ── Thumbnail swap ─────────────────────────────────────────────────────────
-	const startThumbSwap = (id: string, e: React.MouseEvent) => {
-		e.stopPropagation()
+	const startThumbSwap = (id: string) => {
 		setSwappingId(id)
 		thumbInputRef.current?.click()
 	}
@@ -168,32 +114,22 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 		setSwappingId(null)
 		// Reset file input so the same file can be re-selected later
 		if (thumbInputRef.current) thumbInputRef.current.value = ""
-		await persistPortfolio(updated)
+		const saved = await persistPortfolio(updated)
+		if (!saved) return
 		toast({ title: "Thumbnail updated", variant: "default" })
 	}
 
-	// ── Drag-to-reorder ────────────────────────────────────────────────────────
-	const handleDragStart = (index: number) => {
-		dragItem.current = index
-	}
-
-	const handleDragEnter = (index: number) => {
-		dragOverItem.current = index
-	}
-
-	const handleDragEnd = async () => {
-		if (dragItem.current === null || dragOverItem.current === null) return
-		if (dragItem.current === dragOverItem.current) {
-			dragItem.current = null
-			dragOverItem.current = null
-			return
-		}
+	// ── Drag-to-reorder: handled inside PortfolioGallery; cards here use
+	// keyboard-accessible move buttons (handleMoveItem) in arrange mode. ───────
+	// ── Keyboard-accessible reorder (arrange mode) ──────────────────────
+	const handleMoveItem = async (index: number, direction: -1 | 1) => {
+		const target = index + direction
+		if (target < 0 || target >= portfolioList.length) return
 		const reordered = [...portfolioList]
-		const [moved] = reordered.splice(dragItem.current, 1)
-		reordered.splice(dragOverItem.current, 0, moved)
-		dragItem.current = null
-		dragOverItem.current = null
-		await persistPortfolio(reordered)
+		const [moved] = reordered.splice(index, 1)
+		reordered.splice(target, 0, moved)
+		const saved = await persistPortfolio(reordered)
+		if (!saved) return
 		toast({ title: "Order saved", variant: "default" })
 	}
 	if (!portfolioList || (!canEdit && portfolioList.length === 0 && profile.user_type !== "professional" && profile.user_type !== "student")) return null
@@ -201,25 +137,29 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	return (
 		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
 			<CardContent className="px-2 py-6">
-				<div className="mb-6 flex flex-wrap items-center justify-between gap-y-2">
-					<div className="flex items-center space-x-2">
-						<h3 className="text-lg font-semibold text-foreground">Portfolio</h3>
-						{(profile.user_type === "professional" || profile.user_type === "student") && portfolioList.length === 0 ? (
-							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{canEdit ? "3/3 items" : "3 items"}</span>
-						) : (
-							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{portfolioList.length}/3 items</span>
-						)}
+				<div className="mb-4 flex items-center justify-between gap-2">
+					<div className="flex items-center gap-2">
+						<h2 className="text-lg font-semibold text-foreground">Portfolio</h2>
+						<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+							{portfolioList.length}/3 items
+						</span>
 					</div>
 					{canEdit && (
-						<div className="flex items-center gap-2">
-								<Button
+							<div className="flex items-center gap-2">
+								{/* Header add action is hidden while empty — the instructional
+									empty-state CTA owns that flow */}
+								{portfolioList.length > 0 && (
+									<Button
 									variant="outline"
 									size="sm"
 									className="gap-2 rounded-md border-border text-foreground hover:bg-accent hover:text-accent-foreground dark:border-border dark:text-foreground dark:hover:bg-accent px-4 py-1 h-auto text-xs"
 									onClick={() => setEditorOpen(true)}
-									disabled={updating}>
+									disabled={updating || portfolioList.length >= 3}
+									aria-label="Add project">
+									<Plus className="h-4 w-4" />
 									+ Add Project
 								</Button>
+							)}
 							{portfolioList.length > 1 && (
 								<Button
 									variant={arrangeMode ? "default" : "ghost"}
@@ -227,18 +167,23 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 									className="gap-2"
 									onClick={() => setArrangeMode((v) => !v)}
 									disabled={updating}
+									aria-label={arrangeMode ? "Exit arrange mode" : "Rearrange projects"}
 									title={arrangeMode ? "Exit arrange mode" : "Rearrange projects"}>
 									<ArrowLeftRight className="h-4 w-4" />
 									<span className="hidden sm:inline">{arrangeMode ? "Done" : "Arrange"}</span>
 								</Button>
 							)}
+							{/* Manage projects — opens the gallery (rename, reorder, thumbnails, remove) */}
 							<Button
 								variant="ghost"
 								size="sm"
 								className="gap-2"
 								onClick={() => setGalleryOpen(true)}
-								disabled={updating || portfolioList.length === 0}>
+								disabled={updating || portfolioList.length === 0}
+								aria-label="Manage projects"
+								title="Manage projects">
 								<Edit className="h-4 w-4" />
+								<span className="hidden sm:inline">Manage</span>
 							</Button>
 						</div>
 					)}
@@ -246,187 +191,50 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 
 				{arrangeMode && (
 					<p className="mb-4 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-						Drag cards to reorder. Click <strong>Arrange</strong> again to exit.
+						Use the arrow buttons on each card to reorder. Click <strong>Done</strong> again to exit.
 					</p>
 				)}
 
-				{portfolioList.length === 0 ? (
-					profile.user_type === "professional" || profile.user_type === "student" ? (
-						<div className="space-y-6">
-							<div className="grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-								{/* Project 3 */}
-								<div className="flex flex-col relative w-full max-w-[140px] mb-6 mx-auto sm:mx-0">
-									<div className="h-4 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
-									<div className={`h-[160px] ${profile.user_type === "student" ? "bg-[#fde68a] dark:bg-yellow-950/60" : "bg-[#fed7aa] dark:bg-orange-950/60"} border border-gray-400 dark:border-border rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
-										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full font-medium">Project 3</div>
-									</div>
-								</div>
-								{/* Project 1 */}
-								<div className="flex flex-col relative w-full max-w-[140px] mt-6 mx-auto sm:mx-0">
-									<div className="h-4 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
-									<div className={`h-[140px] ${profile.user_type === "student" ? "bg-[#fde68a] dark:bg-yellow-950/60" : "bg-[#fed7aa] dark:bg-orange-950/60"} border border-gray-400 dark:border-border rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
-										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full font-medium">Project 1</div>
-									</div>
-								</div>
-								{/* Project 2 */}
-								<div className="flex flex-col relative w-full max-w-[140px] mb-6 mx-auto sm:mx-0">
-									<div className="h-4 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
-									<div className={`h-[150px] ${profile.user_type === "student" ? "bg-[#fde68a] dark:bg-yellow-950/60" : "bg-[#fed7aa] dark:bg-orange-950/60"} border border-gray-400 dark:border-border rounded-b-lg rounded-t-sm p-3 relative shadow-sm`}>
-										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full font-medium">Project 2</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					) : (
-						<div className="py-12 text-center">
-							<div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-lg bg-muted">
-								<FolderOpen className="h-8 w-8 text-muted-foreground" />
-							</div>
-							<h4 className="mb-2 text-lg font-medium text-foreground">No projects yet</h4>
-							<p className="mb-6 text-muted-foreground">Showcase your work and achievements</p>
-							<Button
-								variant="outline"
-								onClick={() => setEditorOpen(true)}
-								disabled={updating}>
-								<Plus className="mr-2 h-4 w-4" />
-								Add your first project
-							</Button>
-						</div>
-					)
-				) : (
-				<div className="space-y-6">
-						{/* Portfolio Grid styled as folder cards */}
-						<div className="grid grid-cols-2 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3">
-							{portfolioList.map((item, index) => {
-								// Determine card positioning: middle card (index 1) gets mt-6, others get mb-6
-								const isMiddleCard = index === 1 && portfolioList.length === 3
-								const cardClasses = isMiddleCard ? "mt-6" : "mb-6"
-								const isEditing = editingId === item.id
-
-								return (
-									<div
-										key={item.id}
-										className={`cursor-pointer group ${cardClasses} ${arrangeMode ? "cursor-grab active:cursor-grabbing" : ""}`}
-										draggable={arrangeMode}
-										onDragStart={() => arrangeMode && handleDragStart(index)}
-										onDragEnter={() => arrangeMode && handleDragEnter(index)}
-										onDragEnd={() => arrangeMode && handleDragEnd()}
-										onDragOver={(e) => e.preventDefault()}
-										onClick={() => {
-											if (arrangeMode || isEditing) return
-											if (item.type === "link") {
-												window.open(item.url, "_blank")
-											} else {
-												setActiveGalleryIndex(index)
-												setGalleryOpen(true)
-											}
-										}}>
-										{/* Folder-style card with stacked effect */}
-										<div className="relative flex h-full flex-col overflow-visible transition-transform group-hover:scale-105">
-											{/* Top tab bar - darker gray, behind the card */}
-											<div className="absolute -top-1 left-3 right-3 z-0 h-5 rounded-t-lg bg-gray-400 dark:bg-slate-700 shadow-sm" />
-
-											{/* Card body - color-coded card in front, overlapping the gray tab */}
-											<div className={`relative flex h-full flex-col rounded-lg ${colorConfig.bgColor} border ${colorConfig.borderColor} shadow-sm z-10 mt-1`}>
-												<div className="flex min-h-[160px] flex-1 flex-col px-5 pb-5 pt-5">
-
-													{/* Arrange-mode drag handle */}
-													{arrangeMode && (
-														<div className="absolute right-2 top-2 rounded p-0.5 text-muted-foreground">
-															<GripVertical className="h-4 w-4" />
-														</div>
-													)}
-
-													{/* White rectangular field at top with project name / inline edit */}
-													<div className="mb-4 w-full rounded-md border border-border bg-white dark:bg-card px-3 py-2 shadow-sm">
-														{isEditing ? (
-															<div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-																<input
-																	autoFocus
-																	type="text"
-																	value={editDraft}
-																	onChange={(e) => setEditDraft(e.target.value)}
-																	onKeyDown={(e) => {
-																		if (e.key === "Enter") commitEdit(e as any)
-																		if (e.key === "Escape") cancelEdit()
-																	}}
-																	maxLength={80}
-																	className="flex-1 min-w-0 bg-transparent text-sm font-medium text-gray-900 dark:text-foreground outline-none"
-																/>
-																<button
-																	type="button"
-																	onClick={commitEdit}
-																	className="text-green-600 hover:text-green-700 p-0.5"
-																	aria-label="Save title">
-																	<Check className="h-3.5 w-3.5" />
-																</button>
-																<button
-																	type="button"
-																	onClick={cancelEdit}
-																	className="text-muted-foreground hover:text-destructive p-0.5"
-																	aria-label="Cancel edit">
-																	<X className="h-3.5 w-3.5" />
-																</button>
-															</div>
-														) : (
-															<div className="flex items-center gap-1 group/title">
-																<h4 className="truncate text-base font-medium text-gray-900 dark:text-foreground flex-1">{item.name}</h4>
-																{canEdit && !arrangeMode && (
-																	<button
-																		type="button"
-																		onClick={(e) => startEdit(item, e)}
-																		className="invisible group-hover/title:visible text-muted-foreground hover:text-foreground p-0.5 shrink-0"
-																		aria-label="Edit title">
-																		<Edit className="h-3.5 w-3.5" />
-																	</button>
-																)}
-															</div>
-														)}
-													</div>
-
-													{/* Thumbnail preview if available */}
-													{item.thumbnailUrl && (
-														<div className="relative mb-2 h-24 w-full overflow-hidden rounded-md bg-gray-100 dark:bg-slate-800 group/thumb">
-															<img
-																src={item.thumbnailUrl}
-																alt={item.name}
-																className="h-full w-full object-cover"
-															/>
-															{/* Swap thumbnail overlay */}
-															{canEdit && !arrangeMode && (
-																<button
-																	type="button"
-																	onClick={(e) => startThumbSwap(item.id, e)}
-																	className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/50 opacity-0 group-hover/thumb:opacity-100 transition-opacity text-white text-xs font-medium"
-																	aria-label="Swap thumbnail">
-																	<ImageIcon className="h-4 w-4" />
-																	Swap
-																</button>
-															)}
-														</div>
-													)}
-
-													{/* No thumbnail — swap button for items without one */}
-													{!item.thumbnailUrl && canEdit && !arrangeMode && (
-														<button
-															type="button"
-															onClick={(e) => startThumbSwap(item.id, e)}
-															className="flex items-center gap-1.5 rounded-md border border-dashed border-border px-3 py-1.5 text-xs text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-															aria-label="Add thumbnail">
-															<ImageIcon className="h-3.5 w-3.5" />
-															Add thumbnail
-														</button>
-													)}
-												</div>
-											</div>
-										</div>
-									</div>
-								)
-							})}
-						</div>
-					</div>
-				)}
-
+{portfolioList.length === 0 ? (
+<EmptyState
+icon={<FolderOpen className="h-5 w-5" />}
+title={canEdit ? "Showcase your work" : "No projects yet"}
+description={canEdit
+? "Add a project with images, your role, location, and the outcome to build professional credibility."
+: "This member hasn't added any projects yet."}
+action={canEdit ? (
+<Button
+variant="outline"
+onClick={() => setEditorOpen(true)}
+disabled={updating}
+className="gap-2">
+<Plus className="h-4 w-4" /> Add your first project
+</Button>
+) : undefined}
+/>
+) : (
+<div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+{portfolioList.map((item, index) => (
+<FeaturedProjectCard
+key={item.id}
+item={item}
+arrangeMode={arrangeMode}
+updating={updating}
+onOpen={() => {
+if (arrangeMode) return
+if (item.type === "link") window.open(item.url, "_blank", "noopener,noreferrer")
+else {
+setActiveGalleryIndex(index)
+setGalleryOpen(true)
+}
+}}
+onSwapThumbnail={canEdit ? () => startThumbSwap(item.id) : undefined}
+onMoveUp={index > 0 ? () => handleMoveItem(index, -1) : undefined}
+onMoveDown={index < portfolioList.length - 1 ? () => handleMoveItem(index, 1) : undefined}
+/>
+))}
+</div>
+)}
 				{/* Hidden file input for thumbnail swap */}
 				<input
 					type="file"
@@ -447,16 +255,19 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 					onRemove={handleRemove}
 					onRename={async (id, name) => {
 						const updated = portfolioList.map((it) => (it.id === id ? { ...it, name } : it))
-						await persistPortfolio(updated)
+						const saved = await persistPortfolio(updated)
+						if (!saved) return
 						toast({ title: "Title updated", variant: "default" })
 					}}
 					onReorder={async (reordered) => {
-						await persistPortfolio(reordered)
+						const saved = await persistPortfolio(reordered)
+						if (!saved) return
 						toast({ title: "Order saved", variant: "default" })
 					}}
 					onSwapThumbnail={async (id, url) => {
 						const updated = portfolioList.map((it) => (it.id === id ? { ...it, thumbnailUrl: url } : it))
-						await persistPortfolio(updated)
+						const saved = await persistPortfolio(updated)
+						if (!saved) return
 						toast({ title: "Thumbnail updated", variant: "default" })
 					}}
 					profileId={profile.id}

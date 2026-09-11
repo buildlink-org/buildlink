@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import PortfolioThumbnail from "./PortfolioThumbnail"
 import { Button } from "@/components/ui/button"
@@ -38,7 +38,6 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 	setActiveIndex,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null)
-	const [pdfViewerOpen, setPdfViewerOpen] = useState(false)
 
 	// Inline rename
 	const [editingId, setEditingId] = useState<string | null>(null)
@@ -84,7 +83,6 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 		}
 	}, [open])
 
-	const [scrollIndex, setScrollIndex] = useState(0)
 	const [viewerOpen, setViewerOpen] = useState(false)
 	const [viewerIndex, setViewerIndex] = useState(0)
 
@@ -93,13 +91,13 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 		setViewerOpen(true)
 	}
 
-	const handleViewerPrev = () => {
+		const handleViewerPrev = useCallback(() => {
 		setViewerIndex((prev) => (prev - 1 + localOrder.length) % localOrder.length)
-	}
+	}, [localOrder.length])
 
-	const handleViewerNext = () => {
+	const handleViewerNext = useCallback(() => {
 		setViewerIndex((prev) => (prev + 1) % localOrder.length)
-	}
+	}, [localOrder.length])
 
 	// Keyboard arrow navigation in viewer
 	useEffect(() => {
@@ -111,8 +109,9 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 		}
 		window.addEventListener("keydown", handleKeyDown)
 		return () => window.removeEventListener("keydown", handleKeyDown)
-	}, [viewerOpen, localOrder.length])
+	}, [viewerOpen, handleViewerNext, handleViewerPrev])
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy callback shape
 	const handleItemClick = (item: any, index: number) => {
 		if (editingId || arrangeMode) return
 		if (setActiveIndex) setActiveIndex(index)
@@ -190,8 +189,18 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 		if (onReorder) await onReorder(reordered)
 	}
 
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy render signature
 	const renderPortfolioCard = (item: any, index: number) => {
 		const isEditing = editingId === item.id
+		const metaLine = [item.role, item.location].filter(Boolean).join(" · ")
+		const typeLine = [item.year, item.projectType].filter(Boolean).join(" · ")
+		const metaBlock =
+			metaLine || typeLine ? (
+				<div className="mt-0.5 space-y-0.5 text-[11px] text-muted-foreground">
+					{metaLine && <p className="truncate">{metaLine}</p>}
+					{typeLine && <p className="truncate">{typeLine}</p>}
+				</div>
+			) : null
 
 		// Title row — shared between card types
 		const titleRow = (
@@ -204,7 +213,8 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 							value={editDraft}
 							onChange={(e) => setEditDraft(e.target.value)}
 							onKeyDown={(e) => {
-								if (e.key === "Enter") commitEdit(e as any)
+								// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy cast
+							if (e.key === "Enter") commitEdit(e as any)
 								if (e.key === "Escape") cancelEdit()
 							}}
 							maxLength={80}
@@ -246,6 +256,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 						</div>
 						<div className="w-full space-y-2">
 							{titleRow}
+							{metaBlock}
 							{item.description && <p className="line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
 							<span className={`inline-block text-xs px-2 py-1 rounded-md font-medium ${item.type === "pdf" ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"}`}>
 								{item.type === "pdf" ? "PDF Document" : "External Link"}
@@ -282,6 +293,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 				</div>
 				<div className="min-h-[68px] border-t border-border bg-muted/40 px-3 py-3">
 					{titleRow}
+					{metaBlock}
 					{item.description && <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.description}</div>}
 					<span className="mt-2 inline-block rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-950/60 dark:text-green-300">{item.type.toUpperCase()}</span>
 				</div>
@@ -384,7 +396,14 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 						{/* Top Header */}
 						<div className="flex items-center justify-between p-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10 z-50">
 							<div className="flex items-center space-x-3 min-w-0 flex-1">
-								<h3 className="text-base sm:text-lg font-bold text-white truncate">{currentViewerItem.name}</h3>
+								<div className="min-w-0">
+									<h3 className="text-base sm:text-lg font-bold text-white truncate">{currentViewerItem.name}</h3>
+									{([currentViewerItem.role, currentViewerItem.location, currentViewerItem.year, currentViewerItem.projectType].filter(Boolean).length > 0) && (
+										<p className="truncate text-xs text-gray-400">
+											{[currentViewerItem.role, currentViewerItem.location, currentViewerItem.year, currentViewerItem.projectType].filter(Boolean).join(" · ")}
+										</p>
+									)}
+								</div>
 								<span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary-foreground border border-primary/30 shrink-0">
 									{currentViewerItem.type.toUpperCase()}
 								</span>

@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import {MessageCircle,UserPlus,Pencil,Clock,ThumbsUp,Eye,Users,Briefcase,Star,} from "lucide-react"
+import {MessageCircle,UserPlus,Pencil,Clock,ThumbsUp,Eye,Users,Briefcase,Star,Sparkles,} from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { publicProfileService } from "@/services/publicProfileService"
 import { useToast } from "@/hooks/use-toast"
@@ -20,7 +20,9 @@ import EducationSection from "../profile-sections/details/EducationSection"
 import ExperienceSection from "../profile-sections/details/ExperienceSection"
 import PortfolioSection from "../profile-sections/details/PortfolioSection"
 import ProfileSkillsSection from "../profile-sections/details/ProfileSkillsSection"
+import LanguagesSection from "../profile-sections/details/LanguagesSection"
 import SocialMediaLinks from "./SocialMediaLinks"
+import EmptyState from "./EmptyState"
 
 type ConnectionStatus =
    | "not_connected"
@@ -44,6 +46,17 @@ const getProfessionDisplay = (profile: UserProfile): string | null => {
 // Fix #2b — Years Active: stored on company profile rows.
 const getYearsActive = (profile: UserProfile): string | null => {
   return (profile as any).years_active || null
+}
+
+const getSafeExternalUrl = (value?: string): string | null => {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null
+  } catch {
+    return null
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -99,8 +112,13 @@ const PublicProfileView: React.FC = () => {
         const connectionsResult =
           await connectionsService.getConnections(profileId)
 
+        // Fix #6 — count only accepted connections (pending requests are not connections)
         if (connectionsResult.data) {
-          setConnectionsCount(connectionsResult.data.length)
+          setConnectionsCount(
+            connectionsResult.data.filter(
+              (row: { status?: string }) => row.status === "accepted"
+            ).length
+          )
         }
     } catch {
       toast({
@@ -398,6 +416,9 @@ const renderButtons = () => {
   const professionDisplay = getProfessionDisplay(profile)
   const yearsActive = getYearsActive(profile)
 
+  // Fix #1 — real featured data for company profiles (Products[] rows)
+  const featuredItems = Array.isArray(profile.featured) ? profile.featured : []
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-2 sm:px-4">
 
@@ -462,9 +483,6 @@ const renderButtons = () => {
                   </div>
                 )}
                 <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
-                  <Button variant="outline" size="sm" className={`text-xs ${(isCompanyProfile || profile.user_type === "professional" || profile.user_type === "student") ? "border-black text-black" : ""}`}>
-                    Social Links
-                  </Button>
                   <SocialMediaLinks
                     links={profile.social_links || {}}
                     editable={false}
@@ -571,34 +589,57 @@ const renderButtons = () => {
 
       {isCompanyProfile && (
         <Card className="border border-border shadow-sm">
-            <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-semibold text-foreground">Featured (3 items)</h3>
-                </div>
-                <div className="flex flex-row justify-center items-end gap-6">
-                    {/* Item 3 */}
-                    <div className="flex flex-col w-[140px]">
-                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-                        <div className="h-[160px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 3</div>
-                        </div>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-foreground">Featured</h3>
+              {featuredItems.length > 0 && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  {featuredItems.length} {featuredItems.length === 1 ? "item" : "items"}
+                </span>
+              )}
+            </div>
+            {/* Fix #1 — renders real featured data instead of hardcoded placeholder cards */}
+            {featuredItems.length > 0 ? (
+              <div className="space-y-3">
+                {featuredItems.map((item, index) => {
+                  const safeLink = getSafeExternalUrl(item.link)
+
+                  return (
+                    <div
+                      key={`${item.title|| item.name || "featured"}-${index}`}
+                      className="flex items-start gap-3 rounded-lg border border-border p-3"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground">{item.title || item.name}</p>
+                        {item.description && (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
+                        )}
+                        {safeLink && (
+                          <a
+                            className="mt-1 inline-block text-xs text-primary hover:underline"
+                            href={safeLink}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View details
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    {/* Item 1 */}
-                    <div className="flex flex-col w-[140px]">
-                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-                        <div className="h-[140px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 1</div>
-                        </div>
-                    </div>
-                    {/* Item 2 */}
-                    <div className="flex flex-col w-[140px]">
-                        <div className="h-3 w-[90%] bg-gray-400 rounded-t-lg mx-auto" />
-                        <div className="h-[150px] bg-[#dcfce7] border border-gray-400 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-                            <div className="bg-white rounded border border-gray-300 p-2 text-sm text-black w-full">Item 2</div>
-                        </div>
-                    </div>
-                </div>
-            </CardContent>
+                  )
+                })}
+              </div>
+            ) : (
+              <EmptyState
+                icon={<Sparkles className="h-5 w-5" />}
+                title="No featured items yet"
+                description="Highlighted products and services will appear here."
+              />
+            )}
+          </CardContent>
         </Card>
       )}
 
@@ -606,6 +647,8 @@ const renderButtons = () => {
       <ExperienceSection profile={profile} />
       <EducationSection profile={profile} />
       <CertificationsSection profile={profile} />
+      {/* Fix #4 — languages now render on public profiles too */}
+      <LanguagesSection profile={profile} handleProfileUpdate={() => {}} />
     </div>
   )
 }

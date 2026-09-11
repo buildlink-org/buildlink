@@ -24,19 +24,21 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 	return (
 		<header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 			<div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4 md:px-8">
-				{/* Left side - Menu + Logo */}
+							{/* Left side - Menu + Logo */}
 				<div className="flex items-center space-x-3">
-					<div
-						className="flex cursor-pointer items-center"
-						onClick={onLogoClick}>
+					<button
+						type="button"
+						onClick={onLogoClick}
+						aria-label="BuildLink — return to home"
+						className="flex items-center rounded-md p-1 -m-1 text-foreground hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
 						<img
 							src={logo}
-							alt="BuildLink Logo"
+							alt=""
 							className="mr-2 h-6 w-6"
 						/>
 						<span className="text-lg font-semibold">BuildLink</span>
-					</div>
-					{loading && <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary"></div>}
+					</button>
+					{loading && <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary" aria-label="Loading" role="status"></div>}
 				</div>
 
 				{/* Center - Search Bar */}
