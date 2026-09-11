@@ -105,7 +105,7 @@ loading={loading}
 <OfflineIndicator />
 
 {/* Main Content — explicit header offset replaces top-12 positioning */}
-<div className="mx-auto grid w-full max-w-screen-xl grid-cols-12 gap-4 px-4 pt-14 pb-20 md:pb-8">
+<div className="mx-auto grid w-full max-w-screen-xl grid-cols-12 gap-4 px-4 pt-14 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
 {showNavigation && (
 <div className="col-span-12 md:col-span-3 md:pt-1">
 <ResponsiveNavigation loading={loading} />

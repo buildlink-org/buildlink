@@ -132,7 +132,12 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
     staleTime: 2 * 60 * 1000,
   });
 
-  const { data: enrolledIds = [] } = useQuery({
+  const {
+    data: enrolledIds,
+    isLoading: isEnrolledLoading,
+    error: enrolledError,
+    refetch: refetchEnrolled,
+  } = useQuery({
     queryKey: ["enrolledResourceIds"],
     queryFn: () => resourcesEnrollmentService.getEnrolledResourceIds(),
     staleTime: 5 * 60 * 1000,
@@ -158,20 +163,29 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
     },
   });
 
-  const handleEnroll = (courseId: string) => {
-    if (enrolledCourses.includes(courseId)) return;
-    enrollMutation.mutate(courseId);
-  };
-
-  if (isLoading) return <FeedSkeleton />;
-  if (error) return <FeedError onRetry={refetch} />;
-
   const allResources: SkillResource[] = resources ?? [];
   const courses = allResources.filter((r) => r.type === "course");
   const webinars = allResources.filter((r) => r.type === "webinar");
   const articles = allResources.filter((r) => r.type === "article");
   const certifications = allResources.filter((r) => r.type === "certification");
-  const effectiveEnrolled = Array.from(new Set([...enrolledCourses, ...enrolledIds]));
+  const effectiveEnrolled = Array.from(new Set([...enrolledCourses, ...(enrolledIds ?? [])]));
+
+  const handleEnroll = (courseId: string) => {
+    if (effectiveEnrolled.includes(courseId)) return;
+    enrollMutation.mutate(courseId);
+  };
+
+  if (isLoading || isEnrolledLoading) return <FeedSkeleton />;
+  if (error || enrolledError) {
+    return (
+      <FeedError
+        onRetry={() => {
+          refetch();
+          refetchEnrolled();
+        }}
+      />
+    );
+  }
 
   const isLatest = !activeFilter || activeFilter === "latest";
 
@@ -187,7 +201,7 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
           course={course}
           enrolledCourses={effectiveEnrolled}
           handleEnroll={handleEnroll}
-          isEnrolling={enrollMutation.isPending}
+          isEnrolling={enrollMutation.isPending && enrollMutation.variables === course.id}
         />
       ),
     },

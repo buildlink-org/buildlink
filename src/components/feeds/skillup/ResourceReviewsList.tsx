@@ -74,6 +74,8 @@ export default function ResourceReviewsList({ resourceId }: ResourceReviewsListP
 
   const getStars = (n: number) => {
     return "★".repeat(n) + "☆".repeat(5 - n);
+    const validStars = Math.max(0, Math.min(5, Math.round(n || 0)));
+    return "★".repeat(validStars) + "☆".repeat(5 - validStars);
   };
 
   return (

@@ -48,10 +48,15 @@ const difficultyConfig: Record<string, { className: string; label: string }> = {
 const CourseItem = ({ course, enrolledCourses, handleEnroll, isEnrolling }: CourseItemProps) => {
   const [isReviewsOpen, setIsReviewsOpen] = useState(false);
   const enrolled = enrolledCourses.includes(course.id);
-  const syllabus = Array.isArray(course.syllabus) ? (course.syllabus as string[]) : [];
+  const syllabus = Array.isArray(course.syllabus)
+    ? course.syllabus.filter((item): item is string => typeof item === "string")
+    : [];
   const price = course.price && course.price > 0 ? `KSh ${course.price.toLocaleString()}` : "Free";
   const diff = course.difficulty_level
-    ? difficultyConfig[course.difficulty_level.toLowerCase()] ?? difficultyConfig.beginner
+    ? difficultyConfig[course.difficulty_level.toLowerCase()] ?? {
+        className: "bg-muted text-muted-foreground",
+        label: course.difficulty_level,
+      }
     : null;
 
   return (

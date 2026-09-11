@@ -14,6 +14,7 @@ interface Article {
   author?: string | null;
   provider?: string | null;
   category?: string | null;
+  duration?: string | null;
   readTime?: string | null;
   description?: string | null;
   link?: string | null;
@@ -26,6 +27,7 @@ interface ArticleItemProps {
 const ArticleItem = ({ article }: ArticleItemProps) => {
   const [isReviewsOpen, setIsReviewsOpen] = useState(false);
   const authorName = article.author || article.provider;
+  const displayReadTime = article.duration || article.readTime;
 
   return (
     <Card className={cn(
@@ -56,10 +58,10 @@ const ArticleItem = ({ article }: ArticleItemProps) => {
                   {article.category}
                 </Badge>
               )}
-              {article.readTime && (
+              {displayReadTime && (
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" aria-hidden />
-                  {article.readTime}
+                  {displayReadTime}
                 </span>
               )}
             </div>

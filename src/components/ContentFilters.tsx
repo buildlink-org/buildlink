@@ -36,6 +36,7 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
               key={filter.id}
               variant={isActive ? "default" : "ghost"}
               onClick={() => onFilterChange(filter.id)}
+              aria-pressed={isActive}
               size="sm"
               className={cn(
                 "whitespace-nowrap text-xs h-8 px-3.5 rounded-full font-medium transition-all shrink-0",

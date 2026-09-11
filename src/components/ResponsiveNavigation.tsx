@@ -39,6 +39,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                 key={item.id}
                 to={item.path}
                 aria-label={item.ariaLabel}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex items-center gap-3 w-full p-3 rounded-md text-left transition-colors",
                   "hover:bg-accent hover:text-accent-foreground",
@@ -132,6 +133,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                 key={item.id}
                 to={item.path}
                 aria-label={item.ariaLabel}
+                aria-current={active ? "page" : undefined}
                 className={cn(
                   "flex flex-col items-center min-w-[60px] transition-colors",
                   active
