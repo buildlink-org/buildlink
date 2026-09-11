@@ -144,11 +144,55 @@ All colors MUST be HSL.
     }
   }
 
+  /* Skeleton shimmer */
+  .animate-shimmer {
+    background: linear-gradient(
+      90deg,
+      hsl(var(--muted)) 0%,
+      hsl(var(--muted-foreground) / 0.08) 40%,
+      hsl(var(--muted)) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.6s ease-in-out infinite;
+  }
+
+  @keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Card stagger entrance */
+  .animate-card-in {
+    animation: cardIn 0.35s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  @keyframes cardIn {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Reduced motion: collapse all custom animations to instant visibility */
+  @media (prefers-reduced-motion: reduce) {
+    .animate-fade-in-up,
+    .animate-card-in {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+    .animate-shimmer {
+      animation: none;
+    }
+    .animate-pulse {
+      animation: none;
+    }
+  }
+
   .epr-main {
     background: rgba(20,20,20,.35) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,.08) !important;
     border-radius: 18px;
-}
+  }
 }

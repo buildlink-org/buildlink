@@ -1,6 +1,10 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { Skeleton } from "@/components/ui/skeleton";
+import { formatDistanceToNow } from "date-fns";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
 
 // Usage: <ResourceReviewsList resourceId={resource.id} />
 
@@ -14,6 +18,10 @@ type Review = {
   content: string;
   rating: number;
   created_at: string;
+  profiles?: {
+    full_name?: string | null;
+    avatar?: string | null;
+  } | null;
 };
 
 export default function ResourceReviewsList({ resourceId }: ResourceReviewsListProps) {
@@ -22,7 +30,7 @@ export default function ResourceReviewsList({ resourceId }: ResourceReviewsListP
     queryFn: async () => {
       const { data, error } = await supabase
         .from("resource_reviews")
-        .select("*")
+        .select("*, profiles!resource_reviews_user_id_fkey(full_name, avatar)")
         .eq("resource_id", resourceId)
         .order("created_at", { ascending: false });
       if (error) throw error;
@@ -32,36 +40,62 @@ export default function ResourceReviewsList({ resourceId }: ResourceReviewsListP
   });
 
   if (isLoading) {
-    return <div className="text-center py-4 text-gray-500">Loading reviews...</div>;
+    return (
+      <div className="space-y-3" aria-live="polite">
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-12 w-full" />
+      </div>
+    );
   }
-  if (error) return <div className="text-red-600 py-4">{error.message}</div>;
+
+  if (error) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertDescription>
+          Unable to load reviews. Please try again later.
+        </AlertDescription>
+      </Alert>
+    );
+  }
+
   if (!data || data.length === 0)
-    return <div className="text-gray-400 py-4 italic">No reviews yet. Be the first!</div>;
+    return <p className="text-sm text-muted-foreground italic">No reviews yet. Be the first!</p>;
+
+  const formatDateSafe = (ts: string) => {
+    try {
+      const d = new Date(ts);
+      if (isNaN(d.getTime())) return "Some time ago";
+      return formatDistanceToNow(d, { addSuffix: true });
+    } catch {
+      return "Some time ago";
+    }
+  };
+
+  const getStars = (n: number) => {
+    return "★".repeat(n) + "☆".repeat(5 - n);
+    const validStars = Math.max(0, Math.min(5, Math.round(n || 0)));
+    return "★".repeat(validStars) + "☆".repeat(5 - validStars);
+  };
 
   return (
     <div className="space-y-4 mt-2">
       {data.map(review => (
         <div
           key={review.id}
-          className="border rounded-lg px-4 py-2 bg-background shadow-sm"
+          className="rounded-lg border border-border bg-card px-4 py-3 shadow-sm"
         >
-          <div className="flex items-center gap-2 mb-1">
-            <span className="font-semibold text-primary">{getStars(review.rating)}</span>
-            <span className="text-xs text-muted-foreground">{formatDate(review.created_at)}</span>
+          <div className="flex items-center gap-2 mb-1.5">
+            <span className="font-semibold text-yellow-400" aria-label={`Rating: ${review.rating} out of 5 stars`}>
+              {getStars(review.rating)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              {formatDateSafe(review.created_at)}
+            </span>
           </div>
-          <div className="text-gray-800">{review.content}</div>
+          <div className="text-sm text-foreground">{review.content}</div>
         </div>
       ))}
     </div>
   );
-}
-
-// Star rendering helper
-function getStars(n: number) {
-  return "★".repeat(n) + "☆".repeat(5 - n);
-}
-
-function formatDate(ts: string) {
-  const d = new Date(ts);
-  return d.toLocaleDateString();
 }

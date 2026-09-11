@@ -113,7 +113,7 @@ export const publicProfileService = {
 	},
 
 	// Update profile visibility (only for own profile)
-	async updateProfileVisibility(visibility: "public") {
+	async updateProfileVisibility(visibility: "public" | "private" | "connections") {
 		const {
 			data: { user },
 		} = await supabase.auth.getUser()

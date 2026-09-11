@@ -56,6 +56,17 @@ const SkillsEditDialog = ({
     setSkills(skills.filter((skill) => skill.name !== skillToRemove));
   };
 
+  // Reordering persists: the first three skills get the featured treatment
+  // on the profile section, so moving a skill up/down changes its prominence.
+  const moveSkill = (index: number, direction: -1 | 1) => {
+    const target = index + direction;
+    if (target < 0 || target >= skills.length) return;
+    const reordered = [...skills];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(target, 0, moved);
+    setSkills(reordered);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -144,10 +155,37 @@ const SkillsEditDialog = ({
                           variant="ghost"
                           size="sm"
                           className="h-6 w-6 p-0 hover:bg-destructive hover:text-destructive-foreground rounded-full"
-                          onClick={() => removeSkill(skill.name)}>
+                          onClick={() => removeSkill(skill.name)}
+                          aria-label={`Remove skill ${skill.name}`}>
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
+                    </div>
+                    {/* Reorder controls — array order is persisted; the top
+                        three skills render as featured on the profile */}
+                    <div className="flex flex-col gap-0.5 ml-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => moveSkill(index, -1)}
+                        disabled={index === 0}
+                        aria-label={`Move ${skill.name} up`}
+                        title="Move up (top 3 skills are featured)">
+                        ↑
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => moveSkill(index, 1)}
+                        disabled={index === skills.length - 1}
+                        aria-label={`Move ${skill.name} down`}
+                        title="Move down">
+                        ↓
+                      </Button>
                     </div>
                   </div>
                 ))

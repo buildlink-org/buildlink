@@ -4,16 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Plus, BadgePlus, X, Image as ImageIcon, Upload } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
-
-
-type PortfolioItem = {
-  id: string;
-  name: string;
-  url: string;
-  type: string;
-  description?: string;
-  thumbnailUrl?: string;
-};
+import { PortfolioItem } from "@/types";
+import { portfolioService } from "@/services/portfolioService";
 
 interface PortfolioEditorDialogProps {
   open: boolean;
@@ -25,6 +17,26 @@ interface PortfolioEditorDialogProps {
   asIconButton?: boolean;
   disabled?: boolean;
 }
+
+// Built-environment discipline taxonomy (report §15)
+const PROJECT_TYPES = [
+  "Architecture",
+  "Civil Engineering",
+  "Structural Engineering",
+  "Construction Management",
+  "Quantity Surveying",
+  "Urban Planning",
+  "Surveying",
+  "Real Estate",
+  "Construction Technology",
+  "Interior Design",
+  "Other",
+];
+
+const PROJECT_STATUSES = ["Completed", "In Progress", "Planning", "On Hold"];
+
+const inputClass =
+  "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
 
 const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   open,
@@ -41,6 +53,11 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const [linkURL, setLinkURL] = useState("");
   const [desc, setDesc] = useState("");
   const [projectName, setProjectName] = useState("");
+  const [projectRole, setProjectRole] = useState("");
+  const [projectLocation, setProjectLocation] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [projectStatus, setProjectStatus] = useState("");
+  const [projectYear, setProjectYear] = useState("");
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const thumbnailInput = useRef<HTMLInputElement | null>(null);
@@ -51,11 +68,14 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const [dragOver, setDragOver] = useState(false);
 
 
-  const updatePortfolio = async (newPortfolio: PortfolioItem[]) => {
-    await supabase
-      .from("profiles")
-      .update({ portfolio: newPortfolio })
-      .eq("id", profileId);
+  // Fix #2 — persistence now surfaces failures so success feedback is never shown for failed saves
+  const updatePortfolio = async (newPortfolio: PortfolioItem[]): Promise<boolean> => {
+    const { error } = await portfolioService.save(profileId, newPortfolio);
+    if (error) {
+      setError("We couldn't save your project. Please try again.");
+      return false;
+    }
+    return true;
   };
 
   // Fast meta title fetching with timeout
@@ -194,13 +214,28 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       type: isPDF ? "pdf" : "image",
       description: desc,
       thumbnailUrl: isPDF ? thumbnailUrl || "" : thumbnailUrl || url,
+      role: projectRole.trim() || undefined,
+      location: projectLocation.trim() || undefined,
+      projectType: projectType || undefined,
+      status: projectStatus || undefined,
+      year: projectYear.trim() || undefined,
     }
     const newPortfolio = [...portfolioList, item];
-    await updatePortfolio(newPortfolio);
+    const saved = await updatePortfolio(newPortfolio);
+    if (!saved) {
+      setUploading(false);
+      setProgress(0);
+      return false;
+    }
     setUploading(false);
     setProgress(100);
     setOpen(false);
     setDesc("");
+    setProjectRole("");
+    setProjectLocation("");
+    setProjectType("");
+    setProjectStatus("");
+    setProjectYear("");
     setSelectedFile(null);
     setThumbnailUrl("");
     setThumbnailPreview(null);
@@ -240,13 +275,27 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
         type: "link",
         description: desc,
         thumbnailUrl: thumbnailUrl || "", // Use thumbnail if provided
+        role: projectRole.trim() || undefined,
+        location: projectLocation.trim() || undefined,
+        projectType: projectType || undefined,
+        status: projectStatus || undefined,
+        year: projectYear.trim() || undefined,
       };
       const newPortfolio = [...portfolioList, item];
-      await updatePortfolio(newPortfolio);
+      const saved = await updatePortfolio(newPortfolio);
+      if (!saved) {
+        setUploading(false);
+        return;
+      }
       setOpen(false);
       setLinkURL("");
       setDesc("");
       setProjectName("");
+      setProjectRole("");
+      setProjectLocation("");
+      setProjectType("");
+      setProjectStatus("");
+      setProjectYear("");
       setSelectedFile(null);
       setThumbnailUrl("");
       setThumbnailPreview(null);
@@ -269,6 +318,11 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setLinkURL("");
       setDesc("");
       setProjectName("");
+      setProjectRole("");
+      setProjectLocation("");
+      setProjectType("");
+      setProjectStatus("");
+      setProjectYear("");
       setSelectedFile(null);
       setThumbnailUrl("");
       setThumbnailPreview(null);
@@ -386,6 +440,81 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
               maxLength={80}
             />
             <p className="text-xs text-muted-foreground mt-1">This name appears on your portfolio card.</p>
+          </div>
+        )}
+
+        {/* ── Project details (optional but high-value) ── */}
+        {(selectedFile || linkURL.trim() !== "") && (
+          <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/40 p-3">
+            <p className="text-sm font-semibold text-foreground">
+              Project details <span className="font-normal text-muted-foreground">(optional — helps you get discovered)</span>
+            </p>
+
+            <textarea
+              value={desc}
+              onChange={(e) => setDesc(e.target.value)}
+              placeholder="What did you deliver on this project? What was the outcome?"
+              rows={2}
+              maxLength={280}
+              className={`${inputClass} h-20 resize-y`}
+              disabled={uploading || disabled}
+            />
+
+            <input
+              type="text"
+              value={projectRole}
+              onChange={(e) => setProjectRole(e.target.value)}
+              placeholder="Your role — e.g. Project Coordinator"
+              maxLength={60}
+              className={inputClass}
+              disabled={uploading || disabled}
+            />
+
+            <input
+              type="text"
+              value={projectLocation}
+              onChange={(e) => setProjectLocation(e.target.value)}
+              placeholder="Location — e.g. Nairobi, Kenya"
+              maxLength={80}
+              className={inputClass}
+              disabled={uploading || disabled}
+            />
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <select
+                value={projectType}
+                onChange={(e) => setProjectType(e.target.value)}
+                className={inputClass}
+                disabled={uploading || disabled}
+                aria-label="Project discipline">
+                <option value="">Project discipline</option>
+                {PROJECT_TYPES.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+
+              <select
+                value={projectStatus}
+                onChange={(e) => setProjectStatus(e.target.value)}
+                className={inputClass}
+                disabled={uploading || disabled}
+                aria-label="Project status">
+                <option value="">Status</option>
+                {PROJECT_STATUSES.map((s) => (
+                  <option key={s} value={s}>{s}</option>
+                ))}
+              </select>
+            </div>
+
+            <input
+              type="text"
+              value={projectYear}
+              onChange={(e) => setProjectYear(e.target.value)}
+              placeholder="Year — e.g. 2025"
+              maxLength={20}
+              className={inputClass}
+              disabled={uploading || disabled}
+            />
           </div>
         )}
 

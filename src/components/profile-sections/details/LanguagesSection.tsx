@@ -1,40 +1,46 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Edit } from "lucide-react"
+import { Languages } from "lucide-react"
 import LanguagesEditDialog from "@/components/profile-sections/LanguagesEditDialog"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import { UserProfile } from "@/types"
+import EmptyState from "@/components/profile/EmptyState"
+import EditIconButton from "@/components/profile/EditIconButton"
 
 type Language = {
 	name: string
-	proficiency: string
+	proficiency?: string
 }
 
 interface LanguagesSectionProps {
 	profile: UserProfile
 	handleProfileUpdate: () => void
+	canEdit?: boolean
 }
 
-const normalizeLanguages = (raw: any[] | undefined | null): Language[] => {
+const normalizeLanguages = (raw: unknown[] | undefined | null): Language[] => {
 	if (!raw) return []
 
 	return raw
-		.map((item) => {
+		.map((item): Language | null => {
 			if (typeof item === "string") {
 				return { name: item }
 			}
-			if (typeof item === "object" && item !== null) {
-				if (item.name) {
-					return { name: String(item.name), proficiency: item.proficiency }
-				}
+			if (typeof item === "object" && item !== null && (item as Record<string, unknown>).name) {
+				const rec = item as Record<string, unknown>
+				return { name: String(rec.name), proficiency: rec.proficiency ? String(rec.proficiency) : undefined }
 			}
 			return null
 		})
 		.filter((x): x is Language => !!x && !!x.name)
 }
 
-const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProps) => {
-	const languages = normalizeLanguages((profile as any).languages)
+/**
+ * Compact supporting module (report §6.6): language chips with explicit
+ * text proficiency labels — never color-only signaling (report §11).
+ */
+const LanguagesSection = ({ profile, handleProfileUpdate, canEdit = false }: LanguagesSectionProps) => {
+	const languages = normalizeLanguages((profile as { languages?: unknown[] }).languages)
 
 	const userType = profile.user_type?.toLowerCase() || "student"
 
@@ -48,55 +54,55 @@ const LanguagesSection = ({ profile, handleProfileUpdate }: LanguagesSectionProp
 	return (
 		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
 			<CardContent className="px-4 py-4">
-				<div className="mb-4 flex items-center justify-between">
+				<div className="mb-3 flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<h2 className="text-lg font-semibold text-foreground">Languages</h2>
+						<h2 className="text-base font-semibold text-foreground">Languages</h2>
 						{languages.length > 0 && (
-							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">{languages.length}</span>
+							<span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+								{languages.length} {languages.length === 1 ? "language" : "languages"}
+							</span>
 						)}
 					</div>
-					<LanguagesEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
-						<Button variant="ghost" size="sm" className="px-2" type="button" aria-label="Edit languages">
-							<Edit className="h-4 w-4" />
-						</Button>
-					</LanguagesEditDialog>
-				</div>
-
-				<div className="space-y-3">
-					{languages.length === 0 ? (
-						<div className="flex flex-col items-center justify-center py-6 text-center">
-							<div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
-								<Edit className="h-5 w-5 text-muted-foreground" />
-							</div>
-							<p className="text-sm text-muted-foreground">
-								No languages added yet. Click edit to showcase the languages you speak.
-							</p>
-						</div>
-					) : (
-						<div className="flex flex-wrap gap-2">
-							{languages.map((lang, idx) => {
-								const label = lang.proficiency
-									? `${lang.name} (${lang.proficiency})`
-									: lang.name
-
-								return (
-									<Badge
-										key={`${lang.name}-${idx}`}
-										variant="secondary"
-										className={`${badgeClasses} rounded-full px-4 py-1.5 text-sm font-medium capitalize transition-all hover:scale-105 hover:shadow-sm cursor-default`}
-									>
-										{label}
-									</Badge>
-								)
-							})}
-						</div>
+					{canEdit && (
+						<LanguagesEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
+							<EditIconButton label="Edit languages" />
+						</LanguagesEditDialog>
 					)}
 				</div>
+
+				{languages.length === 0 ? (
+					<EmptyState
+						icon={<Languages className="h-5 w-5" />}
+						title="Add your languages"
+						description="Add the languages you speak and your proficiency level."
+						action={canEdit ? (
+							<LanguagesEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
+								{/* Real button — a clickable Badge is not a proper control (report §8/§9) */}
+								<Button variant="outline" className="gap-2">
+									<Languages className="h-4 w-4" /> Add languages
+								</Button>
+							</LanguagesEditDialog>
+						) : undefined}
+					/>
+				) : (
+					<div className="flex flex-wrap gap-2">
+						{languages.map((lang, idx) => {
+							// Proficiency always as text (e.g. "English — Fluent")
+							const label = lang.proficiency ? `${lang.name} — ${lang.proficiency}` : lang.name
+							return (
+								<Badge
+									key={`${lang.name}-${idx}`}
+									variant="secondary"
+									className={`${badgeClasses} rounded-full px-3 py-1 text-xs sm:text-sm font-medium cursor-default`}>
+									{label}
+								</Badge>
+							)
+						})}
+					</div>
+				)}
 			</CardContent>
 		</Card>
 	)
 }
 
 export default LanguagesSection
-
-

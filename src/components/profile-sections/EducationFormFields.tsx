@@ -7,7 +7,13 @@ import { Label } from "@/components/ui/label";
 interface Education {
   degree: string;
   institution: string;
-  year: string;
+  /** Structured study period */
+  startDate?: string;
+  endDate?: string;
+  /** Field of study / major, e.g. "Information Technology" */
+  fieldOfStudy?: string;
+  /** Legacy free-form year/duration — kept so existing entries stay editable */
+  year?: string;
   description?: string;
 }
 
@@ -51,15 +57,57 @@ const EducationFormFields = ({
         </div>
       </div>
       <div>
-        {showLabels && <Label htmlFor={`${idPrefix}-year`}>Year/Duration</Label>}
+        {showLabels && <Label htmlFor={`${idPrefix}-fieldOfStudy`}>Field of Study (Optional)</Label>}
         <Input
-          id={`${idPrefix}-year`}
-          value={education.year}
-          onChange={(e) => onChange({ ...education, year: e.target.value })}
-          placeholder="e.g., 2015-2019 or 2020"
+          id={`${idPrefix}-fieldOfStudy`}
+          value={education.fieldOfStudy || ""}
+          onChange={(e) => onChange({ ...education, fieldOfStudy: e.target.value })}
+          placeholder="e.g., Structural Engineering, Urban Planning"
           disabled={disabled}
         />
       </div>
+      {/* Structured study period (report §6.4) — replaces the legacy free-form year field */}
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          {showLabels && <Label htmlFor={`${idPrefix}-startDate`}>Start year</Label>}
+          <Input
+            id={`${idPrefix}-startDate`}
+            value={education.startDate || ""}
+            onChange={(e) => onChange({ ...education, startDate: e.target.value })}
+            placeholder="e.g., 2021"
+            inputMode="numeric"
+            disabled={disabled}
+          />
+        </div>
+        <div>
+          {showLabels && <Label htmlFor={`${idPrefix}-endDate`}>End year (or expected)</Label>}
+          <Input
+            id={`${idPrefix}-endDate`}
+            value={education.endDate || ""}
+            onChange={(e) => onChange({ ...education, endDate: e.target.value })}
+            placeholder="e.g., 2025 or Present"
+            disabled={disabled}
+          />
+        </div>
+      </div>
+      {/* Legacy free-form year/duration — shown only for entries that already use it */}
+      {education.year ? (
+        <div>
+          {showLabels && (
+            <Label htmlFor={`${idPrefix}-year`}>Year/Duration (legacy)</Label>
+          )}
+          <Input
+            id={`${idPrefix}-year`}
+            value={education.year}
+            onChange={(e) => onChange({ ...education, year: e.target.value })}
+            placeholder="e.g., 2015-2019 or 2020"
+            disabled={disabled}
+          />
+          <p className="mt-1 text-xs text-muted-foreground">
+            Prefer the Start/End year fields above — this legacy field is kept only for older entries.
+          </p>
+        </div>
+      ) : null}
       <div>
         {showLabels && (
           <Label htmlFor={`${idPrefix}-description`}>Description (Optional)</Label>
