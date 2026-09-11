@@ -27,6 +27,12 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 	const [activeFilter, setActiveFilter] = useState("latest")
 	const [loading, setLoading] = useState(false)
 
+	// Profile tab uses a wider main column to accommodate the right discovery rail
+	const isProfileTab = activeTab === "profile" || activeTab === "publicProfile"
+	const mainColumnClass = isProfileTab
+		? `col-span-12 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
+		: `col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
+
 	const handleTabChange = useCallback(
 		(tab: string) => {
 			// If we're on a public profile page and user clicks navigation, navigate to the appropriate route
@@ -100,14 +106,14 @@ const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, sho
 			<OfflineIndicator />
 
 			{/* Main Content */}
-		<div className="relative top-12 mx-auto grid h-screen w-full max-w-screen-xl grid-cols-12 px-4 pb-24 md:pb-8">
+		<div className="relative top-12 mx-auto grid min-h-screen w-full max-w-screen-xl grid-cols-12 px-4 pb-24 md:pb-8">
 				{showNavigation && (
-					<div className="col-span-3 bg-background/80">
+					<div className="col-span-12 bg-background/80 md:col-span-3">
 						<ResponsiveNavigation loading={loading} />
 					</div>
 				)}
 				{/* Main Content Area */}
-				<div className={`col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`}>
+				<div className={mainColumnClass}>
 					{/* Content Filters */}
 					{shouldShowFilters && (
 						<div className="mb-4">

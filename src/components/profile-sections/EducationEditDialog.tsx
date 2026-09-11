@@ -12,8 +12,33 @@ import EducationList from "./EducationList"
 interface Education {
 	degree: string
 	institution: string
-	year: string
+	/** Structured study period */
+	startDate?: string
+	endDate?: string
+	/** Field of study / major */
+	fieldOfStudy?: string
+	/** Legacy free-form year/duration — kept so older entries remain editable */
+	year?: string
 	description?: string
+}
+
+/**
+ * Normalize legacy entries: if an entry only has the old free-form `year`
+ * (e.g. "2015-2019" or "2020"), derive structured start/end dates so the
+ * upgraded form can edit them (report §6.4).
+ */
+const normalizeEdu = (edu: Education): Education => {
+	if ((!edu.startDate && !edu.endDate) && edu.year) {
+		const years = String(edu.year).match(/\d{4}/g)
+		if (years && years.length > 0) {
+			return {
+				...edu,
+				startDate: edu.startDate || years[0],
+				endDate: edu.endDate || years[years.length - 1],
+			}
+		}
+	}
+	return edu
 }
 
 interface EducationEditDialogProps {
@@ -27,11 +52,15 @@ const EducationEditDialog = ({ children, currentProfile, onProfileUpdated }: Edu
 	const { toast } = useToast()
 	const [open, setOpen] = useState(false)
 	const [isLoading, setIsLoading] = useState(false)
-	const [education, setEducation] = useState<Education[]>(currentProfile?.education || [])
+	const [education, setEducation] = useState<Education[]>(
+		(currentProfile?.education || []).map(normalizeEdu)
+	)
 	const [newEducation, setNewEducation] = useState<Education>({
 		degree: "",
 		institution: "",
-		year: "",
+		startDate: "",
+		endDate: "",
+		fieldOfStudy: "",
 		description: "",
 	})
 	const [editingIndex, setEditingIndex] = useState<number | null>(null)
@@ -39,16 +68,19 @@ const EducationEditDialog = ({ children, currentProfile, onProfileUpdated }: Edu
 	// Prepare editing state for individual education
 	const [editEducation, setEditEducation] = useState<Education | null>(null)
 
+	const hasPeriod = (edu: Education) =>
+		Boolean(edu.startDate?.trim() || edu.endDate?.trim() || edu.year?.trim())
+
 	const addEducation = () => {
-		if (newEducation.degree.trim() && newEducation.institution.trim() && newEducation.year.trim()) {
+		if (newEducation.degree.trim() && newEducation.institution.trim() && hasPeriod(newEducation)) {
 			setEducation([...education, { ...newEducation }])
-			setNewEducation({ degree: "", institution: "", year: "", description: "" })
+			setNewEducation({ degree: "", institution: "", startDate: "", endDate: "", fieldOfStudy: "", description: "" })
 		}
 	}
 
 	const startEdit = (index: number) => {
 		setEditingIndex(index)
-		setEditEducation(education[index])
+		setEditEducation(normalizeEdu(education[index]))
 	}
 
 	const handleEditChange = (edu: Education) => {
@@ -81,7 +113,12 @@ const EducationEditDialog = ({ children, currentProfile, onProfileUpdated }: Edu
 
 		setIsLoading(true)
 		try {
-			const { error } = await profileService.updateProfile(user.id, { education })
+			// Prefer structured dates — drop the legacy free-form year on entries
+			// that now carry start/end so the two can never disagree.
+			const normalized = education.map((edu) =>
+				edu.startDate?.trim() || edu.endDate?.trim() ? { ...edu, year: undefined } : edu
+			)
+			const { error } = await profileService.updateProfile(user.id, { education: normalized })
 
 			if (error) throw error
 
@@ -130,7 +167,11 @@ const EducationEditDialog = ({ children, currentProfile, onProfileUpdated }: Edu
 							onClick={addEducation}
 							variant="outline"
 							className="w-full"
-							disabled={!newEducation.degree.trim() || !newEducation.institution.trim() || !newEducation.year.trim()}>
+							disabled={
+								!newEducation.degree.trim() ||
+								!newEducation.institution.trim() ||
+								!(newEducation.startDate?.trim() || newEducation.endDate?.trim())
+							}>
 							<Plus className="mr-2 h-4 w-4" />
 							Add Education
 						</Button>

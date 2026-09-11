@@ -6,47 +6,277 @@ import ProfileExperience from "../profile-sections/details/ExperienceSection"
 import ProfileSkillsSection from "../profile-sections/details/ProfileSkillsSection"
 import ProfileCertifications from "../profile-sections/details/CertificationsSection"
 import LanguagesSection from "../profile-sections/details/LanguagesSection"
-import ProfilePeople from "../profile/ProfilePeople"
-import ProfileProducts from "../profile/ProfileProducts"
 
 import { useProfile } from "@/hooks/useProfile"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import ProfileCompletionIndicator from "@/components/profile/ProfileCompletionIndicator"
-import { BookOpen, Users, Edit } from "lucide-react"
+import SectionHeader from "@/components/profile/SectionHeader"
+import EmptyState from "@/components/profile/EmptyState"
+import { BookOpen, Users, Sparkles, Package } from "lucide-react"
 import { UserProfile } from "@/types"
+import { connectionsService } from "@/services/connectionsService"
+import { publicProfileService } from "@/services/publicProfileService"
+import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
+import { useEffect, useMemo, useState } from "react"
 import AboutActivitySection from "../profile-sections/details/AboutActivitySection"
+import SuggestedConnections from "@/components/profile/SuggestedConnections"
+import ShareProfileDialog from "@/components/profile/ShareProfileDialog"
+import { Share2 } from "lucide-react"
 
-// About & Activity Tabbed Component
+// ---------------------------------------------------------------------------
+// Shared profile types
+// ---------------------------------------------------------------------------
 
-// Connections Preview Component
-const ConnectionsPreview = ({ profile }: { profile: UserProfile }) => {
-	// TODO: Fetch from connectionsService
-	const connections: any[] = []
+interface ConnectionProfileRow {
+	id: string
+	full_name: string | null
+	avatar: string | null
+}
+
+// ---------------------------------------------------------------------------
+// Right discovery rail: profile strength, visibility, connections
+// ---------------------------------------------------------------------------
+
+const ProfileRail = ({
+	profile,
+	connections,
+	connectionsLoading,
+	onChangeVisibility,
+	savingVisibility,
+}: {
+	profile: UserProfile
+	connections: ConnectionProfileRow[]
+	connectionsLoading: boolean
+	/** Fix #5 — working visibility control (persisted to the profiles table) */
+	onChangeVisibility: (visibility: "public" | "private" | "connections") => void
+	savingVisibility: boolean
+}) => {
+	const completion = profile.profile_completion_score || 0
+
+	const missing: string[] = []
+	if (!profile.bio) missing.push("a professional summary")
+	if (!profile.portfolio?.length) missing.push("a featured project")
+	if (!profile.skills?.length) missing.push("your skills")
+	if (!profile.experiences?.length) missing.push("your experience")
+
+	const visibilityLabel =
+		profile.profile_visibility === "private"
+			? "only you"
+			: profile.profile_visibility === "connections"
+				? "your connections"
+				: "everyone"
+
+	const myProfessions = useMemo(() => {
+		const p = (profile as { profession?: string | string[] | null }).profession
+		if (!p) return []
+		return Array.isArray(p) ? p.filter(Boolean) : [p]
+	}, [profile])
+
+	return (
+		<div className="space-y-5">
+			{/* Profile strength */}
+			<Card>
+				<CardContent className="p-5">
+					<SectionHeader title="Profile strength" />
+					<ProfileCompletionIndicator score={completion} showDetails={completion < 100} />
+					{completion < 100 && missing.length > 0 && (
+						<div className="mt-3 border-t border-border pt-3">
+							<p className="mb-2 text-xs font-medium text-muted-foreground">Completing these next helps you get found:</p>
+							<ul className="flex flex-wrap gap-1.5">
+								{missing.slice(0, 3).map((item) => (
+									<li key={item} className="rounded-full bg-muted px-2.5 py-1 text-[11px] text-muted-foreground">
+										+ {item}
+									</li>
+								))}
+							</ul>
+						</div>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Profile visibility + share / public preview (report §8) */}
+			<Card>
+				<CardContent className="p-5">
+					<SectionHeader title="Profile visibility" description="Who can see your profile" />
+					{/* Fix #5 — working visibility control (persisted to the profiles table) */}
+					<label className="sr-only" htmlFor="profile-visibility">
+						Choose who can view your profile
+					</label>
+					<select
+						id="profile-visibility"
+						value={profile.profile_visibility || "public"}
+						onChange={(e) =>
+							onChangeVisibility(e.target.value as "public" | "private" | "connections")
+						}
+						disabled={savingVisibility}
+						className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm capitalize text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+					>
+						<option value="public">Public — {visibilityLabel === "everyone" ? visibilityLabel : "everyone"}</option>
+						<option value="connections">Connections only</option>
+						<option value="private">Private — only you</option>
+					</select>
+					<p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+						{savingVisibility
+							? "Saving…"
+							: `Currently visible to ${visibilityLabel}.`}
+					</p>
+					<div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+						<ShareProfileDialog
+							profileId={profile.id}
+							profileName={profile.full_name}
+							trigger={
+								<button
+									type="button"
+									className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+									<Share2 className="h-3.5 w-3.5" aria-hidden="true" />
+									Share profile
+								</button>
+							}
+						/>
+						<a
+							href={`/profile/${profile.id}`}
+							target="_blank"
+							rel="noreferrer"
+							className="text-xs font-medium text-primary hover:underline">
+							View public profile
+						</a>
+					</div>
+				</CardContent>
+			</Card>
+
+			{/* Connections preview */}
+			<Card>
+				<CardContent className="py-5">
+					<SectionHeader
+						title="Connections"
+						count={connections.length}
+						countUnit="connections"
+						description="People in your professional network"
+					/>
+					{connectionsLoading ? (
+						<p className="text-sm text-muted-foreground">Loading connections…</p>
+					) : connections.length > 0 ? (
+						<div className="grid grid-cols-4 gap-3">
+							{connections.map((conn) => (
+								<div key={conn.id} className="flex flex-col items-center gap-1.5">
+									{conn.avatar ? (
+										<img
+											src={conn.avatar}
+											alt={conn.full_name || "Connection"}
+											className="h-10 w-10 rounded-full object-cover"
+											loading="lazy" />
+									) : (
+										<div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground">
+											{(conn.full_name || "?").charAt(0).toUpperCase()}
+										</div>
+									)}
+									<span className="max-w-[60px] truncate text-[10px] leading-none text-muted-foreground">
+										{conn.full_name?.split(" ")[0] || "Member"}
+									</span>
+								</div>
+							))}
+						</div>
+					) : (
+						<EmptyState
+							icon={<Users className="h-5 w-5" />}
+							title="No connections yet"
+							description="Connect with professionals in the built environment to grow your network."
+						/>
+					)}
+				</CardContent>
+			</Card>
+
+			{/* Suggested connections — self-hiding when there are no suggestions */}
+			<SuggestedConnections profileId={profile.id} myProfessions={myProfessions} />
+		</div>
+	)
+}
+
+// ---------------------------------------------------------------------------
+// Company profile sections (data-driven, no placeholder content)
+// ---------------------------------------------------------------------------
+
+const CompanyFeatured = ({ profile }: { profile: UserProfile }) => {
+	const featured = Array.isArray(profile.featured) ? profile.featured : []
 
 	return (
 		<Card>
-			<CardContent className="py-5">
-				<div className="mb-4 flex items-center justify-between">
-					<h3 className="text-lg font-semibold">Connections</h3>
-					<Button
-						variant="outline"
-						size="sm">
-						View All
-					</Button>
-				</div>
-				{connections.length > 0 ? (
-					<div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-						{connections.slice(0, 8).map((conn) => (
-							<div
-								key={conn.id}
-								className="text-center">
-								{/* Connection preview card */}
+			<CardContent className="p-5">
+				<SectionHeader
+					title="Featured"
+					count={featured.length}
+					countUnit="items"
+					description="Highlighted products and services"
+				/>
+				{featured.length > 0 ? (
+					<div className="space-y-3">
+						{featured.map((item, index) => (
+							<div key={`${item.title || item.name || "featured"}-${index}`} className="flex items-start gap-3 rounded-lg border border-border p-3">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+									<Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<p className="text-sm font-semibold text-foreground">{item.title || item.name}</p>
+									{item.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
+									{item.link && (
+										<a className="mt-1 inline-block text-xs text-primary hover:underline" href={item.link} target="_blank" rel="noreferrer">
+											View details
+										</a>
+									)}
+								</div>
 							</div>
 						))}
 					</div>
 				) : (
-					<p className="py-4 text-center text-muted-foreground">No connections yet</p>
+					<EmptyState
+						icon={<Sparkles className="h-5 w-5" />}
+						title="No featured items yet"
+						description="Showcase your company’s key products and services to stand out."
+					/>
+				)}
+			</CardContent>
+		</Card>
+	)
+}
+
+const CompanyProducts = ({ profile }: { profile: UserProfile }) => {
+	const products = Array.isArray(profile.products) ? profile.products : []
+
+	return (
+		<Card>
+			<CardContent className="p-5">
+				<SectionHeader
+					title="Products & Services"
+					count={products.length}
+					countUnit="products"
+					description="What your company offers"
+				/>
+				{products.length > 0 ? (
+					<div className="space-y-3">
+						{products.map((item, index) => (
+							<div key={`${item.name || item.title || "product"}-${index}`} className="flex items-start gap-3 rounded-lg border border-border p-3">
+								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+									<Package className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+								</div>
+								<div className="min-w-0 flex-1">
+									<p className="text-sm font-semibold text-foreground">{item.name || item.title}</p>
+									{item.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
+									{item.link && (
+										<a className="mt-1 inline-block text-xs text-primary hover:underline" href={item.link} target="_blank" rel="noreferrer">
+											View details
+										</a>
+									)}
+								</div>
+							</div>
+						))}
+					</div>
+				) : (
+					<EmptyState
+						icon={<Package className="h-5 w-5" />}
+						title="No products or services listed"
+						description="Add the products and services your company provides."
+					/>
 				)}
 			</CardContent>
 		</Card>
@@ -55,6 +285,60 @@ const ConnectionsPreview = ({ profile }: { profile: UserProfile }) => {
 
 const ProfileBoard = () => {
 	const { profile, userPosts, loading, uploading, handleProfileUpdate, handleAvatarChange, handleAvatarRemove } = useProfile()
+	const [connections, setConnections] = useState<ConnectionProfileRow[]>([])
+	const [connectionsLoading, setConnectionsLoading] = useState(false)
+	// Fix #5 — working profile visibility control
+	const [savingVisibility, setSavingVisibility] = useState(false)
+	const { toast } = useToast()
+
+	const handleChangeVisibility = async (
+		visibility: "public" | "private" | "connections"
+	) => {
+		setSavingVisibility(true)
+		const { error } = await publicProfileService.updateProfileVisibility(visibility)
+		setSavingVisibility(false)
+		if (error) {
+			toast({
+				title: "Update failed",
+				description: "We couldn't change your profile visibility. Please try again.",
+				variant: "destructive",
+			})
+			return
+		}
+		toast({
+			title: "Visibility updated",
+			description: `Your profile is now visible to ${
+				visibility === "public" ? "everyone" : visibility === "connections" ? "your connections" : "only you"
+			}.`,
+			variant: "default",
+		})
+		handleProfileUpdate()
+	}
+
+	// Load accepted connections once the profile is known (single fetch, shared by stats + rail)
+	useEffect(() => {
+		if (!profile?.id) return
+		setConnectionsLoading(true)
+		;(async () => {
+			const { data } = await connectionsService.getConnections(profile.id)
+			const accepted = (data || []).filter((row) => row.status === "accepted")
+			const otherIds = accepted
+				.map((row) => (row.user_id === profile.id ? row.connected_user_id : row.user_id) as string)
+				.slice(0, 8)
+
+			if (otherIds.length === 0) {
+				setConnections([])
+				return
+			}
+
+			const { data: profiles } = await supabase
+				.from("profiles")
+				.select("id, full_name, avatar")
+				.in("id", otherIds)
+
+			setConnections(profiles || [])
+		})().finally(() => setConnectionsLoading(false))
+	}, [profile?.id])
 
 	if (loading) {
 		return (
@@ -74,10 +358,13 @@ const ProfileBoard = () => {
 	}
 
 	const userType = profile.user_type?.toLowerCase() || "student"
+	const isCompany = userType === "company"
+	const portfolio = Array.isArray(profile.portfolio) ? profile.portfolio : []
+	const teamCount = profile.people?.length || 0
 
 	return (
-		<div className="mx-auto max-w-5xl space-y-6 py-6 md:px-0">
-			{/* Header */}
+		<div className="mx-auto max-w-7xl space-y-4 px-1 py-4 sm:space-y-6 sm:px-0 sm:py-6">
+			{/* Identity header */}
 			<ProfileHeader
 				profile={profile}
 				uploading={uploading}
@@ -86,18 +373,18 @@ const ProfileBoard = () => {
 				handleProfileUpdate={handleProfileUpdate}
 			/>
 
-		{/* Stats Cards */}
-			<div className="grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4">
+			{/* Stat cards — live data (profile completion lives in the right rail "Profile strength" module) */}
+			<div className="grid grid-cols-2 gap-4">
 				<Card className="border border-border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
 					<CardContent className="p-3 sm:p-4 relative">
 						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-green-500/10 dark:bg-green-500/5" />
 						<div className="relative flex items-center justify-between">
 							<div className="min-w-0">
-								<p className="text-xs sm:text-sm text-muted-foreground truncate">{userType === "company" ? "Staff" : "Portfolio Items"}</p>
-								<p className="text-2xl sm:text-4xl font-bold text-foreground">{userType === "company" ? 0 : profile.portfolio?.length || 0}</p>
+								<p className="text-xs sm:text-sm text-muted-foreground truncate">{isCompany ? "Team Members" : "Portfolio Items"}</p>
+								<p className="text-2xl sm:text-4xl font-bold text-foreground">{isCompany ? teamCount : portfolio.length}</p>
 							</div>
 							<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-green-500/15 dark:bg-green-500/10 flex-shrink-0">
-								<BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" />
+								<BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" aria-hidden="true" />
 							</div>
 						</div>
 					</CardContent>
@@ -108,170 +395,84 @@ const ProfileBoard = () => {
 						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-purple-500/10 dark:bg-purple-500/5" />
 						<div className="relative flex items-center justify-between">
 							<div className="min-w-0">
-								<p className="text-xs sm:text-sm text-muted-foreground truncate">{userType === "company" ? "Following" : "Connections"}</p>
-								<p className="text-2xl sm:text-4xl font-bold text-foreground">0</p>
+								<p className="text-xs sm:text-sm text-muted-foreground truncate">Connections</p>
+								<p className="text-2xl sm:text-4xl font-bold text-foreground">{connectionsLoading ? "…" : connections.length}</p>
 							</div>
 							<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-purple-500/15 dark:bg-purple-500/10 flex-shrink-0">
-								<Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />
+								<Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" aria-hidden="true" />
 							</div>
 						</div>
 					</CardContent>
 				</Card>
+			</div>
 
-				<Card className="col-span-2 md:col-span-2 border border-border overflow-hidden transition-all hover:shadow-md">
-					<CardContent className="p-3 sm:p-4 relative">
-						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-primary/10 dark:bg-primary/5" />
-						<div className="relative">
-							<ProfileCompletionIndicator
-								score={profile?.profile_completion_score || 0}
-								showDetails
+			{/* Main content + right discovery rail */}
+			<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-6">
+				<div className="order-2 min-w-0 space-y-4 sm:space-y-6 xl:order-1">
+					<AboutActivitySection
+						profile={profile}
+						publicProfile={false}
+						userPosts={userPosts}
+						handleProfileUpdate={handleProfileUpdate}
+					/>
+{isCompany ? (
+						<>
+							<CompanyFeatured profile={profile} />
+							<CompanyProducts profile={profile} />
+						</>
+					) : (
+						<>
+							{/* Featured projects — project-first hierarchy */}
+							<PortfolioSection
+								profile={profile}
+								canEdit={true}
+								handleProfileUpdate={handleProfileUpdate}
 							/>
-						</div>
-					</CardContent>
-				</Card>
-			</div>
+							{/* Professional experience */}
+							<ProfileExperience
+								canEdit={true}
+								profile={profile}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+							{/* Skills */}
+							<ProfileSkillsSection
+								profile={profile}
+								canEdit={true}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+							{/* Education & training */}
+							<ProfileEducation
+								canEdit={true}
+								profile={profile}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+							{/* Licences & certifications */}
+							<ProfileCertifications
+								canEdit={true}
+								profile={profile}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+							{/* Languages — supporting info last */}
+							<LanguagesSection
+								profile={profile}
+								canEdit={true}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+						</>
+					)}
+				</div>
 
-			{/* About & Activity - Horizontal 2-column */}
-			<AboutActivitySection
-				profile={profile}
-				publicProfile={false}
-				userPosts={userPosts}
-				handleProfileUpdate={handleProfileUpdate}
-			/>
-
-			{/* Skills/Expertise - Right below About/Activity */}
-			<div>
-				<ProfileSkillsSection
+				{/* Right discovery rail (desktop >= xl; stacks below on smaller screens) */}
+				<div className="order-1 min-w-0 xl:order-2">
+					<ProfileRail
 					profile={profile}
-					canEdit={true}
-					handleProfileUpdate={handleProfileUpdate}
-				/>
+					connections={connections}
+					connectionsLoading={connectionsLoading}
+					onChangeVisibility={handleChangeVisibility}
+					savingVisibility={savingVisibility}
+					/>
+				</div>
 			</div>
-
-			{/* Account Type Specific Sections */}
-			{userType === "student" && (
-				<>
-					<PortfolioSection
-						profile={profile}
-						canEdit={true}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					{/* Professional Experience - on its own */}
-					<ProfileExperience
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					{/* Education & Training - on its own */}
-					<ProfileEducation
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					{/* Licenses & Certifications - on its own */}
-					<ProfileCertifications
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					<LanguagesSection
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-				</>
-			)}
-
-			{userType === "professional" && (
-				<>
-					<PortfolioSection
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					{/* Professional Experience - on its own */}
-					<ProfileExperience
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					{/* Education & Training - on its own */}
-					<ProfileEducation
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					{/* Licenses & Certifications - on its own */}
-					<ProfileCertifications
-						canEdit={true}
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-					<LanguagesSection
-						profile={profile}
-						handleProfileUpdate={handleProfileUpdate}
-					/>
-				</>
-			)}
-
-			{userType === "company" && (
-				<>
-					{/* Featured Section */}
-					<Card className="border border-border shadow-sm">
-						<CardContent className="p-6">
-							<div className="flex items-center justify-between mb-6">
-								<h3 className="text-lg font-semibold text-foreground">Featured (3/3 items uploaded)</h3>
-				<div className="flex items-center gap-3">
-									<Button variant="outline" size="sm" className="rounded-md border-border text-foreground hover:bg-accent hover:text-accent-foreground dark:border-border dark:text-foreground dark:hover:bg-accent px-4 py-1 h-auto text-xs">
-										+ Add Item
-									</Button>
-									<Edit className="h-4 w-4 text-foreground cursor-pointer" />
-								</div>
-							</div>
-							<div className="flex flex-row justify-center items-end gap-4 sm:gap-6">
-								{/* Item 3 */}
-								<div className="flex flex-col w-[120px] sm:w-[140px]">
-									<div className="h-3 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
-									<div className="h-[160px] bg-[#dcfce7] dark:bg-green-950/60 border border-gray-400 dark:border-green-800/50 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full">Item 3</div>
-									</div>
-								</div>
-								{/* Item 1 */}
-								<div className="flex flex-col w-[120px] sm:w-[140px]">
-									<div className="h-3 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
-									<div className="h-[140px] bg-[#dcfce7] dark:bg-green-950/60 border border-gray-400 dark:border-green-800/50 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full">Item 1</div>
-									</div>
-								</div>
-								{/* Item 2 */}
-								<div className="flex flex-col w-[120px] sm:w-[140px]">
-									<div className="h-3 w-[90%] bg-gray-400 dark:bg-slate-700 rounded-t-lg mx-auto" />
-									<div className="h-[150px] bg-[#dcfce7] dark:bg-green-950/60 border border-gray-400 dark:border-green-800/50 rounded-b-lg rounded-t-sm p-3 relative shadow-sm">
-										<div className="bg-white dark:bg-card rounded border border-gray-300 dark:border-border p-2 text-sm text-black dark:text-foreground w-full">Item 2</div>
-									</div>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-					
-					{/* Products & Services */}
-					<Card className="border border-border shadow-sm">
-						<CardContent className="p-6 relative">
-							<div className="absolute top-4 right-4">
-								<Edit className="h-4 w-4 text-foreground cursor-pointer" />
-							</div>
-							<h3 className="mb-4 text-lg font-semibold text-foreground">Products & Services (optional)</h3>
-							<div className="flex gap-4 items-start mt-4">
-								<div className="w-12 h-12 rounded bg-[#bbf7d0]" />
-								<div className="space-y-1">
-									<p className="font-bold text-base leading-tight text-foreground">[Product/Service]</p>
-									<p className="text-sm text-muted-foreground leading-tight">[Type/Group]</p>
-									<p className="text-sm text-muted-foreground leading-tight">[Availability – location]</p>
-								</div>
-							</div>
-						</CardContent>
-					</Card>
-				</>
-			)}
 		</div>
 	)
 }

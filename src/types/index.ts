@@ -5,6 +5,16 @@ export type PortfolioItem = {
 	type: string
 	description?: string
 	thumbnailUrl?: string
+	/** Project role / contribution, e.g. "Project Coordinator" */
+	role?: string
+	/** Project location, e.g. "Nairobi" */
+	location?: string
+	/** Discipline / project type, e.g. "Construction Management" */
+	projectType?: string
+	/** Status, e.g. "Completed", "In Progress" */
+	status?: string
+	/** Year(s), e.g. "2025" */
+	year?: string
 }
 
 type People = {
@@ -51,6 +61,7 @@ export type BaseProfile = {
 	skills?: string[]
 	languages?: string[]
 	experience?: string[]
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy shape, kept as-is
 	Certification?: any[]
 	certifications?: string[]
 	profile_completion_score?: number
@@ -62,6 +73,7 @@ export type StudentProfile = BaseProfile & {
 	people: People[]
 	products: Products[]
 	education_level: string | null
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy shape, kept as-is
 	activity?: any[] // posts, likes, etc.
 	profession: string[]
 	organization: string
@@ -96,6 +108,7 @@ export type ProfessionalProfile = BaseProfile & {
 	education?: Education[]
 	portfolio?: PortfolioItem[]
 	connections?: string[]
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy shape, kept as-is
 	activity?: any[]
 	following?: { name?: string; role?: string; avatar?: string }[]
 }
@@ -109,6 +122,7 @@ export type CompanyProfile = BaseProfile & {
 	organization: string
 	connections?: string[]
 	about?: string
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy shape, kept as-is
 	activity?: any[]
 	profession: string[]
 	portfolio: PortfolioItem[]
@@ -144,8 +158,11 @@ export type Education = {
 	institution?: string
 	startDate?: string
 	endDate?: string
+	/** Field of study / major, e.g. "Information Technology" */
+	fieldOfStudy?: string
 	description?: string
-	year?: number
+	/** Legacy single year or period string, e.g. 2020 or "2015-2019" (kept for back-compat) */
+	year?: number | string
 }
 
 export type UserProfile = StudentProfile | ProfessionalProfile | CompanyProfile
