@@ -3,7 +3,6 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
 import TopBar from "@/components/TopBar"
 import HomeFeed from "@/components/feeds/HomeFeed"
-// import MentorshipHub from "@/components/feeds/MentorshipHub";
 import SkillUpFeed from "@/components/feeds/SkillUpFeed"
 import PostCreate from "@/components/feeds/PostCreate"
 import ProfileBoard from "@/components/feeds/ProfileBoard"
@@ -13,126 +12,126 @@ import { OfflineIndicator } from "@/components/OfflineIndicator"
 import FloatingMessagingWidget from "@/components/DirectMessages/FloatingMessageWidget"
 
 interface IndexProps {
-	customContent?: ReactNode
-	showNavigation?: boolean
-	showFilters?: boolean
-	initialTab?: string
-	isPublicProfile?: boolean
+customContent?: ReactNode
+showNavigation?: boolean
+showFilters?: boolean
+initialTab?: string
+isPublicProfile?: boolean
 }
 
 const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, showFilters = true, initialTab = "home", isPublicProfile = false }) => {
-	const { user } = useAuth()
-	const navigate = useNavigate()
-	const [activeTab, setActiveTab] = useState(initialTab)
-	const [activeFilter, setActiveFilter] = useState("latest")
-	const [loading, setLoading] = useState(false)
+const { user } = useAuth()
+const navigate = useNavigate()
+const [activeTab, setActiveTab] = useState(initialTab)
+const [activeFilter, setActiveFilter] = useState("latest")
+const [loading, setLoading] = useState(false)
 
-	// Profile tab uses a wider main column to accommodate the right discovery rail
-	const isProfileTab = activeTab === "profile" || activeTab === "publicProfile"
-	const mainColumnClass = isProfileTab
-		? `col-span-12 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
-		: `col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
+// Profile tab uses a wider main column to accommodate the right discovery rail
+const isProfileTab = activeTab === "profile" || activeTab === "publicProfile"
+const mainColumnClass = isProfileTab
+? `col-span-12 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
+: `col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
 
-	const handleTabChange = useCallback(
-		(tab: string) => {
-			// If we're on a public profile page and user clicks navigation, navigate to the appropriate route
-			if (isPublicProfile) {
-				switch (tab) {
-					case "home":
-						navigate("/")
-						break
-					case "post":
-						navigate("/post")
-						break
-					case "skillup":
-						navigate("/skillup")
-						break
-					case "profile":
-						navigate("/profile")
-						break
-					default:
-						navigate("/")
-				}
-				return
-			}
+const handleTabChange = useCallback(
+(tab: string) => {
+// If we're on a public profile page and user clicks navigation, navigate to the appropriate route
+if (isPublicProfile) {
+switch (tab) {
+case "home":
+navigate("/")
+break
+case "post":
+navigate("/post")
+break
+case "skillup":
+navigate("/resource-hub")
+break
+case "profile":
+navigate("/profile")
+break
+default:
+navigate("/")
+}
+return
+}
 
-			// Normal tab switching for non-public profile pages
-			setLoading(true)
-			setActiveTab(tab)
-			// Reset filter when changing tabs
-			if (tab === "home" || tab === "skillup") {
-				setActiveFilter("latest")
-			}
-			// Simulate loading time for smooth transition
-			setTimeout(() => setLoading(false), 300)
-		},
-		[isPublicProfile, navigate],
-	)
+// Normal tab switching for non-public profile pages
+setLoading(true)
+setActiveTab(tab)
+// Reset filter when changing tabs
+if (tab === "home" || tab === "skillup") {
+setActiveFilter("latest")
+}
+// Simulate loading time for smooth transition
+setTimeout(() => setLoading(false), 300)
+},
+[isPublicProfile, navigate],
+)
 
-	const handleLogoClick = () => {
-		if (isPublicProfile) {
-			navigate("/")
-			return
-		}
-		handleTabChange("home")
-		setActiveFilter("latest")
-	}
+const handleLogoClick = () => {
+if (isPublicProfile) {
+navigate("/")
+return
+}
+handleTabChange("home")
+setActiveFilter("latest")
+}
 
-	const renderActiveContent = () => {
-		switch (activeTab) {
-			case "home":
-				return <HomeFeed activeFilter={activeFilter} />
-			case "post":
-				return <PostCreate />
-			case "skillup":
-				return <SkillUpFeed activeFilter={activeFilter} />
-			case "profile":
-				return <ProfileBoard />
-			case "publicProfile":
-				return customContent || <ProfileBoard />
-			default:
-				return <HomeFeed activeFilter={activeFilter} />
-		}
-	}
+const renderActiveContent = () => {
+switch (activeTab) {
+case "home":
+return <HomeFeed activeFilter={activeFilter} />
+case "post":
+return <PostCreate />
+case "skillup":
+return <SkillUpFeed activeFilter={activeFilter} />
+case "profile":
+return <ProfileBoard />
+case "publicProfile":
+return customContent || <ProfileBoard />
+default:
+return <HomeFeed activeFilter={activeFilter} />
+}
+}
 
-	const shouldShowFilters = showFilters && (activeTab === "home" || activeTab === "skillup")
+const shouldShowFilters = showFilters && (activeTab === "home" || activeTab === "skillup")
 
-	return (
-		<div className="min-h-screen bg-background">
-			<TopBar
-				onLogoClick={handleLogoClick}
-				loading={loading}
-			/>
-			<OfflineIndicator />
+return (
+<div className="min-h-screen bg-background">
+<TopBar
+onLogoClick={handleLogoClick}
+loading={loading}
+/>
+<OfflineIndicator />
 
-			{/* Main Content */}
-		<div className="relative top-12 mx-auto grid min-h-screen w-full max-w-screen-xl grid-cols-12 px-4 pb-24 md:pb-8">
-				{showNavigation && (
-					<div className="col-span-12 bg-background/80 md:col-span-3">
-						<ResponsiveNavigation loading={loading} />
-					</div>
-				)}
-				{/* Main Content Area */}
-				<div className={mainColumnClass}>
-					{/* Content Filters */}
-					{shouldShowFilters && (
-						<div className="mb-4">
-							<ContentFilters
-								activeFilter={activeFilter}
-								onFilterChange={setActiveFilter}
-								filterType={activeTab}
-							/>
-						</div>
-					)}
+{/* Main Content — explicit header offset replaces top-12 positioning */}
+<div className="mx-auto grid w-full max-w-screen-xl grid-cols-12 gap-4 px-4 pt-14 pb-20 md:pb-8">
+{showNavigation && (
+<div className="col-span-12 md:col-span-3 md:pt-1">
+<ResponsiveNavigation loading={loading} />
+</div>
+)}
+{/* Main Content Area */}
+<div className={mainColumnClass}>
+{/* Content Filters */}
+{shouldShowFilters && (
+<div className="mb-4">
+<ContentFilters
+activeFilter={activeFilter}
+onFilterChange={setActiveFilter}
+filterType={activeTab}
+/>
+</div>
+)}
 
-					{/* Content Area */}
-					<div className={`transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
-				</div>
-			</div>
+{/* Content Area */}
+<div className={`transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
+</div>
+</div>
 
-			{user && <FloatingMessagingWidget />}
-		</div>
-	)
+{user && <FloatingMessagingWidget />}
+</div>
+)
 }
 
 export default Index

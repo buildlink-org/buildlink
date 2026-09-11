@@ -16,11 +16,12 @@ export const skillsService = {
     if (options.difficulty) {
       query = query.eq('difficulty_level', options.difficulty);
     }
-    
+
     query = query.order('created_at', { ascending: false });
-    
+
     const { data, error } = await query;
-    return { data, error };
+    if (error) throw error;
+    return data;
   },
 
   async getStats() {
@@ -32,26 +33,19 @@ export const skillsService = {
           .from('skill_resources')
           .select('*', { count: 'exact', head: true })
           .eq('type', type);
-        return { type, count, error };
+        if (error) throw error;
+        return { type, count: count ?? 0 };
       })
     );
-
-    const firstError = results.find((r) => r.error)?.error;
-    if (firstError) {
-      return { data: null, error: firstError };
-    }
 
     const toCount = (type: string) =>
       results.find((r) => r.type === type)?.count ?? 0;
 
     return {
-      data: {
-        coursesCount: toCount('course'),
-        webinarsCount: toCount('webinar'),
-        articlesCount: toCount('article'),
-        certificationsCount: toCount('certification'),
-      },
-      error: null,
+      coursesCount: toCount('course'),
+      webinarsCount: toCount('webinar'),
+      articlesCount: toCount('article'),
+      certificationsCount: toCount('certification'),
     };
   },
 };

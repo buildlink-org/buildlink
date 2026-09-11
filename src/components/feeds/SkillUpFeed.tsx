@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { skillsService } from "@/services/skillsService";
+import { resourcesEnrollmentService } from "@/services/resourcesEnrollmentService";
 import { Card, CardContent } from "../ui/card";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Skeleton } from "../ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 import SkillUpHeader from "./skillup/SkillUpHeader";
 import CourseItem from "./skillup/CourseItem";
 import WebinarItem from "./skillup/WebinarItem";
@@ -16,30 +18,83 @@ interface SkillUpFeedProps {
   activeFilter: string;
 }
 
+interface SkillResource {
+  id: string;
+  type: string;
+  title: string;
+  provider: string;
+  description: string;
+  duration: string | null;
+  difficulty_level: string | null;
+  rating: number | null;
+  reviews_count: number | null;
+  syllabus: unknown[] | null;
+  price: number | null;
+  thumbnail: string;
+  link: string;
+  category: string | null;
+  learning_outcomes: string[] | null;
+  prerequisites: string[] | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
   const [enrolledCourses, setEnrolledCourses] = useState<string[]>([]);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  const { data: resourcesData, isLoading, error, refetch } = useQuery({
+  const { data: resources, isLoading, error, refetch } = useQuery({
     queryKey: ['skillResources'],
     queryFn: () => skillsService.getSkillResources(),
+    staleTime: 2 * 60 * 1000,
+  });
+
+  // Fetch the user's existing enrollments so we can reflect persisted state
+  const { data: enrolledIds = [] } = useQuery({
+    queryKey: ['enrolledResourceIds'],
+    queryFn: () => resourcesEnrollmentService.getEnrolledResourceIds(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const enrollMutation = useMutation({
+    mutationFn: (resourceId: string) => resourcesEnrollmentService.enroll(resourceId),
+    onSuccess: (_data, resourceId) => {
+      setEnrolledCourses((prev) => prev.includes(resourceId) ? prev : [...prev, resourceId]);
+      queryClient.invalidateQueries({ queryKey: ["enrolledResourceIds"] });
+      toast({
+        title: "Enrolled",
+        description: "You've been enrolled in this course.",
+        variant: "default",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Enrollment failed",
+        description: "Could not enroll in this course. Please try again.",
+        variant: "destructive",
+      });
+    },
   });
 
   const handleEnroll = (courseId: string) => {
-    setEnrolledCourses(prev => [...prev, courseId]);
-    // Here you would typically make an API call to enroll the user
-    console.log(`Enrolled in course ${courseId}`);
+    if (enrolledCourses.includes(courseId)) return;
+    enrollMutation.mutate(courseId);
   };
 
-  const allResources = resourcesData?.data || [];
+  const allResources: SkillResource[] = resources ?? [];
 
   const courses = allResources.filter(r => r.type === 'course');
   const webinars = allResources.filter(r => r.type === 'webinar');
   const articles = allResources.filter(r => r.type === 'article');
   const certifications = allResources.filter(r => r.type === 'certification');
 
+  const effectiveEnrolled = Array.from(new Set([...enrolledCourses, ...enrolledIds]));
+
+  // Accessible loading announcement
   if (isLoading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" aria-live="polite" aria-busy={true}>
         <Skeleton className="h-40 w-full rounded-xl" />
         <div className="space-y-4">
           <Skeleton className="h-48 w-full" />
@@ -56,8 +111,10 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
         <Card>
           <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
             <p className="font-medium text-destructive">Could not load resources</p>
-            <p className="text-sm text-muted-foreground">Something went wrong while fetching the resource hub. Please try again.</p>
-            <Button onClick={() => refetch()} className="mt-1">
+            <p className="text-sm text-muted-foreground">
+              Something went wrong while fetching the resource hub. Please try again.
+            </p>
+            <Button onClick={() => refetch()}>
               Try Again
             </Button>
           </CardContent>
@@ -68,7 +125,7 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
 
   const itemCountLabel = (count: number) => (count === 1 ? "1 item" : `${count} items`);
 
-  const sections: { id: string; title: string; items: typeof courses; emptyText: string; renderItem: (item: any) => React.ReactNode }[] = [
+  const sections: { id: string; title: string; items: SkillResource[]; emptyText: string; renderItem: (item: SkillResource) => React.ReactNode }[] = [
     {
       id: "courses",
       title: "Featured Courses",
@@ -78,8 +135,9 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
         <CourseItem
           key={course.id}
           course={course}
-          enrolledCourses={enrolledCourses}
+          enrolledCourses={effectiveEnrolled}
           handleEnroll={handleEnroll}
+          isEnrolling={enrollMutation.isPending}
         />
       ),
     },
@@ -106,15 +164,20 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
     },
   ].filter((section) => activeFilter === "latest" || activeFilter === section.id);
 
+  const hasAnyContent = sections.length > 0 && sections.some(s => s.items.length > 0);
+
   return (
     <div className="space-y-6">
       <SkillUpHeader />
 
       <div className="space-y-8">
-        {sections.length === 0 && (
+        {!hasAnyContent && (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              No resources yet. Check back soon for new content.
+              <p>No resources yet. Check back soon for new content.</p>
+              <Button variant="outline" onClick={() => refetch()} className="mt-3">
+                Refresh
+              </Button>
             </CardContent>
           </Card>
         )}
@@ -127,7 +190,11 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
             </div>
 
             {section.items.length > 0 ? (
-              <div className="space-y-3">
+              <div
+                className="space-y-3"
+                role="group"
+                aria-label={`${section.title}, ${itemCountLabel(section.items.length)}`}
+              >
                 {section.items.map((item) => section.renderItem(item))}
               </div>
             ) : (
@@ -137,9 +204,9 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
             )}
           </section>
         ))}
-      </div>
 
-      <ProfessionalBodiesCard />
+        <ProfessionalBodiesCard />
+      </div>
     </div>
   );
 };

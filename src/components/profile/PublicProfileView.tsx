@@ -48,6 +48,17 @@ const getYearsActive = (profile: UserProfile): string | null => {
   return (profile as any).years_active || null
 }
 
+const getSafeExternalUrl = (value?: string): string | null => {
+  if (!value) return null
+
+  try {
+    const url = new URL(value)
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null
+  } catch {
+    return null
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -590,32 +601,36 @@ const renderButtons = () => {
             {/* Fix #1 — renders real featured data instead of hardcoded placeholder cards */}
             {featuredItems.length > 0 ? (
               <div className="space-y-3">
-                {featuredItems.map((item, index) => (
-                  <div
-                    key={`${item.title || item.name || "featured"}-${index}`}
-                    className="flex items-start gap-3 rounded-lg border border-border p-3"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                      <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                {featuredItems.map((item, index) => {
+                  const safeLink = getSafeExternalUrl(item.link)
+
+                  return (
+                    <div
+                      key={`${item.title|| item.name || "featured"}-${index}`}
+                      className="flex items-start gap-3 rounded-lg border border-border p-3"
+                    >
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
+                        <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold text-foreground">{item.title || item.name}</p>
+                        {item.description && (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
+                        )}
+                        {safeLink && (
+                          <a
+                            className="mt-1 inline-block text-xs text-primary hover:underline"
+                            href={safeLink}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            View details
+                          </a>
+                        )}
+                      </div>
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-foreground">{item.title || item.name}</p>
-                      {item.description && (
-                        <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
-                      )}
-                      {item.link && (
-                        <a
-                          className="mt-1 inline-block text-xs text-primary hover:underline"
-                          href={item.link}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          View details
-                        </a>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             ) : (
               <EmptyState
