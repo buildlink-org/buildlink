@@ -174,15 +174,18 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
         {!hasAnyContent && (
           <Card>
             <CardContent className="p-8 text-center text-muted-foreground">
-              <p>No resources yet. Check back soon for new content.</p>
-              <Button variant="outline" onClick={() => refetch()} className="mt-3">
+              <h2 className="text-2xl font-bold text-[#ac2913] text-center">
+                Coming Soon
+              </h2>
+              {/* <Button variant="outline" onClick={() => refetch()} className="mt-3">
                 Refresh
-              </Button>
+              </Button> */}
             </CardContent>
           </Card>
         )}
 
-        {sections.map((section) => (
+       {/** 
+        * {sections.map((section) => (
           <section key={section.id} className="space-y-3">
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
@@ -204,6 +207,7 @@ const SkillUpFeed = ({ activeFilter }: SkillUpFeedProps) => {
             )}
           </section>
         ))}
+       */} 
 
         <ProfessionalBodiesCard />
       </div>
