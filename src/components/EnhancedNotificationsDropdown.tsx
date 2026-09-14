@@ -23,6 +23,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import {
   NotificationService,
   groupNotifications,
+  getNotificationCategory,
 } from "@/services/notificationService";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -32,8 +33,8 @@ import { useCommentsStore } from "@/stores/commentsStore";
 
 const notificationCategories = [
   { id: "all", label: "All", icon: Bell },
-  { id: "follows", label: "Follows", icon: User },
-  { id: "comments", label: "Comments", icon: MessageCircle },
+  { id: "posts", label: "Posts", icon: MessageCircle },
+  { id: "connections", label: "Connections", icon: User },
   { id: "jobs", label: "Jobs", icon: Briefcase },
   { id: "training", label: "Training", icon: BookOpen },
 ];
@@ -71,8 +72,13 @@ const EnhancedNotificationsDropdown = () => {
         await NotificationService.getNotificationsPaginated(user.id, 20, 0);
       if (error) return;
 
-      setNotifications(data || []);
-      setUnreadCount((data || []).filter((n) => !n.read).length);
+      const normalized = (data || []).map((n) => ({
+        ...n,
+        category: getNotificationCategory(n),
+      }));
+
+      setNotifications(normalized);
+      setUnreadCount(normalized.filter((n) => !n.read).length);
     } finally {
       setLoading(false);
     }
@@ -99,12 +105,24 @@ const EnhancedNotificationsDropdown = () => {
           table: "notifications",
           filter: `user_id=eq.${user.id}`,
         },
-        (payload) => {
-          const newNotification = payload.new as any;
-          setNotifications((prev) => [newNotification, ...prev]);
-          if (!newNotification.read) {
+        async (payload) => {
+          const rawNotification = payload.new as any;
+          const hydrated = await NotificationService.hydrateNotification(rawNotification);
+
+          setNotifications((prev) => [hydrated, ...prev]);
+          if (!hydrated.read) {
             setUnreadCount((prev) => prev + 1);
           }
+
+          toast({
+            title: "New Notification",
+            description: hydrated.content,
+          });
+
+          NotificationService.sendBrowserPushNotification("BuildLink Notification", {
+            body: hydrated.content,
+            tag: hydrated.id,
+          });
         },
       )
       .subscribe();
@@ -112,7 +130,7 @@ const EnhancedNotificationsDropdown = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, toast]);
 
   const markAsRead = async (id: string) => {
     await NotificationService.markAsRead(id);
@@ -129,18 +147,10 @@ const EnhancedNotificationsDropdown = () => {
     setUnreadCount(0);
   };
 
-  // Category mapping
-  const categoryMap: Record<string, string> = {
-    follows: "connection",
-    comments: "comment",
-    jobs: "job",
-    training: "training",
-  };
-
   const filteredNotifications = notifications
     .filter((n) => {
       if (activeCategory === "all") return true;
-      return n.type === categoryMap[activeCategory];
+      return getNotificationCategory(n) === activeCategory;
     })
     .sort(
       (a, b) =>
@@ -152,14 +162,20 @@ const EnhancedNotificationsDropdown = () => {
     [filteredNotifications],
   );
 
-  //Handle click routing
   const handleNotificationClick = async (n: any) => {
     if (!n.read) await markAsRead(n.id);
 
+    const postId = n.post_id || n.entity_id || n.target_id || n.data?.post_id || n.data?.entity_id;
+    const userId = n.from_user?.id || n.user_id;
+
     switch (n.type) {
       case "connection":
-        navigate(`/profile/${n.from_user?.id}`);
+      case "follow":
+      case "profile":
+        if (userId) navigate(`/profile/${userId}`);
+        else navigate(`/profile`);
         break;
+
       case "message":
         openConversation(
           n.from_user?.id,
@@ -167,26 +183,27 @@ const EnhancedNotificationsDropdown = () => {
           n.from_user?.avatar,
         );
         break;
+
       case "comment":
-      case "like": {
-        const postId = n.post_id || n.entity_id || n.target_id;
-
-        //if (!postId) {
-        //console.warn("Missing postId in notification:", n)
-        //return
-        //}
-
-        openComments(postId);
+      case "like":
+      case "mention":
+      case "post":
+        if (postId) {
+          openComments(postId);
+        }
+        navigate(`/feed`);
         break;
-      }
+
       case "job":
-        navigate(`/jobs/${n.job_id}`);
-        break;
       case "training":
-        navigate(`/training/${n.training_id}`);
+        navigate(`/resource-hub`);
         break;
+
       default:
-        navigate(`/notifications`);
+        if (postId) {
+          openComments(postId);
+        }
+        navigate(`/feed`);
     }
 
     setIsOpen(false);
@@ -255,46 +272,55 @@ const EnhancedNotificationsDropdown = () => {
             ) : (
               groupedNotifications.map((n) => {
                 const name = n.from_user?.full_name
-                  ? n.from_user.full_name.charAt(0).toUpperCase() +
-                    n.from_user.full_name.slice(1)
+                  ? n.from_user.full_name
                   : "User";
+
+                const contentStartsWithName = n.content
+                  ?.toLowerCase()
+                  .startsWith(name.toLowerCase());
 
                 return (
                   <div
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`flex justify-between p-4 border-b cursor-pointer ${
-                      !n.read ? "bg-accent/30" : ""
+                    className={`flex justify-between p-4 border-b cursor-pointer hover:bg-accent/50 transition-colors ${
+                      !n.read ? "bg-accent/30 font-medium" : ""
                     }`}>
                     <div className="flex gap-2">
                       {/* Icon */}
-                      <div>{typeIcons[n.type]}</div>
+                      <div className="mt-0.5">{typeIcons[n.type] || <Bell className="h-5 w-5 text-primary" />}</div>
 
                       {/* Avatar */}
-                      <Avatar className="h-8 w-8">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
                         <AvatarImage src={n.from_user?.avatar} />
-                        <AvatarFallback>{name[0]}</AvatarFallback>
+                        <AvatarFallback>{name[0]?.toUpperCase() || "U"}</AvatarFallback>
                       </Avatar>
 
                       {/* Content */}
                       <div>
                         <p className="text-sm">
-                          <strong>{name}</strong> {n.content}
+                          {!contentStartsWithName && (
+                            <strong className="mr-1">{name}</strong>
+                          )}
+                          {n.content}
                           {n.groupCount && n.groupCount > 1 && (
-                            <span className="ml-1 text-xs text-muted-foreground">
+                            <span className="ml-1 text-xs text-muted-foreground font-normal">
                               (+{n.groupCount - 1} more)
                             </span>
                           )}
                         </p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(n.created_at).toLocaleDateString()}
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {new Date(n.created_at).toLocaleString(undefined, {
+                            dateStyle: "short",
+                            timeStyle: "short",
+                          })}
                         </p>
                       </div>
                     </div>
 
                     {/* Unread dot */}
                     {!n.read && (
-                      <div className="mt-2 h-2 w-2 rounded-full bg-primary" />
+                      <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-full bg-primary" />
                     )}
                   </div>
                 );
@@ -308,3 +334,4 @@ const EnhancedNotificationsDropdown = () => {
 };
 
 export default EnhancedNotificationsDropdown;
+

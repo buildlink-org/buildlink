@@ -18,13 +18,7 @@ export interface Notification {
 }
 
 export const NotificationService = {
-	/**
-	 * Fetch notifications for a user.
-	 * Tries the RPC function first, falls back to a direct query if the
-	 * function is missing or returns an error.
-	 */
 	async getNotification(userId: string) {
-		// Try the RPC function first
 		const { data: rpcData, error: rpcError } = await supabase.rpc(
 			"get_notification_for_user",
 			{ input_user_id: userId }
@@ -34,7 +28,6 @@ export const NotificationService = {
 			return { data: rpcData, error: null }
 		}
 
-		// Fallback: direct query with join
 		const { data, error } = await supabase
 			.from("notifications")
 			.select("*, from_user:from_user_id(id, full_name, avatar)")
@@ -45,9 +38,6 @@ export const NotificationService = {
 		return { data, error }
 	},
 
-	/**
-	 * Paginated notifications query (direct table query).
-	 */
 	async getNotificationsPaginated(userId: string, limit: number = 20, offset: number = 0) {
 		const { data, error } = await supabase
 			.from("notifications")
@@ -58,12 +48,6 @@ export const NotificationService = {
 		return { data, error }
 	},
 
-	/**
-	 * Create a notification via the create_notification RPC.
-	 * Returns the notification ID on success, or null on failure.
-	 * Errors are logged but not thrown — callers should treat
-	 * notification creation as best-effort.
-	 */
 	async createNotification(params: {
 		user_id: string
 		type: string
@@ -86,9 +70,6 @@ export const NotificationService = {
 		return { data, error }
 	},
 
-	/**
-	 * Mark a single notification as read.
-	 */
 	async markAsRead(notificationId: string) {
 		const { data, error } = await supabase
 			.from("notifications")
@@ -97,9 +78,6 @@ export const NotificationService = {
 		return { data, error }
 	},
 
-	/**
-	 * Mark all unread notifications for a user as read.
-	 */
 	async markAllAsRead(userId: string) {
 		const { data, error } = await supabase
 			.from("notifications")
@@ -108,6 +86,98 @@ export const NotificationService = {
 			.eq("read", false)
 		return { data, error }
 	},
+
+	async hydrateNotification(rawNotification: any): Promise<Notification> {
+		const notification: Notification = {
+			...rawNotification,
+			category: getNotificationCategory(rawNotification),
+			read: rawNotification.read ?? false,
+		}
+
+		const senderId = rawNotification.from_user_id || rawNotification.from_user?.id
+		if (senderId && (!notification.from_user || !notification.from_user.full_name)) {
+			try {
+				const { data: profile } = await supabase
+					.from("profiles")
+					.select("id, full_name, avatar")
+					.eq("id", senderId)
+					.single()
+
+				if (profile) {
+					notification.from_user = {
+						id: profile.id,
+						full_name: profile.full_name || "User",
+						avatar: profile.avatar || "",
+					}
+				}
+			} catch (err) {
+				console.warn("[NotificationService] Failed to hydrate sender profile:", err)
+			}
+		}
+
+		return notification
+	},
+
+	async requestBrowserPushPermission(): Promise<NotificationPermission | "unsupported"> {
+		if (typeof window === "undefined" || !("Notification" in window)) {
+			return "unsupported"
+		}
+		return await window.Notification.requestPermission()
+	},
+
+	sendBrowserPushNotification(title: string, options?: NotificationOptions) {
+		if (
+			typeof window !== "undefined" &&
+			"Notification" in window &&
+			window.Notification.permission === "granted"
+		) {
+			try {
+				new window.Notification(title, {
+					icon: "/favicon.ico",
+					...options,
+				})
+			} catch (e) {
+				console.warn("[NotificationService] Browser Notification error:", e)
+			}
+		}
+	},
+}
+
+export function getNotificationCategory(notification: { category?: string | null; type?: string | null }): string {
+	if (notification.category && notification.category !== "general") {
+		return notification.category.toLowerCase()
+	}
+
+	const type = (notification.type || "").toLowerCase()
+
+	switch (type) {
+		case "like":
+		case "comment":
+		case "mention":
+		case "post":
+		case "share":
+			return "posts"
+		case "follow":
+		case "connection":
+		case "connection_request":
+			return "connections"
+		case "job":
+		case "application":
+			return "jobs"
+		case "mentorship":
+		case "mentor_request":
+			return "mentorship"
+		case "training":
+		case "course":
+			return "training"
+		case "message":
+			return "messages"
+		case "system":
+		case "security":
+			return "system"
+		default:
+			return "general"
+	}
 }
 
 export interface GroupedNotification extends Notification {
@@ -115,26 +185,26 @@ export interface GroupedNotification extends Notification {
 	groupUsers?: { full_name: string; avatar: string }[]
 }
 
-const GROUP_WINDOW_MS = 60 * 60 * 1000 // 1 hour
+const GROUP_WINDOW_MS = 60 * 60 * 1000
 
-/**
- * Group like/comment/follow notifications by type + post_id within a time window.
- * This collapses "X, Y, Z liked your post" into a single grouped notification.
- */
 export function groupNotifications(notifications: Notification[]): GroupedNotification[] {
 	const groups = new Map<string, Notification[]>()
 	const singles: Notification[] = []
 
 	for (const n of notifications) {
-		// Only group like/comment/follow type notifications with a post_id
-		if (n.post_id && (n.type === "like" || n.type === "comment" || n.type === "follow")) {
-			const key = `${n.type}:${n.post_id}`
+		const normalized: Notification = {
+			...n,
+			category: getNotificationCategory(n),
+		}
+
+		if (normalized.post_id && (normalized.type === "like" || normalized.type === "comment" || normalized.type === "follow")) {
+			const key = `${normalized.type}:${normalized.post_id}`
 			if (!groups.has(key)) {
 				groups.set(key, [])
 			}
-			groups.get(key)!.push(n)
+			groups.get(key)!.push(normalized)
 		} else {
-			singles.push(n)
+			singles.push(normalized)
 		}
 	}
 
@@ -146,14 +216,11 @@ export function groupNotifications(notifications: Notification[]): GroupedNotifi
 			continue
 		}
 
-		// Sort by created_at descending, take the most recent as representative
 		items.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
-		// Check if all items are within the time window
 		const latest = new Date(items[0].created_at).getTime()
 		const earliest = new Date(items[items.length - 1].created_at).getTime()
 		if (latest - earliest > GROUP_WINDOW_MS) {
-			// Items span too much time — keep them separate
 			singles.push(...items)
 			continue
 		}
@@ -181,7 +248,6 @@ export function groupNotifications(notifications: Notification[]): GroupedNotifi
 		grouped.push(representative)
 	}
 
-	// Sort singles by created_at descending
 	singles.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
 
 	return [...grouped, ...singles].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
