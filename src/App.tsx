@@ -6,6 +6,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { DataSaverProvider } from "@/contexts/DataSaverContext";
 import AppRoutes from "./AppRoutes";
+import GlobalCommentsDialog from "@/components/GlobalCommentsDialog";
 
 
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ const App = () => (
 					<Sonner />
 				<BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
 						<AppRoutes />
+						<GlobalCommentsDialog />
 					</BrowserRouter>
 					</TooltipProvider>
 				</DataSaverProvider>

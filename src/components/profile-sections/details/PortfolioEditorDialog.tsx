@@ -182,9 +182,9 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setError("File size must be 10MB or less.")
       return false
     }
-    // Check portfolio limit
-    if (portfolioList.length >= 3) {
-      setError("You can only upload up to 3 portfolio items.");
+    // Check portfolio limit (max 20 items)
+    if (portfolioList.length >= 20) {
+      setError("You can upload up to 20 portfolio items.");
       return false;
     }
 
@@ -248,9 +248,9 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const handleAddPortfolio = async () => {
     if (!linkURL && !selectedFile) return;
     
-    // Check portfolio limit
-    if (portfolioList.length >= 3) {
-      setError("You can only upload up to 3 portfolio items.");
+    // Check portfolio limit (max 20 items)
+    if (portfolioList.length >= 20) {
+      setError("You can upload up to 20 portfolio items.");
       return;
     }
     
@@ -418,11 +418,11 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             <Progress value={progress} className="mt-2" />
           )}
 
-          {portfolioList.length >= 3 && (
-            <p className="mt-1.5 text-xs text-destructive">Portfolio limit reached (3/3). Remove an item to add a new one.</p>
+          {portfolioList.length >= 20 && (
+            <p className="mt-1.5 text-xs text-destructive">Portfolio limit reached (20/20). Remove an item to add a new one.</p>
           )}
-          {portfolioList.length > 0 && portfolioList.length < 3 && (
-            <p className="mt-1.5 text-xs text-blue-500 dark:text-blue-400">{portfolioList.length}/3 items uploaded</p>
+          {portfolioList.length > 0 && portfolioList.length < 20 && (
+            <p className="mt-1.5 text-xs text-blue-500 dark:text-blue-400">{portfolioList.length} items uploaded</p>
           )}
         </div>
 

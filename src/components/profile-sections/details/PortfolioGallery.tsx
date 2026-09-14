@@ -2,10 +2,122 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog"
 import PortfolioThumbnail from "./PortfolioThumbnail"
 import { Button } from "@/components/ui/button"
-import { Trash, FileText, Edit, Check, X, Image as ImageIcon, GripVertical, ArrowLeftRight, ExternalLink } from "lucide-react"
+import { Trash, FileText, Edit, Check, X, Image as ImageIcon, GripVertical, ArrowLeftRight, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react"
 import { PortfolioItem } from "@/types"
 import MediaPreview from "@/components/ui/media-preview"
 import { supabase } from "@/integrations/supabase/client"
+
+// PDF Canvas Page Carousel Viewer
+const PdfCanvasViewer = ({ url, title }: { url: string; title: string }) => {
+	const [numPages, setNumPages] = useState<number>(0)
+	const [currentPage, setCurrentPage] = useState<number>(1)
+	const [loading, setLoading] = useState<boolean>(true)
+	const [error, setError] = useState<boolean>(false)
+	const canvasRef = useRef<HTMLCanvasElement>(null)
+
+	useEffect(() => {
+		let isMounted = true
+		setLoading(true)
+		setError(false)
+
+		const loadPdf = async () => {
+			try {
+				if (!(window as any).pdfjsLib) {
+					await new Promise((resolve, reject) => {
+						const script = document.createElement("script")
+						script.src = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+						script.onload = () => {
+							;(window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+								"https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js"
+							resolve(true)
+						}
+						script.onerror = reject
+						document.head.appendChild(script)
+					})
+				}
+
+				const pdfjsLib = (window as any).pdfjsLib
+				const pdf = await pdfjsLib.getDocument(url).promise
+				if (!isMounted) return
+				setNumPages(pdf.numPages)
+
+				const page = await pdf.getPage(currentPage)
+				if (!isMounted || !canvasRef.current) return
+
+				const viewport = page.getViewport({ scale: 1.3 })
+				const canvas = canvasRef.current
+				const context = canvas.getContext("2d")
+				if (!context) return
+
+				canvas.height = viewport.height
+				canvas.width = viewport.width
+
+				await page.render({ canvasContext: context, viewport }).promise
+				if (isMounted) setLoading(false)
+			} catch {
+				if (isMounted) {
+					setError(true)
+					setLoading(false)
+				}
+			}
+		}
+
+		loadPdf()
+		return () => {
+			isMounted = false
+		}
+	}, [url, currentPage])
+
+	if (error) {
+		return (
+			<div className="w-full h-full max-h-[72vh] max-w-5xl rounded-lg overflow-hidden border border-white/10 bg-slate-900 shadow-2xl flex flex-col">
+				<iframe src={`${url}#toolbar=1&navpanes=0&scrollbar=1`} className="w-full h-full border-0" title={title} />
+			</div>
+		)
+	}
+
+	return (
+		<div className="flex flex-col items-center justify-center w-full max-w-4xl">
+			<div className="relative flex items-center justify-center bg-slate-900/90 p-2 rounded-lg border border-white/10 shadow-2xl max-h-[68vh] overflow-auto">
+				{loading && (
+					<div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 text-white z-10 rounded-lg">
+						<div className="flex flex-col items-center gap-2">
+							<div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+							<span className="text-xs text-gray-300 font-mono">Loading Page {currentPage}...</span>
+						</div>
+					</div>
+				)}
+				<canvas ref={canvasRef} className="max-h-[64vh] object-contain rounded shadow-lg" />
+			</div>
+
+			{numPages > 1 && (
+				<div className="mt-3 flex items-center space-x-3 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 shadow-lg z-50">
+					<Button
+						variant="ghost"
+						size="sm"
+						disabled={currentPage <= 1}
+						onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+						className="text-xs text-white hover:bg-white/20 h-7 px-2"
+					>
+						‹ Prev Page
+					</Button>
+					<span className="text-xs text-gray-300 font-mono">
+						Page {currentPage} of {numPages}
+					</span>
+					<Button
+						variant="ghost"
+						size="sm"
+						disabled={currentPage >= numPages}
+						onClick={() => setCurrentPage((p) => Math.min(numPages, p + 1))}
+						className="text-xs text-white hover:bg-white/20 h-7 px-2"
+					>
+						Next Page ›
+					</Button>
+				</div>
+			)}
+		</div>
+	)
+}
 
 
 interface PortfolioGalleryProps {
@@ -21,6 +133,8 @@ interface PortfolioGalleryProps {
 	updating?: boolean
 	activeIndex?: number
 	setActiveIndex?: (i: number) => void
+	directViewerMode?: boolean
+	setDirectViewerMode?: (direct: boolean) => void
 }
 
 const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
@@ -36,6 +150,8 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 	updating = false,
 	activeIndex = 0,
 	setActiveIndex,
+	directViewerMode = false,
+	setDirectViewerMode,
 }) => {
 	const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -86,18 +202,47 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 	const [viewerOpen, setViewerOpen] = useState(false)
 	const [viewerIndex, setViewerIndex] = useState(0)
 
+	// Auto-launch viewer when opened in directViewerMode
+	useEffect(() => {
+		if (open && directViewerMode) {
+			setViewerIndex(activeIndex)
+			setViewerOpen(true)
+		}
+	}, [open, directViewerMode, activeIndex])
+
 	const openViewer = (index: number) => {
 		setViewerIndex(index)
+		if (setActiveIndex) setActiveIndex(index)
 		setViewerOpen(true)
 	}
 
-		const handleViewerPrev = useCallback(() => {
-		setViewerIndex((prev) => (prev - 1 + localOrder.length) % localOrder.length)
-	}, [localOrder.length])
+	const handleCloseViewer = () => {
+		setViewerOpen(false)
+		if (directViewerMode) {
+			setDirectViewerMode?.(false)
+			setOpen(false)
+		}
+	}
 
-	const handleViewerNext = useCallback(() => {
-		setViewerIndex((prev) => (prev + 1) % localOrder.length)
-	}, [localOrder.length])
+	const handleOpenChange = (isOpen: boolean) => {
+		setOpen(isOpen)
+		if (!isOpen) {
+			setDirectViewerMode?.(false)
+			setViewerOpen(false)
+		}
+	}
+
+	const handleViewerPrev = () => {
+		const nextIdx = (viewerIndex - 1 + localOrder.length) % localOrder.length
+		setViewerIndex(nextIdx)
+		if (setActiveIndex) setActiveIndex(nextIdx)
+	}
+
+	const handleViewerNext = () => {
+		const nextIdx = (viewerIndex + 1) % localOrder.length
+		setViewerIndex(nextIdx)
+		if (setActiveIndex) setActiveIndex(nextIdx)
+	}
 
 	// Keyboard arrow navigation in viewer
 	useEffect(() => {
@@ -105,16 +250,15 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 			if (!viewerOpen) return
 			if (e.key === "ArrowLeft") handleViewerPrev()
 			if (e.key === "ArrowRight") handleViewerNext()
-			if (e.key === "Escape") setViewerOpen(false)
+			if (e.key === "Escape") handleCloseViewer()
 		}
 		window.addEventListener("keydown", handleKeyDown)
 		return () => window.removeEventListener("keydown", handleKeyDown)
-	}, [viewerOpen, handleViewerNext, handleViewerPrev])
+	}, [viewerOpen, localOrder.length, viewerIndex])
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy callback shape
 	const handleItemClick = (item: any, index: number) => {
 		if (editingId || arrangeMode) return
-		if (setActiveIndex) setActiveIndex(index)
 		openViewer(index)
 	}
 
@@ -305,7 +449,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 
 	return (
 		<>
-			<Dialog open={open} onOpenChange={setOpen}>
+			<Dialog open={open && !directViewerMode} onOpenChange={handleOpenChange}>
 				<DialogContent
 					className="w-[calc(100vw-2rem)] max-w-4xl rounded-xl shadow-lg p-4 sm:p-6"
 					description="View, rearrange, rename, or remove your portfolio projects">
@@ -391,7 +535,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 
 			{/* Sideways Carousel Project View Screen */}
 			{currentViewerItem && (
-				<Dialog open={viewerOpen} onOpenChange={setViewerOpen}>
+				<Dialog open={viewerOpen} onOpenChange={(v) => { if (!v) handleCloseViewer() }}>
 					<DialogContent showCloseButton={false} className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0 bg-slate-950/95 text-white border-none flex flex-col justify-between overflow-hidden shadow-2xl">
 						{/* Top Header */}
 						<div className="flex items-center justify-between p-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10 z-50">
@@ -404,69 +548,151 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 										</p>
 									)}
 								</div>
-								<span className="text-xs px-2 py-0.5 rounded-full font-medium bg-primary/20 text-primary-foreground border border-primary/30 shrink-0">
-									{currentViewerItem.type.toUpperCase()}
+								<span className="text-xs px-2.5 py-0.5 rounded-full font-semibold bg-primary/20 text-primary-foreground border border-primary/30 shrink-0 uppercase tracking-wider">
+									{currentViewerItem.type}
 								</span>
 							</div>
 
 							<div className="flex items-center space-x-3 shrink-0">
 								{localOrder.length > 1 && (
-									<span className="text-xs text-gray-400 font-mono">
-										{viewerIndex + 1} / {localOrder.length}
+									<span className="text-xs text-gray-400 font-mono bg-white/10 px-2 py-1 rounded-md">
+										Project {viewerIndex + 1} of {localOrder.length}
 									</span>
 								)}
-								<Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20 rounded-full" onClick={() => setViewerOpen(false)}>
+								<Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20 rounded-full" onClick={handleCloseViewer}>
 									<X className="h-5 w-5" />
 								</Button>
 							</div>
 						</div>
 
-						{/* Main Content Area */}
-						<div className="relative flex-1 w-full h-full flex items-center justify-center p-4 overflow-hidden">
-							{/* Content based on type */}
-							{currentViewerItem.type === "pdf" ? (
-								<div className="w-full h-full max-h-[75vh] rounded-lg overflow-hidden border border-white/10 bg-white">
-									<MediaPreview url={currentViewerItem.url} type="pdf" name={currentViewerItem.name} size="lg" showActions />
-								</div>
-							) : currentViewerItem.type === "link" ? (
-								<div className="flex flex-col items-center justify-center text-center p-8 bg-slate-900/60 rounded-2xl border border-white/10 max-w-lg">
-									<ExternalLink className="h-16 w-16 text-blue-400 mb-4" />
-									<h4 className="text-xl font-bold mb-2 text-white">{currentViewerItem.name}</h4>
-									{currentViewerItem.description && <p className="text-sm text-gray-300 mb-6">{currentViewerItem.description}</p>}
-									<Button onClick={() => window.open(currentViewerItem.url, "_blank", "noopener,noreferrer")} className="gap-2">
-										<ExternalLink className="h-4 w-4" /> Open Project Link
-									</Button>
-								</div>
-							) : (
-								<img
-									src={currentViewerItem.url}
-									alt={currentViewerItem.name}
-									className="max-h-[75vh] max-w-[85vw] object-contain rounded-lg shadow-2xl"
-								/>
-							)}
+						{/* Main 3D Cover Flow Content Area */}
+						<div className="relative flex-1 w-full h-full flex flex-col items-center justify-center p-4 overflow-hidden">
+							{/* 3D Cover Flow Cards Stack */}
+							<div className="relative w-full max-w-5xl h-[62vh] flex items-center justify-center">
+								{localOrder.map((item, idx) => {
+									const offset = idx - viewerIndex
+									const isCenter = offset === 0
+									const isLeft1 = offset === -1
+									const isRight1 = offset === 1
+									const isLeft2 = offset === -2
+									const isRight2 = offset === 2
+									const isVisible = Math.abs(offset) <= 2
 
-							{/* Left Arrow */}
+									if (!isVisible) return null
+
+									// Calculate 3D transforms matching cover flow screenshot
+									let transform = ""
+									let zIndex = 0
+									let opacity = 1
+
+									if (isCenter) {
+										transform = "translateX(0%) scale(1)"
+										zIndex = 30
+										opacity = 1
+									} else if (isLeft1) {
+										transform = "translateX(-70%) scale(0.88)"
+										zIndex = 20
+										opacity = 0.8
+									} else if (isRight1) {
+										transform = "translateX(70%) scale(0.88)"
+										zIndex = 20
+										opacity = 0.8
+									} else if (isLeft2) {
+										transform = "translateX(-135%) scale(0.76)"
+										zIndex = 10
+										opacity = 0.45
+									} else if (isRight2) {
+										transform = "translateX(135%) scale(0.76)"
+										zIndex = 10
+										opacity = 0.45
+									}
+
+									return (
+										<div
+											key={item.id}
+											onClick={() => !isCenter && openViewer(idx)}
+											style={{
+												transform,
+												zIndex,
+												opacity,
+												transition: "all 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
+											}}
+											className={`absolute top-1/2 -translate-y-1/2 w-[70vw] max-w-2xl h-[54vh] max-h-[520px] rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-slate-900 flex flex-col items-center justify-center select-none ${
+												isCenter ? "ring-2 ring-primary/50 shadow-primary/20 cursor-default" : "cursor-pointer hover:opacity-90"
+											}`}
+										>
+											{item.type === "pdf" ? (
+												<PdfCanvasViewer url={item.url} title={item.name} />
+											) : item.type === "link" ? (
+												<div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/90 w-full h-full">
+													<ExternalLink className="h-14 w-14 text-blue-400 mb-3 animate-bounce" />
+													<h4 className="text-lg font-bold mb-1 text-white">{item.name}</h4>
+													{item.description && <p className="text-xs text-gray-300 mb-4 line-clamp-3">{item.description}</p>}
+													<Button onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")} size="sm" className="gap-2 font-semibold">
+														<ExternalLink className="h-3.5 w-3.5" /> Open Project Link
+													</Button>
+												</div>
+											) : (
+												<div className="w-full h-full flex items-center justify-center bg-black/40 p-2">
+													<img
+														src={item.url}
+														alt={item.name}
+														className="max-h-full max-w-full object-contain rounded-lg shadow-xl"
+													/>
+												</div>
+											)}
+
+											{/* Bottom label banner on active center card */}
+											{isCenter && item.description && item.type !== "link" && (
+												<div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent backdrop-blur-sm text-center z-40">
+													<p className="text-xs text-gray-200 line-clamp-2">{item.description}</p>
+												</div>
+											)}
+										</div>
+									)
+								})}
+							</div>
+
+							{/* Left Arrow Navigation */}
 							{localOrder.length > 1 && (
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="icon"
 									onClick={handleViewerPrev}
-									className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-white/10 z-40 transition-transform active:scale-95"
-									aria-label="Previous item"
+									className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 z-40 transition-all active:scale-95 shadow-2xl"
+									aria-label="Previous project"
 								>
-									‹
-								</button>
+									<ChevronLeft className="h-6 w-6" />
+								</Button>
 							)}
 
-							{/* Right Arrow */}
+							{/* Right Arrow Navigation */}
 							{localOrder.length > 1 && (
-								<button
-									type="button"
+								<Button
+									variant="ghost"
+									size="icon"
 									onClick={handleViewerNext}
-									className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-white/10 z-40 transition-transform active:scale-95"
-									aria-label="Next item"
+									className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 z-40 transition-all active:scale-95 shadow-2xl"
+									aria-label="Next project"
 								>
-									›
-								</button>
+									<ChevronRight className="h-6 w-6" />
+								</Button>
+							)}
+
+							{/* 3D Cover Flow Pagination Dots (• • •) matching prompt design */}
+							{localOrder.length > 1 && (
+								<div className="mt-2 flex items-center justify-center space-x-2 z-50">
+									{localOrder.map((_, idx) => (
+										<button
+											key={idx}
+											onClick={() => openViewer(idx)}
+											className={`h-3 rounded-full transition-all duration-300 ${
+												idx === viewerIndex ? "w-8 bg-white shadow-lg shadow-white/50" : "w-3 bg-white/30 hover:bg-white/60"
+											}`}
+											aria-label={`Go to slide ${idx + 1}`}
+										/>
+									))}
+								</div>
 							)}
 						</div>
 
@@ -476,12 +702,14 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 								{localOrder.map((item, idx) => (
 									<button
 										key={item.id}
-										onClick={() => setViewerIndex(idx)}
+										onClick={() => openViewer(idx)}
 										className={`relative h-12 w-16 rounded-md overflow-hidden border-2 transition-all shrink-0 ${
-											idx === viewerIndex ? "border-primary scale-105 shadow-md" : "border-transparent opacity-50 hover:opacity-100"
+											idx === viewerIndex ? "border-primary scale-105 shadow-lg ring-2 ring-primary/50" : "border-transparent opacity-50 hover:opacity-100"
 										}`}
 									>
-										{item.type === "pdf" ? (
+										{item.thumbnailUrl ? (
+											<img src={item.thumbnailUrl} alt={item.name} className="w-full h-full object-cover" />
+										) : item.type === "pdf" ? (
 											<div className="w-full h-full bg-red-950/80 flex items-center justify-center text-[10px] font-bold text-red-300">
 												PDF
 											</div>

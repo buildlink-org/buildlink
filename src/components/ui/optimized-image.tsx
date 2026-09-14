@@ -34,21 +34,9 @@ const OptimizedImage = ({
   const imgRef = useRef<HTMLImageElement>(null);
   const placeholderRef = useRef<HTMLDivElement>(null);
 
-  // Generate optimized src URL
+  // Return clean image URL
   const getOptimizedSrc = (originalSrc: string) => {
-    if (!originalSrc || dataSaver) return originalSrc;
-    
-    try {
-      const url = new URL(originalSrc);
-      if (url.hostname.includes('supabase')) {
-        url.searchParams.set('width', width.toString());
-        url.searchParams.set('quality', (dataSaver ? 50 : quality).toString());
-        return url.toString();
-      }
-    } catch {
-      // If URL parsing fails, return original
-    }
-    
+    if (!originalSrc) return '';
     return originalSrc;
   };
 
@@ -168,7 +156,8 @@ const OptimizedImage = ({
           src={optimizedSrc}
           alt={alt}
           className={cn(
-            'block max-h-60 object-contain transition-opacity duration-300',
+            'w-full h-full object-cover transition-opacity duration-300',
+            className,
             isLoaded ? 'opacity-100' : 'opacity-0',
             error && 'hidden'
           )}

@@ -119,21 +119,9 @@ export const optimizedPostsService = {
     }
   },
 
-  // Get optimized image URL for data saver mode
-  getOptimizedImageUrl(originalUrl: string, options: { width?: number; quality?: number; format?: string } = {}) {
+  // Get image URL
+  getOptimizedImageUrl(originalUrl: string) {
     if (!originalUrl) return '';
-    
-    const { width = 400, quality = 70, format = 'webp' } = options;
-    
-    // If using Supabase storage, add transformation parameters
-    if (originalUrl.includes('supabase')) {
-      const url = new URL(originalUrl);
-      url.searchParams.set('width', width.toString());
-      url.searchParams.set('quality', quality.toString());
-      if (format) url.searchParams.set('format', format);
-      return url.toString();
-    }
-    
     return originalUrl;
   },
 
