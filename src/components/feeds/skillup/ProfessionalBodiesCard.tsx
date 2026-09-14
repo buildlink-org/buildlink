@@ -45,7 +45,7 @@ const ProfessionalBodiesCard = () => {
           <span className="h-5 w-1 rounded-full bg-primary" aria-hidden />
           <CardTitle className="text-base font-semibold text-foreground flex items-center gap-2">
             <Award className="h-5 w-5 text-primary" />
-            Professional Bodies
+           Verified Professional Bodies
           </CardTitle>
         </div>
       </CardHeader>

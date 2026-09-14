@@ -26,7 +26,8 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
 
   const filters = filterType === "skillup" ? skillUpFilters : homeFilters;
 
-  return (
+ {/**
+   return (
     <div className="mb-5 overflow-hidden">
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
         {filters.map((filter) => {
@@ -51,7 +52,7 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
         })}
       </div>
     </div>
-  );
+  ); */}
 };
 
 export default ContentFilters;
