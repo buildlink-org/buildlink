@@ -263,9 +263,7 @@ const EnhancedNotificationsDropdown = () => {
                   <div
                     key={n.id}
                     onClick={() => handleNotificationClick(n)}
-                    className={`flex justify-between p-4 border-b cursor-pointer ${
-                      !n.read ? "bg-accent/30" : ""
-                    }`}>
+                    className="flex justify-between p-4 border-b cursor-pointer">
                     <div className="flex gap-2">
                       {/* Icon */}
                       <div>{typeIcons[n.type]}</div>
