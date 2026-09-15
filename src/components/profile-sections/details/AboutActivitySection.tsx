@@ -11,7 +11,7 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
-				bgColor: "bg-[#fde68a] dark:bg-yellow-950/60",
+				bgColor: "bg-[#fffae7] dark:bg-yellow-950/60",
 				borderColor: "border-[#fde68a] dark:border-yellow-800/50",
 			}
 		} else if (userType === "professional") {
