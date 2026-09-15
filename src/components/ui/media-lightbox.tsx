@@ -133,12 +133,6 @@ export const MediaLightbox: React.FC<MediaLightboxProps> = ({
                 <RotateCcw className="h-4 w-4" />
               </Button>
             )}
-
-            <div className="h-4 w-[1px] bg-white/20 mx-1" />
-
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/20 rounded-full" onClick={handleDownload} title="Download image">
-              <Download className="h-4 w-4" />
-            </Button>
           </div>
 
           <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20 rounded-full" onClick={() => onOpenChange(false)} title="Close (Esc)">
