@@ -292,15 +292,6 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 										<Eye className="h-3.5 w-3.5" />
 										<span>View PDF</span>
 									</Button>
-									<Button
-										variant="ghost"
-										size="icon"
-										onClick={handleDownload}
-										className="h-8 w-8 text-muted-foreground hover:text-foreground"
-										title="Download PDF"
-									>
-										<Download className="h-4 w-4" />
-									</Button>
 								</div>
 							</div>
 						</div>
@@ -400,9 +391,6 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 								<span>{post.document_name || getFilenameFromUrl(post.document_url) || "PDF Document"}</span>
 							</DialogTitle>
 							<div className="flex items-center space-x-2 shrink-0">
-								<Button variant="outline" size="sm" onClick={handleDownload} className="gap-1.5 text-xs">
-									<Download className="h-3.5 w-3.5" /> Download
-								</Button>
 								<Button variant="outline" size="sm" onClick={handlePreview} className="gap-1.5 text-xs">
 									<ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
 								</Button>

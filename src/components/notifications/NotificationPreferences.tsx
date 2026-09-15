@@ -2,10 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Bell, Mail, Smartphone } from 'lucide-react';
+import { Bell, Mail, Smartphone, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { notificationPreferencesService } from '@/services/notificationPreferencesService';
+import { NotificationService } from '@/services/notificationService';
 import { useToast } from '@/hooks/use-toast';
 
 interface PreferenceItem {
@@ -21,12 +23,38 @@ const NotificationPreferences: React.FC = () => {
   const { toast } = useToast();
   const [preferences, setPreferences] = useState<PreferenceItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [pushPermission, setPushPermission] = useState<string>('default');
 
   useEffect(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setPushPermission(window.Notification.permission);
+    } else {
+      setPushPermission('unsupported');
+    }
+
     if (user) {
       loadPreferences();
     }
   }, [user]);
+
+  const handleRequestPushPermission = async () => {
+    const perm = await NotificationService.requestBrowserPushPermission();
+    if (perm !== 'unsupported') {
+      setPushPermission(perm);
+      if (perm === 'granted') {
+        toast({
+          title: 'Push Notifications Enabled',
+          description: 'You will now receive desktop real-time notifications.',
+        });
+      } else {
+        toast({
+          title: 'Push Permission Denied',
+          description: 'Browser push notifications were blocked or dismissed.',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
 
   const loadPreferences = async () => {
     if (!user) return;
@@ -139,6 +167,28 @@ const NotificationPreferences: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Browser Push Permission Banner */}
+        <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
+          <div className="flex items-center space-x-3">
+            {pushPermission === 'granted' ? (
+              <ShieldCheck className="h-5 w-5 text-green-500" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-amber-500" />
+            )}
+            <div>
+              <p className="text-sm font-medium">Browser Real-time Push Notifications</p>
+              <p className="text-xs text-muted-foreground">
+                Status: <span className="capitalize font-semibold">{pushPermission}</span>
+              </p>
+            </div>
+          </div>
+          {pushPermission !== 'granted' && pushPermission !== 'unsupported' && (
+            <Button size="sm" variant="outline" onClick={handleRequestPushPermission}>
+              Enable Browser Push
+            </Button>
+          )}
+        </div>
+
         <div className="grid grid-cols-3 gap-4 text-sm font-medium text-muted-foreground">
           <div>Category</div>
           <div className="flex items-center justify-center">
