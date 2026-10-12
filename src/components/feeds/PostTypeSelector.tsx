@@ -17,7 +17,7 @@ interface PostTypeSelectorProps {
 
 const postTypes: PostType[] = [
   {
-    id: "general",
+    id: "express",
     label: "Express Yourself",
     icon: FileText,
     description: "Share & discuss industry insights & experiences",
@@ -29,12 +29,18 @@ const postTypes: PostType[] = [
     description: "Display & highlight your latest and past work",
   },
   {
-    id: "career",
+    id: "opportunity",
     label: "Post Opportunity",
     icon: Briefcase,
-    description: "Advertise jobs, gigs & opportunities",
+    description: "Advertise gigs, job openings & any other opportunities",
   },
 ]
+
+const isTypeSelected = (typeId: string, current: string) => {
+  if (typeId === "express") return current === "express" || current === "general" || current === "industry";
+  if (typeId === "opportunity") return current === "opportunity" || current === "career";
+  return current === typeId;
+};
 
 const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType, setPostType }) => {
 	const isMobile = useIsMobile()
@@ -47,18 +53,22 @@ const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType
 				<div className={cn(isMobile ? "flex flex-col gap-3" : "grid grid-cols-1 gap-3")}>
 					{postTypes.map((type) => {
 						const Icon = type.icon
+						const isSelected = isTypeSelected(type.id, postType);
 						return (
 							<button
 								key={type.id}
 								onClick={() => setPostType(type.id)}
 								type="button"
-								className={cn("p-4 rounded-lg border-2 text-left transition-all flex-1 focus:outline-none focus:ring-2 focus:ring-primary", postType === type.id ? "border-primary bg-primary/10" : "border-border hover:border-primary/50")}
-
+								aria-pressed={isSelected}
+								className={cn(
+									"p-4 rounded-lg border-2 text-left transition-all flex-1 focus:outline-none focus:ring-2 focus:ring-primary",
+									isSelected ? "border-primary bg-primary/10" : "border-border hover:border-primary/50"
+								)}
 								style={isMobile ? { minHeight: 56, minWidth: 0 } : {}}>
 								<div className="flex items-start space-x-3">
-									<Icon className={cn("h-6 w-6 mt-1", postType === type.id ? "text-primary" : "text-muted-foreground")} />
+									<Icon className={cn("h-6 w-6 mt-1", isSelected ? "text-primary" : "text-muted-foreground")} />
 									<div>
-										<h3 className={cn("font-medium", postType === type.id ? "text-primary" : "text-foreground")}>{type.label}</h3>
+										<h3 className={cn("font-medium", isSelected ? "text-primary" : "text-foreground")}>{type.label}</h3>
 										<p className="text-sm text-muted-foreground">{type.description}</p>
 									</div>
 								</div>
@@ -72,4 +82,5 @@ const PostTypeSelector: React.FC<PostTypeSelectorProps> = React.memo(({ postType
 })
 
 PostTypeSelector.displayName = "PostTypeSelector"
+export { PostTypeSelector }
 export default PostTypeSelector
