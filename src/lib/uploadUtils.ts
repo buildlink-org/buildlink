@@ -36,6 +36,8 @@ export interface UploadConfig {
   context: string
   /** Whether to upsert (overwrite) if the file already exists. Defaults to false. */
   upsert?: boolean
+  /** HTTP Cache-Control header value, e.g. "3600" or "max-age=3600". Defaults to "3600". */
+  cacheControl?: string
 }
 
 // ─── MIME allow-lists ─────────────────────────────────────────
@@ -208,6 +210,7 @@ export async function uploadFile(
     maxSizeBytes,
     context,
     upsert = false,
+    cacheControl = "3600",
   } = config
 
   // 1 ── Log attempt ─────────────────────────────────────────
@@ -244,7 +247,7 @@ export async function uploadFile(
 
   const { error: uploadError } = await supabase.storage
     .from(bucket)
-    .upload(filePath, file, { upsert, contentType: file.type })
+    .upload(filePath, file, { upsert, contentType: file.type, cacheControl })
 
   if (uploadError) {
     logError(context, "Supabase Storage upload failed.", uploadError)

@@ -85,7 +85,7 @@ const MediaPreview = ({
           </div>
         )}
         <iframe
-          src={`${url}#toolbar=1&navpanes=1&scrollbar=1`}
+          src={`${url}#toolbar=0&navpanes=0&scrollbar=1&view=FitH`}
           className="w-full h-full border-0"
           key={url}
           onLoad={() => setIsLoading(false)}

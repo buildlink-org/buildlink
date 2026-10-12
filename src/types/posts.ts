@@ -1,6 +1,13 @@
 // Shared types for post creation components
 
-export type PostCategory = 'general' | 'project' | 'career' | 'technical' | 'news';
+export type PostCategory =
+  | 'industry'
+  | 'project'
+  | 'opportunity'
+  | 'general'
+  | 'career'
+  | 'technical'
+  | 'news';
 
 export interface PostDraft {
   id?: string;
@@ -44,10 +51,48 @@ export interface CreatePostPayload {
   user_id: string;
 }
 
-export const POST_CATEGORIES: { value: PostCategory; label: string; description: string }[] = [
-  { value: 'general', label: 'Express Yourself', description: 'Share & discuss industry insights & experiences' },
-  { value: 'project', label: 'Showcase Project', description: 'Display & highlight your latest and past work' },
-  { value: 'career', label: 'Post Opportunity', description: 'Advertise jobs, gigs & opportunities' },
-  { value: 'technical', label: 'Technical', description: 'Share technical tips, tutorials & how-tos' },
-  { value: 'news', label: 'News & Updates', description: 'Share industry news, updates & announcements' },
+export const OPPORTUNITY_TYPES = [
+  'Competition',
+  'Consultancy',
+  'Contract',
+  'Full Time',
+  'Gig',
+  'Grant',
+  'Funding',
+  'Internship',
+  'Part Time',
+  'Volunteer',
+] as const;
+
+export type OpportunityType = (typeof OPPORTUNITY_TYPES)[number];
+
+export const EXPERIENCE_LEVELS = [
+  'Novice',
+  'Competent',
+  'Masterful',
+  'Expert',
+] as const;
+
+export type ExperienceLevel = (typeof EXPERIENCE_LEVELS)[number];
+
+export const POST_CATEGORIES: {
+  value: PostCategory;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 'industry',
+    label: 'Express Yourself',
+    description: 'Share & discuss industry insights & experiences',
+  },
+  {
+    value: 'project',
+    label: 'Showcase Project',
+    description: 'Display & highlight your latest and past work',
+  },
+  {
+    value: 'opportunity',
+    label: 'Post Opportunity',
+    description: 'Advertise gigs, job openings & any other opportunities',
+  },
 ];

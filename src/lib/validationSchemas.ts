@@ -6,7 +6,43 @@ export const postContentSchema = z.object({
     .trim()
     .min(1, { message: "Content cannot be empty" })
     .max(5000, { message: "Content must be less than 5000 characters" }),
-  category: z.enum(['general', 'project', 'career', 'technical', 'news']),
+  category: z.enum([
+    'industry',
+    'project',
+    'opportunity',
+    'general',
+    'career',
+    'technical',
+    'news',
+  ]),
+});
+
+export const expressPostSchema = z.object({
+  content: z.string()
+    .trim()
+    .min(1, { message: "Content cannot be empty" })
+    .max(600, { message: "Content must not exceed 600 characters" }),
+});
+
+export const projectPostSchema = z.object({
+  title: z.string().trim().min(1, { message: "Title is required" }),
+  timeline: z.string().trim().optional(),
+  subjectMatter: z.string()
+    .trim()
+    .min(1, { message: "Subject Matter is required" })
+    .max(100, { message: "Subject Matter must not exceed 100 characters" }),
+});
+
+export const opportunityPostSchema = z.object({
+  title: z.string().trim().min(1, { message: "Title is required" }),
+  company: z.string().trim().optional(),
+  location: z.string().trim().min(1, { message: "Location is required" }),
+  type: z.string().min(1, { message: "Opportunity type is required" }),
+  experience: z.string().min(1, { message: "Experience level is required" }),
+  description: z.string()
+    .trim()
+    .min(1, { message: "Description is required" })
+    .max(600, { message: "Description must not exceed 600 characters" }),
 });
 
 // Sign up validation

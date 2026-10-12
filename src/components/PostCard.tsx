@@ -21,6 +21,14 @@ import { getFilenameFromUrl, handleProfileClick, downloadFile } from "@/lib/util
 import ReadMoreText from "./ReadMore"
 import { parsePostImages } from "@/lib/uploadUtils"
 import MediaLightbox from "@/components/ui/media-lightbox"
+import {
+	Carousel,
+	CarouselContent,
+	CarouselItem,
+	CarouselPrevious,
+	CarouselNext,
+} from "@/components/ui/carousel"
+import { PdfViewerModal } from "@/components/media/PdfViewerModal"
 
 interface PostCardProps {
 	post: Post
@@ -116,11 +124,16 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 		}
 	}
 
+	const isProjectPost = post.location === "project" || (post as any).category === "project"
+	const isOpportunityPost = post.location === "opportunity" || (post as any).category === "opportunity"
+
 	const getCategoryColor = (category: string) => {
 		const colors = {
 			general: "bg-gray-100 text-gray-800",
+			industry: "bg-amber-100 text-amber-800",
 			project: "bg-blue-100 text-blue-800",
-			career: "bg-green-100 text-green-800",
+			opportunity: "bg-emerald-100 text-emerald-800",
+			career: "bg-emerald-100 text-emerald-800",
 			technical: "bg-purple-100 text-purple-800",
 			news: "bg-orange-100 text-orange-800",
 		}
@@ -212,7 +225,38 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 						</p>
 					</div>
 
-					{postImages.length > 0 && (
+					{/* Project posts use Image Carousel; others use standard grid */}
+					{isProjectPost && postImages.length > 0 ? (
+						<div className="relative overflow-hidden rounded-lg border bg-slate-950/5">
+							<Carousel className="w-full">
+								<CarouselContent>
+									{postImages.map((imgUrl, idx) => (
+										<CarouselItem key={idx}>
+											<div
+												className="cursor-zoom-in relative w-full aspect-video sm:aspect-[16/9] max-h-[460px] overflow-hidden flex items-center justify-center bg-black/5"
+												onClick={() => openLightboxAt(idx)}
+											>
+												<img
+													src={imgUrl}
+													alt={`Project slide ${idx + 1}`}
+													className="w-full h-full object-contain"
+												/>
+												<div className="absolute top-2 right-2 bg-black/70 text-white text-[11px] font-mono px-2 py-0.5 rounded-full backdrop-blur-sm">
+													{idx + 1} / {postImages.length}
+												</div>
+											</div>
+										</CarouselItem>
+									))}
+								</CarouselContent>
+								{postImages.length > 1 && (
+									<>
+										<CarouselPrevious className="left-2 bg-background/80 hover:bg-background" />
+										<CarouselNext className="right-2 bg-background/80 hover:bg-background" />
+									</>
+								)}
+							</Carousel>
+						</div>
+					) : postImages.length > 0 ? (
 						<div className="overflow-hidden rounded-lg">
 							{postImages.length === 1 ? (
 								<div
@@ -260,10 +304,10 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 								</div>
 							)}
 						</div>
-					)}
+					) : null}
 
-					{/* Presentable PDF Attachment Card */}
-					{post.document_url && (
+					{/* Presentable PDF Attachment Card - Showcase Project PDF viewer tool & non-opportunity posts */}
+					{post.document_url && !isOpportunityPost && (
 						<div className="mt-3 rounded-xl border bg-slate-50 dark:bg-slate-900/50 p-3.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-900 border-slate-200 dark:border-slate-800 shadow-sm">
 							<div className="flex items-center justify-between gap-3">
 								<div className="flex items-center space-x-3 min-w-0 flex-1">
@@ -381,26 +425,14 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 				onOpenChange={setLightboxOpen}
 			/>
 
-			{/* Full PDF View Modal */}
+			{/* Presentable PDF Viewer Modal */}
 			{post.document_url && (
-				<Dialog open={pdfModalOpen} onOpenChange={setPdfModalOpen}>
-					<DialogContent className="max-w-5xl h-[85vh] p-6 flex flex-col justify-between" description={`Viewing document ${post.document_name}`}>
-						<DialogHeader className="flex-row items-center justify-between border-b pb-3">
-							<DialogTitle className="text-base font-semibold truncate max-w-xl flex items-center gap-2">
-								<FileText className="h-5 w-5 text-red-500" />
-								<span>{post.document_name || getFilenameFromUrl(post.document_url) || "PDF Document"}</span>
-							</DialogTitle>
-							<div className="flex items-center space-x-2 shrink-0">
-								<Button variant="outline" size="sm" onClick={handlePreview} className="gap-1.5 text-xs">
-									<ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
-								</Button>
-							</div>
-						</DialogHeader>
-						<div className="flex-1 min-h-0 mt-4 rounded-lg overflow-hidden border bg-slate-900">
-							<iframe src={post.document_url} className="w-full h-full border-0" title={post.document_name || "PDF Document"} />
-						</div>
-					</DialogContent>
-				</Dialog>
+				<PdfViewerModal
+					open={pdfModalOpen}
+					onOpenChange={setPdfModalOpen}
+					url={post.document_url}
+					name={post.document_name}
+				/>
 			)}
 		</Card>
 	)

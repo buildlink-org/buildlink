@@ -1,214 +1,276 @@
+import { useState, useCallback, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
-import { Card, CardContent } from "../ui/card"
-import { Button } from "../ui/button"
-import { Textarea } from "../ui/textarea"
-import { Camera, FileText, MapPin, X, ArrowLeft, ArrowRight, Star } from "lucide-react"
-import {
-	useState,
-	useRef,
-	useCallback,
-	useEffect,
-} from "react"
-
+import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Textarea } from "@/components/ui/textarea"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import { useIsMobile } from "@/hooks/use-mobile"
 import PostTypeSelector from "./PostTypeSelector"
 import UserAvatarHeader from "./UserAvatarHeader"
 import { useAuth } from "@/contexts/AuthContext"
 import { postsService } from "@/services/postsService"
+import { draftsService } from "@/services/draftsService"
 import { useToast } from "@/hooks/use-toast"
-import MediaPreview from "@/components/ui/media-preview"
-import { postContentSchema } from "@/lib/validationSchemas"
-import { z } from "zod"
-import { uploadPostImages, uploadPostDocument, validateUploadFile, ALLOWED_MIME, MAX_SIZE } from "@/lib/uploadUtils"
+import {
+	uploadPostImages,
+	uploadPostDocument,
+} from "@/lib/uploadUtils"
+import {
+	MediaItem,
+	MediaUploader,
+	MediaLayoutEditor,
+} from "@/components/media"
+import {
+	OPPORTUNITY_TYPES,
+	EXPERIENCE_LEVELS,
+	OpportunityType,
+	ExperienceLevel,
+	PostCategory,
+} from "@/types/posts"
 
-interface ImageItem {
-	id: string
-	file: File
-	previewUrl: string
-}
-
-const PostCreate = () => {
-
+export const PostCreate = () => {
 	const { user } = useAuth()
-
 	const { toast } = useToast()
-
 	const isMobile = useIsMobile()
 
-	const [postType, setPostType] =
-		useState("general")
+	// Post type: "express" | "project" | "opportunity"
+	const [postType, setPostType] = useState<"express" | "project" | "opportunity">("express")
 
-	const [content, setContent] =
-		useState("")
+	// Express Yourself state
+	const [expressContent, setExpressContent] = useState("")
 
-	const [imageItems, setImageItems] =
-		useState<ImageItem[]>([])
+	// Showcase Project state
+	const [projectTitle, setProjectTitle] = useState("")
+	const [projectTimeline, setProjectTimeline] = useState("")
+	const [projectSubjectMatter, setProjectSubjectMatter] = useState("")
 
-	const [documentFile, setDocumentFile] =
-		useState<File | null>(null)
+	// Post Opportunity state
+	const [opportunityTitle, setOpportunityTitle] = useState("")
+	const [opportunityCompany, setOpportunityCompany] = useState("")
+	const [opportunityLocation, setOpportunityLocation] = useState("")
+	const [opportunityType, setOpportunityType] = useState<OpportunityType>("Full Time")
+	const [opportunityExperience, setOpportunityExperience] = useState<ExperienceLevel>("Competent")
+	const [opportunityDescription, setOpportunityDescription] = useState("")
 
-	const [documentPreviewUrl,
-		setDocumentPreviewUrl] =
-		useState<string | null>(null)
+	// Media state
+	const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
+	const [layoutEditorOpen, setLayoutEditorOpen] = useState(false)
+	const [isLoading, setIsLoading] = useState(false)
+	const [isSavingDraft, setIsSavingDraft] = useState(false)
 
-	const [isLoading, setIsLoading] =
-		useState(false)
+	const mediaItemsRef = useRef(mediaItems)
+	mediaItemsRef.current = mediaItems
 
-	const fileInputRef =
-		useRef<HTMLInputElement>(null)
-
-	const documentInputRef =
-		useRef<HTMLInputElement>(null)
-
-	const handleImageChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const files = Array.from(e.target.files || [])
-			if (files.length === 0) return
-
-			if (imageItems.length + files.length > 10) {
-				toast({
-					title: "Limit Exceeded",
-					description: "You can attach up to 10 images per post.",
-					variant: "destructive",
-				})
-				return
-			}
-
-			const newItems: ImageItem[] = []
-			files.forEach((file) => {
-				const { valid, error } = validateUploadFile(file, ALLOWED_MIME.image, MAX_SIZE.postImage)
-				if (!valid && error) {
-					toast({
-						title: "Invalid File",
-						description: error,
-						variant: "destructive",
-					})
-					return
-				}
-				newItems.push({
-					id: `${Date.now()}-${Math.random()}`,
-					file,
-					previewUrl: URL.createObjectURL(file),
-				})
-			})
-
-			if (newItems.length > 0) {
-				setImageItems((prev) => [...prev, ...newItems])
-			}
-
-			if (fileInputRef.current) {
-				fileInputRef.current.value = ""
-			}
-		},
-		[imageItems.length, toast]
-	)
-
-	const handleRemoveImage = useCallback((id: string) => {
-		setImageItems((prev) => {
-			const itemToRemove = prev.find((item) => item.id === id)
-			if (itemToRemove) {
-				URL.revokeObjectURL(itemToRemove.previewUrl)
-			}
-			return prev.filter((item) => item.id !== id)
-		})
-	}, [])
-
-	const moveImage = useCallback((index: number, direction: "left" | "right") => {
-		setImageItems((prev) => {
-			const newArr = [...prev]
-			const targetIndex = direction === "left" ? index - 1 : index + 1
-			if (targetIndex < 0 || targetIndex >= newArr.length) return prev
-			const temp = newArr[index]
-			newArr[index] = newArr[targetIndex]
-			newArr[targetIndex] = temp
-			return newArr
-		})
-	}, [])
-
-	const makeCoverImage = useCallback((index: number) => {
-		if (index === 0) return
-		setImageItems((prev) => {
-			const newArr = [...prev]
-			const [selected] = newArr.splice(index, 1)
-			newArr.unshift(selected)
-			return newArr
-		})
-	}, [])
-
-	const handleDocumentChange = useCallback(
-		(e: React.ChangeEvent<HTMLInputElement>) => {
-			const file = e.target.files?.[0]
-			if (!file) return
-
-			const { valid, error } = validateUploadFile(file, ALLOWED_MIME.pdf, MAX_SIZE.document)
-			if (!valid && error) {
-				toast({
-					title: "Invalid Document",
-					description: error,
-					variant: "destructive",
-				})
-				e.target.value = ""
-				return
-			}
-
-			if (documentPreviewUrl) {
-				URL.revokeObjectURL(documentPreviewUrl)
-			}
-
-			setDocumentFile(file)
-			setDocumentPreviewUrl(URL.createObjectURL(file))
-		},
-		[toast, documentPreviewUrl]
-	)
-
+	// Clean up object URLs on component unmount only to prevent premature cache eviction across browsers
 	useEffect(() => {
 		return () => {
-			imageItems.forEach((item) => URL.revokeObjectURL(item.previewUrl))
-			if (documentPreviewUrl) {
-				URL.revokeObjectURL(documentPreviewUrl)
-			}
+			mediaItemsRef.current.forEach((item) => {
+				if (item.previewUrl?.startsWith("blob:")) {
+					URL.revokeObjectURL(item.previewUrl)
+				}
+			})
 		}
-	}, [imageItems, documentPreviewUrl])
+	}, [])
 
-	const cancelCreatePost = (e: React.MouseEvent<HTMLButtonElement>) => {
+	// Switch post type handler
+	const handlePostTypeChange = (newType: string) => {
+		const resolvedType =
+			newType === "general" || newType === "industry"
+				? "express"
+				: newType === "career"
+				? "opportunity"
+				: (newType as "express" | "project" | "opportunity")
+
+		// If switching to Opportunity, remove any uploaded PDF since Opportunity does not permit PDFs
+		if (resolvedType === "opportunity") {
+			const withoutPdf = mediaItems.filter((item) => {
+				if (item.type === "pdf") {
+					if (item.previewUrl) URL.revokeObjectURL(item.previewUrl)
+					return false
+				}
+				return true
+			})
+			setMediaItems(withoutPdf)
+		}
+
+		setPostType(resolvedType)
+	}
+
+	const resetForm = useCallback(() => {
+		mediaItems.forEach((item) => {
+			if (item.previewUrl) URL.revokeObjectURL(item.previewUrl)
+		})
+		setMediaItems([])
+		setExpressContent("")
+		setProjectTitle("")
+		setProjectTimeline("")
+		setProjectSubjectMatter("")
+		setOpportunityTitle("")
+		setOpportunityCompany("")
+		setOpportunityLocation("")
+		setOpportunityType("Full Time")
+		setOpportunityExperience("Competent")
+		setOpportunityDescription("")
+	}, [mediaItems])
+
+	const handleCancel = (e: React.MouseEvent<HTMLButtonElement>) => {
 		e.preventDefault()
+		resetForm()
+		toast({
+			title: "Cancelled",
+			description: "Post creation cancelled and fields reset.",
+		})
+	}
 
-		imageItems.forEach((item) => URL.revokeObjectURL(item.previewUrl))
-		if (documentPreviewUrl) {
-			URL.revokeObjectURL(documentPreviewUrl)
-		}
+	// Create Later (Drafts)
+	const handleCreateLater = async (e: React.MouseEvent<HTMLButtonElement>) => {
+		e.preventDefault()
+		if (!user || isSavingDraft) return
 
-		setContent("")
-		setImageItems([])
-		setDocumentFile(null)
-		setDocumentPreviewUrl(null)
+		setIsSavingDraft(true)
+		try {
+			let contentToSave = ""
+			let categoryToSave: PostCategory = "project"
 
-		if (fileInputRef.current) {
-			fileInputRef.current.value = ""
-		}
+			if (postType === "project") {
+				categoryToSave = "project"
+				contentToSave = `### ${projectTitle.trim() || "Untitled Project"}\n${
+					projectTimeline.trim() ? `Timeline: ${projectTimeline.trim()}\n\n` : ""
+				}${projectSubjectMatter.trim()}`
+			} else if (postType === "opportunity") {
+				categoryToSave = "opportunity"
+				contentToSave = `### ${opportunityTitle.trim() || "Untitled Opportunity"}\n🏢 ${
+					opportunityCompany.trim() || "Undisclosed"
+				}\n📍 ${opportunityLocation.trim() || "Undisclosed"}\n💼 Type: ${opportunityType} • 🎯 Experience: ${opportunityExperience}\n\n${opportunityDescription.trim()}`
+			} else {
+				categoryToSave = "industry"
+				contentToSave = expressContent.trim()
+			}
 
-		if (documentInputRef.current) {
-			documentInputRef.current.value = ""
+			const { error } = await draftsService.saveDraft({
+				user_id: user.id,
+				content: contentToSave,
+				category: categoryToSave,
+			})
+
+			if (error) throw error
+
+			toast({
+				title: "Draft Saved",
+				description: "Your post draft has been saved. You can complete it later.",
+			})
+			resetForm()
+		} catch (err: any) {
+			console.error("Failed to save draft:", err)
+			toast({
+				title: "Error",
+				description: err?.message || "Failed to save draft.",
+				variant: "destructive",
+			})
+		} finally {
+			setIsSavingDraft(false)
 		}
 	}
 
-	const handleSubmit = useCallback(async () => {
+	// Handle Submit (Create Post)
+	const handleSubmit = async () => {
 		if (!user || isLoading) return
+
+		// Validation according to matrix
+		if (postType === "express") {
+			if (!expressContent.trim()) {
+				toast({
+					title: "Content Required",
+					description: "Please share your thoughts before posting.",
+					variant: "destructive",
+				})
+				return
+			}
+			if (expressContent.length > 600) {
+				toast({
+					title: "Limit Exceeded",
+					description: "Content cannot exceed 600 characters.",
+					variant: "destructive",
+				})
+				return
+			}
+		} else if (postType === "project") {
+			if (!projectTitle.trim()) {
+				toast({
+					title: "Title Required",
+					description: "Please enter a project title.",
+					variant: "destructive",
+				})
+				return
+			}
+			if (!projectSubjectMatter.trim()) {
+				toast({
+					title: "Subject Matter Required",
+					description: "Please enter the subject matter of the project.",
+					variant: "destructive",
+				})
+				return
+			}
+			if (projectSubjectMatter.length > 100) {
+				toast({
+					title: "Limit Exceeded",
+					description: "Subject matter cannot exceed 100 characters.",
+					variant: "destructive",
+				})
+				return
+			}
+		} else if (postType === "opportunity") {
+			if (!opportunityTitle.trim()) {
+				toast({
+					title: "Title Required",
+					description: "Please enter the opportunity title.",
+					variant: "destructive",
+				})
+				return
+			}
+			if (!opportunityLocation.trim()) {
+				toast({
+					title: "Location Required",
+					description: "Please enter the opportunity location.",
+					variant: "destructive",
+				})
+				return
+			}
+			if (!opportunityDescription.trim()) {
+				toast({
+					title: "Description Required",
+					description: "Please describe the opportunity.",
+					variant: "destructive",
+				})
+				return
+			}
+			if (opportunityDescription.length > 600) {
+				toast({
+					title: "Limit Exceeded",
+					description: "Description cannot exceed 600 characters.",
+					variant: "destructive",
+				})
+				return
+			}
+		}
 
 		setIsLoading(true)
 
 		try {
-			const validatedData = postContentSchema.parse({
-				content,
-				category: postType,
-			})
-
 			let image_url: string | undefined
 			let document_url: string | undefined
+			let document_name: string | undefined
 
-			if (imageItems.length > 0) {
-				const filesToUpload = imageItems.map((item) => item.file)
-				const { urls, errors } = await uploadPostImages(filesToUpload, user.id)
+			const imageFiles = mediaItems
+				.filter((m) => m.type === "image" && m.file)
+				.map((m) => m.file as File)
+
+			const pdfItem = mediaItems.find((m) => m.type === "pdf" && m.file)
+
+			// ── Multi-Image Upload ──────────────────────────────────────
+			if (imageFiles.length > 0) {
+				const { urls, errors } = await uploadPostImages(imageFiles, user.id)
 
 				if (errors.length > 0 && urls.length === 0) {
 					toast({
@@ -226,8 +288,9 @@ const PostCreate = () => {
 				}
 			}
 
-			if (documentFile) {
-				const { url, error: uploadError } = await uploadPostDocument(documentFile, user.id)
+			// ── Document Upload (Express & Project only; no PDF on Opportunity) ─
+			if (pdfItem?.file && postType !== "opportunity") {
+				const { url, error: uploadError } = await uploadPostDocument(pdfItem.file, user.id)
 
 				if (uploadError || !url) {
 					toast({
@@ -239,15 +302,35 @@ const PostCreate = () => {
 				}
 
 				document_url = url
+				document_name = pdfItem.name || pdfItem.file.name
+			}
+
+			// Format post content according to post type
+			let finalContent = ""
+			let finalCategory: PostCategory = "industry"
+
+			if (postType === "express") {
+				finalContent = expressContent.trim()
+				finalCategory = "industry"
+			} else if (postType === "project") {
+				finalCategory = "project"
+				finalContent = `### ${projectTitle.trim()}\n${
+					projectTimeline.trim() ? `Timeline: ${projectTimeline.trim()}\n\n` : ""
+				}${projectSubjectMatter.trim()}`
+			} else if (postType === "opportunity") {
+				finalCategory = "opportunity"
+				finalContent = `### ${opportunityTitle.trim()}\n🏢 ${
+					opportunityCompany.trim() || "Undisclosed"
+				}\n📍 ${opportunityLocation.trim()}\n💼 Type: ${opportunityType} • 🎯 Experience: ${opportunityExperience}\n\n${opportunityDescription.trim()}`
 			}
 
 			const { error } = await postsService.createPost({
-				content: validatedData.content,
-				category: validatedData.category,
+				content: finalContent,
+				category: finalCategory,
 				user_id: user.id,
 				image_url,
 				document_url,
-				document_name: documentFile?.name,
+				document_name,
 			})
 
 			if (error) {
@@ -259,272 +342,332 @@ const PostCreate = () => {
 				description: "Your post has been created successfully!",
 			})
 
-			imageItems.forEach((item) => URL.revokeObjectURL(item.previewUrl))
-			if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
-
-			setContent("")
-			setPostType("general")
-			setImageItems([])
-			setDocumentFile(null)
-			setDocumentPreviewUrl(null)
-		} catch (error) {
-			if (error instanceof z.ZodError) {
-				toast({
-					title: "Validation Error",
-					description: error.errors[0].message,
-					variant: "destructive",
-				})
-			} else {
-				console.error(error)
-				toast({
-					title: "Error",
-					description: "Failed to create post.",
-					variant: "destructive",
-				})
-			}
+			resetForm()
+		} catch (error: any) {
+			console.error("Error creating post:", error)
+			toast({
+				title: "Error",
+				description: error?.message || "Failed to create post.",
+				variant: "destructive",
+			})
 		} finally {
 			setIsLoading(false)
-			if (fileInputRef.current) {
-				fileInputRef.current.value = ""
-			}
-			if (documentInputRef.current) {
-				documentInputRef.current.value = ""
-			}
 		}
-	}, [
-		user,
-		isLoading,
-		content,
-		postType,
-		imageItems,
-		documentFile,
-		documentPreviewUrl,
-		toast,
-	])
+	}
 
 	if (!user) {
 		return (
 			<Card className="border-0 shadow-sm">
 				<CardContent className="p-6 text-center">
-					<p className="text-gray-600">
-						Please sign in to create posts
-					</p>
+					<p className="text-gray-600">Please sign in to create posts</p>
 				</CardContent>
 			</Card>
 		)
 	}
 
+	const isProject = postType === "project"
+	const isOpportunity = postType === "opportunity"
+	const isExpress = postType === "express"
+
+	// Determine if submit is disabled based on current active composer
+	const isSubmitDisabled =
+		isLoading ||
+		(isExpress && !expressContent.trim()) ||
+		(isProject && (!projectTitle.trim() || !projectSubjectMatter.trim())) ||
+		(isOpportunity &&
+			(!opportunityTitle.trim() ||
+				!opportunityLocation.trim() ||
+				!opportunityDescription.trim()))
+
 	return (
 		<div className={cn("space-y-6 mt-4 mb-24", isMobile && "px-0")}>
-			<PostTypeSelector
-				postType={postType}
-				setPostType={setPostType}
-			/>
+			{/* "What would you like to share?" screen */}
+			<PostTypeSelector postType={postType} setPostType={handlePostTypeChange} />
 
+			{/* Main Composer Card */}
 			<Card className={cn("border-0 shadow-sm max-h-[90vh] overflow-y-auto", isMobile && "rounded-none")}>
-				<CardContent className={cn(isMobile ? "p-2" : "p-4")}>
+				<CardContent className={cn("space-y-4", isMobile ? "p-3" : "p-5")}>
+					{/* Author Row */}
 					<UserAvatarHeader user={user} />
 
-					<Textarea
-						placeholder={
-							postType === "career"
-								? "Describe the job opportunity..."
-								: postType === "project"
-								? "Tell us about your project..."
-								: postType === "collaboration"
-								? "Describe your collaboration..."
-								: "Share your thoughts..."
-						}
-						value={content}
-						onChange={(e) => setContent(e.target.value)}
-						className={cn("min-h-[120px] resize-none border-0 text-base p-0 w-full", isMobile && "text-sm")}
+					{/* ── 1. Express Yourself Composer ── */}
+					{isExpress && (
+						<div className="space-y-2">
+							<div className="flex items-center justify-between">
+								<Label htmlFor="express-content" className="text-xs text-muted-foreground">
+									Share your thoughts
+								</Label>
+								<span
+									className={cn(
+										"text-xs font-mono",
+										expressContent.length > 550 ? "text-amber-600 font-semibold" : "text-muted-foreground"
+									)}
+								>
+									{expressContent.length} / 600 characters
+								</span>
+							</div>
+							<Textarea
+								id="express-content"
+								placeholder="Share your thoughts, insights or updates with the community…"
+								value={expressContent}
+								maxLength={600}
+								onChange={(e) => setExpressContent(e.target.value.slice(0, 600))}
+								className="min-h-[140px] resize-none border text-sm"
+							/>
+						</div>
+					)}
+
+					{/* ── 2. Showcase Project Composer ── */}
+					{isProject && (
+						<div className="space-y-3">
+							<div className="space-y-1">
+								<Label htmlFor="project-title" className="text-xs font-medium">
+									Title*
+								</Label>
+								<Input
+									id="project-title"
+									placeholder="Project Title*"
+									value={projectTitle}
+									onChange={(e) => setProjectTitle(e.target.value)}
+									required
+									className="text-sm"
+								/>
+							</div>
+
+							<div className="space-y-1">
+								<Label htmlFor="project-timeline" className="text-xs font-medium text-muted-foreground">
+									Timeline (optional)
+								</Label>
+								<Input
+									id="project-timeline"
+									placeholder="e.g. Jan 2024 - Dec 2024 (or Ongoing)"
+									value={projectTimeline}
+									onChange={(e) => setProjectTimeline(e.target.value)}
+									className="text-sm"
+								/>
+							</div>
+
+							<div className="space-y-1">
+								<div className="flex items-center justify-between">
+									<Label htmlFor="project-subject" className="text-xs font-medium">
+										Subject Matter (100 characters max)*
+									</Label>
+									<span
+										className={cn(
+											"text-xs font-mono",
+											projectSubjectMatter.length > 90
+												? "text-amber-600 font-semibold"
+												: "text-muted-foreground"
+										)}
+									>
+										{projectSubjectMatter.length} / 100 characters
+									</span>
+								</div>
+								<Textarea
+									id="project-subject"
+									placeholder="Subject Matter (100 characters max)"
+									value={projectSubjectMatter}
+									maxLength={100}
+									onChange={(e) => setProjectSubjectMatter(e.target.value.slice(0, 100))}
+									className="min-h-[80px] resize-none border text-sm"
+									required
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* ── 3. Post Opportunity Composer ── */}
+					{isOpportunity && (
+						<div className="space-y-3">
+							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+								<div className="space-y-1">
+									<Label htmlFor="opportunity-title" className="text-xs font-medium">
+										Title*
+									</Label>
+									<Input
+										id="opportunity-title"
+										placeholder="Title*"
+										value={opportunityTitle}
+										onChange={(e) => setOpportunityTitle(e.target.value)}
+										required
+										className="text-sm"
+									/>
+								</div>
+								<div className="space-y-1">
+									<Label htmlFor="opportunity-company" className="text-xs font-medium">
+										Company
+									</Label>
+									<Input
+										id="opportunity-company"
+										placeholder="Company"
+										value={opportunityCompany}
+										onChange={(e) => setOpportunityCompany(e.target.value)}
+										className="text-sm"
+									/>
+								</div>
+							</div>
+
+							<div className="space-y-1">
+								<Label htmlFor="opportunity-location" className="text-xs font-medium">
+									Location*
+								</Label>
+								<Input
+									id="opportunity-location"
+									placeholder="Location*"
+									value={opportunityLocation}
+									onChange={(e) => setOpportunityLocation(e.target.value)}
+									required
+									className="text-sm"
+								/>
+							</div>
+
+							{/* Opportunity Type Options (Radio) */}
+							<div className="space-y-1.5">
+								<Label className="text-xs font-medium">Type*</Label>
+								<div className="flex flex-wrap gap-1.5">
+									{OPPORTUNITY_TYPES.map((typeOption) => {
+										const isSelected = opportunityType === typeOption
+										return (
+											<button
+												key={typeOption}
+												type="button"
+												role="radio"
+												aria-checked={isSelected}
+												onClick={() => setOpportunityType(typeOption)}
+												className={cn(
+													"px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
+													isSelected
+														? "bg-primary text-primary-foreground border-primary shadow-sm"
+														: "bg-muted/40 text-muted-foreground hover:bg-muted border-border"
+												)}
+											>
+												{typeOption}
+											</button>
+										)
+									})}
+								</div>
+							</div>
+
+							{/* Opportunity Experience Level Options (Radio) */}
+							<div className="space-y-1.5">
+								<Label className="text-xs font-medium">Experience*</Label>
+								<div className="flex flex-wrap gap-1.5">
+									{EXPERIENCE_LEVELS.map((levelOption) => {
+										const isSelected = opportunityExperience === levelOption
+										return (
+											<button
+												key={levelOption}
+												type="button"
+												role="radio"
+												aria-checked={isSelected}
+												onClick={() => setOpportunityExperience(levelOption)}
+												className={cn(
+													"px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+													isSelected
+														? "bg-primary text-primary-foreground border-primary shadow-sm"
+														: "bg-muted/40 text-muted-foreground hover:bg-muted border-border"
+												)}
+											>
+												{levelOption}
+											</button>
+										)
+									})}
+								</div>
+							</div>
+
+							<div className="space-y-1">
+								<div className="flex items-center justify-between">
+									<Label htmlFor="opportunity-description" className="text-xs font-medium">
+										Description (600 characters max)*
+									</Label>
+									<span
+										className={cn(
+											"text-xs font-mono",
+											opportunityDescription.length > 550
+												? "text-amber-600 font-semibold"
+												: "text-muted-foreground"
+										)}
+									>
+										{opportunityDescription.length} / 600 characters
+									</span>
+								</div>
+								<Textarea
+									id="opportunity-description"
+									placeholder="Advertise gigs, job openings & any other opportunities"
+									value={opportunityDescription}
+									maxLength={600}
+									onChange={(e) => setOpportunityDescription(e.target.value.slice(0, 600))}
+									className="min-h-[110px] resize-none border text-sm"
+									required
+								/>
+							</div>
+						</div>
+					)}
+
+					{/* Shared Media Uploader */}
+					<MediaUploader
+						mediaItems={mediaItems}
+						onChange={setMediaItems}
+						allowPdf={!isOpportunity} // No Add PDF on Opportunity per spec
+						isProject={isProject} // Pop-up editor appears only on Showcase Project per spec
+						onOpenLayoutEditor={() => setLayoutEditorOpen(true)}
+						disabled={isLoading}
 					/>
 
-					{imageItems.length > 0 && (
-						<div className="my-4 space-y-2 border-t pt-3">
-							<div className="flex items-center justify-between text-xs text-muted-foreground">
-								<span className="font-semibold uppercase tracking-wider">
-									Attached Photos ({imageItems.length}/10)
-								</span>
-								<span>First image is post cover</span>
-							</div>
-
-							<div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-								{imageItems.map((item, idx) => (
-									<div
-										key={item.id}
-										className={`group relative aspect-square rounded-lg border overflow-hidden bg-slate-100 ${
-											idx === 0 ? "ring-2 ring-primary" : ""
-										}`}
-									>
-										<img
-											src={item.previewUrl}
-											alt={`Preview ${idx + 1}`}
-											className="h-full w-full object-cover"
-										/>
-
-										{idx === 0 && (
-											<span className="absolute top-1 left-1 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded shadow">
-												Cover
-											</span>
-										)}
-
-										<div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
-											<div className="flex items-center justify-between">
-												{idx > 0 && (
-													<button
-														type="button"
-														onClick={() => makeCoverImage(idx)}
-														className="bg-white/90 hover:bg-white text-yellow-600 p-1 rounded-full text-xs"
-														title="Set as Cover"
-													>
-														<Star className="h-3 w-3 fill-yellow-500" />
-													</button>
-												)}
-												<button
-													type="button"
-													onClick={() => handleRemoveImage(item.id)}
-													className="ml-auto bg-white/90 hover:bg-white text-destructive p-1 rounded-full"
-													title="Remove image"
-												>
-													<X className="h-3.5 w-3.5" />
-												</button>
-											</div>
-
-											<div className="flex items-center justify-between">
-												<button
-													type="button"
-													disabled={idx === 0}
-													onClick={() => moveImage(idx, "left")}
-													className="bg-white/90 hover:bg-white disabled:opacity-30 p-1 rounded-full text-gray-700"
-													title="Move left"
-												>
-													<ArrowLeft className="h-3.5 w-3.5" />
-												</button>
-												<button
-													type="button"
-													disabled={idx === imageItems.length - 1}
-													onClick={() => moveImage(idx, "right")}
-													className="bg-white/90 hover:bg-white disabled:opacity-30 p-1 rounded-full text-gray-700"
-													title="Move right"
-												>
-													<ArrowRight className="h-3.5 w-3.5" />
-												</button>
-											</div>
-										</div>
-									</div>
-								))}
-							</div>
-						</div>
-					)}
-
-					{documentFile && (
-						<div className="my-4 max-h-[250px] overflow-y-auto rounded-lg border p-2">
-							<MediaPreview
-								url={documentPreviewUrl || ""}
-								type="pdf"
-								name={documentFile.name}
-								size="sm"
-								showActions
-							/>
-
+					{/* Actions Bar — Consistent Cancel / Create / Create Later across composers */}
+					<div
+						className={cn(
+							"flex flex-col md:flex-row md:justify-end items-center mt-6 gap-2.5 pt-4 border-t sticky bottom-0 bg-background",
+							isMobile && "gap-2"
+						)}
+					>
+						{/* Create Later action (Showcase Project and Post Opportunity per spec) */}
+						{(isProject || isOpportunity) && (
 							<Button
 								type="button"
-								variant="ghost"
-								size="sm"
-								className="mt-2 w-full text-destructive hover:bg-destructive/10"
-								onClick={() => {
-									if (documentPreviewUrl) URL.revokeObjectURL(documentPreviewUrl)
-									setDocumentFile(null)
-									setDocumentPreviewUrl(null)
-
-									if (documentInputRef.current) {
-										documentInputRef.current.value = ""
-									}
-								}}
+								variant="outline"
+								disabled={isLoading || isSavingDraft}
+								onClick={handleCreateLater}
+								className={cn("text-xs font-medium", isMobile && "w-full py-2.5")}
 							>
-								<X className="mr-2 h-4 w-4" />
-								Remove PDF
+								{isSavingDraft ? "Saving Draft..." : "Create Later"}
 							</Button>
-						</div>
-					)}
+						)}
 
-					<div className={cn("flex items-center space-x-4 mt-4 pt-4 border-t", isMobile && "flex-wrap space-x-2")}>
 						<Button
+							type="button"
 							variant="ghost"
-							size="sm"
-							disabled={imageItems.length >= 10}
-							className={cn("text-muted-foreground hover:text-foreground", isMobile && "px-2 py-1")}
-							onClick={() => fileInputRef.current?.click()}
-						>
-							<Camera className="mr-2 h-4 w-4" />
-							<span className={isMobile ? "sr-only" : ""}>
-								{imageItems.length > 0 ? "Add More Photos" : "Add Photos"}
-							</span>
-						</Button>
-
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept="image/*"
-							multiple
-							className="hidden"
-							onChange={handleImageChange}
-						/>
-
-						<Button
-							variant="ghost"
-							size="sm"
-							className={cn("text-muted-foreground hover:text-foreground", isMobile && "px-2 py-1")}
-							onClick={() => documentInputRef.current?.click()}
-						>
-							<FileText className="mr-2 h-4 w-4" />
-							<span className={isMobile ? "sr-only" : ""}>Add PDF</span>
-						</Button>
-
-						<input
-							ref={documentInputRef}
-							type="file"
-							accept=".pdf"
-							className="hidden"
-							onChange={handleDocumentChange}
-						/>
-
-						<Button
-							variant="ghost"
-							size="sm"
-							className="text-muted-foreground hover:text-foreground"
-							disabled
-						>
-							<MapPin className="mr-2 h-4 w-4" />
-							<span className={isMobile ? "sr-only" : ""}>Add Location</span>
-						</Button>
-					</div>
-
-					<div className={cn("flex flex-col md:flex-row md:justify-end mt-4 gap-3 sticky bottom-0 bg-background pt-4 border-t", isMobile && "mt-2")}>
-						<Button variant="outline" disabled className={cn(isMobile && "w-full py-3 text-base")}>
-							Create Later
-						</Button>
-
-						<Button
-							variant="link"
-							className={cn("text-muted-foreground hover:text-foreground", isMobile && "w-full py-3 text-base")}
+							className={cn("text-muted-foreground hover:text-foreground text-xs", isMobile && "w-full py-2.5")}
 							disabled={isLoading}
-							onClick={cancelCreatePost}
+							onClick={handleCancel}
 						>
-							{isLoading ? "Canceling..." : "Cancel"}
+							Cancel
 						</Button>
 
 						<Button
-							className={cn("bg-primary text-primary-foreground hover:bg-primary-800 font-medium", isMobile && "w-full py-3 text-base")}
-							disabled={!content.trim() || isLoading}
+							type="button"
+							className={cn(
+								"bg-primary text-primary-foreground hover:bg-primary/90 font-medium text-xs px-5",
+								isMobile && "w-full py-2.5"
+							)}
+							disabled={isSubmitDisabled}
 							onClick={handleSubmit}
 						>
-							{isLoading ? "Posting..." : "Share Update"}
+							{isLoading ? "Creating..." : "Create"}
 						</Button>
 					</div>
 				</CardContent>
 			</Card>
+
+			{/* Project-only Pop-up Layout Editor Window */}
+			{isProject && (
+				<MediaLayoutEditor
+					open={layoutEditorOpen}
+					onOpenChange={setLayoutEditorOpen}
+					items={mediaItems}
+					onSave={(updated) => setMediaItems(updated)}
+				/>
+			)}
 		</div>
 	)
 }
