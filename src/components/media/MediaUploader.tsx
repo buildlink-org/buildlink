@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Camera, FileText, X, ArrowLeft, ArrowRight, Star, LayoutGrid } from "lucide-react";
@@ -9,6 +9,7 @@ import {
   MAX_SIZE,
 } from "@/lib/uploadUtils";
 import { MediaItem, MediaUploaderProps } from "./MediaTypes";
+import { PdfPageThumbnailSelector } from "./PdfPageThumbnailSelector";
 
 export const MediaUploader: React.FC<MediaUploaderProps> = ({
   mediaItems,
@@ -71,7 +72,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     if (newItems.length > 0) {
       const updated = [...mediaItems, ...newItems];
       onChange(updated);
-      // For project posts: Dev Journal specifies enabling Pop-up Window on upload
       if (isProject) {
         setTimeout(() => {
           onOpenLayoutEditor?.();
@@ -104,7 +104,10 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
     }
 
     // Replace existing PDF or add
-    const withoutPdf = mediaItems.filter((m) => m.type !== "pdf");
+    const withoutPdf = mediaItems.filter((m) => {
+      if (m.type === "pdf") URL.revokeObjectURL(m.previewUrl);
+      return m.type !== "pdf";
+    });
     const newPdfItem: MediaItem = {
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
       file,
@@ -112,6 +115,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
       type: "pdf",
       name: file.name,
       size: file.size,
+      isCover: !mediaItems.some((item) => item.type === "image" && item.isCover),
     };
 
     const updated = [...withoutPdf, newPdfItem];
@@ -143,34 +147,84 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
   };
 
   const handleSelectThumbnail = (index: number) => {
-    if (index === 0 && mediaItems[0]?.isCover) return;
-    const updated = [...mediaItems];
-    const [selected] = updated.splice(index, 1);
-    selected.isCover = true;
-    updated.forEach((it) => {
-      it.isCover = false;
-    });
-    updated.unshift(selected);
+    const selected = imageItems[index];
+    if (!selected) return;
+    const updated = mediaItems.map((item) => ({
+      ...item,
+      isCover: item.id === selected.id,
+    }));
     onChange(updated);
   };
 
   const handleMove = (index: number, direction: "left" | "right") => {
-    const targetIdx = direction === "left" ? index - 1 : index + 1;
-    if (targetIdx < 0 || targetIdx >= mediaItems.length) return;
+    const targetImageIdx = direction === "left" ? index - 1 : index + 1;
+    if (targetImageIdx < 0 || targetImageIdx >= imageItems.length) return;
 
     const updated = [...mediaItems];
-    const temp = updated[index];
-    updated[index] = updated[targetIdx];
-    updated[targetIdx] = temp;
+    const currentIndex = updated.findIndex((item) => item.id === imageItems[index].id);
+    const targetIndex = updated.findIndex((item) => item.id === imageItems[targetImageIdx].id);
+    [updated[currentIndex], updated[targetIndex]] = [updated[targetIndex], updated[currentIndex]];
     onChange(updated);
   };
 
   const imageItems = mediaItems.filter((m) => m.type === "image");
   const pdfItem = mediaItems.find((m) => m.type === "pdf");
+  const handlePdfPageRendered = useCallback(
+    (
+      pdfId: string,
+      page: number,
+      pageCount: number,
+      previewPageUrl: string,
+      thumbnailFile: File,
+    ) => {
+      onChange(
+        mediaItems.map((item) => {
+          if (item.id !== pdfId) return item;
+          const shouldSelectDefault = item.thumbnailPage === undefined && page === 1;
+          const selectedPage = item.thumbnailPage ?? (shouldSelectDefault ? 1 : undefined);
+          const isSelectedPreview = selectedPage === page;
+          const hasImageCover = mediaItems.some(
+            (candidate) => candidate.type === "image" && candidate.isCover,
+          );
+          return {
+            ...item,
+            previewPageUrl,
+            pageCount,
+            thumbnailPage: selectedPage,
+            thumbnailPreviewUrl: isSelectedPreview
+              ? previewPageUrl
+              : item.thumbnailPreviewUrl,
+            thumbnailFile: isSelectedPreview ? thumbnailFile : item.thumbnailFile,
+            isCover: shouldSelectDefault && !hasImageCover ? true : item.isCover,
+          };
+        }),
+      );
+    },
+    [mediaItems, onChange],
+  );
+  const handleSelectPdfPage = (
+    pdfId: string,
+    page: number,
+    previewUrl: string,
+    thumbnailFile: File,
+  ) => {
+    onChange(
+      mediaItems.map((item) => ({
+        ...item,
+        ...(item.id === pdfId
+          ? {
+              isCover: true,
+              thumbnailPage: page,
+              thumbnailPreviewUrl: previewUrl,
+              thumbnailFile,
+            }
+          : { isCover: false }),
+      })),
+    );
+  };
 
   return (
     <div className={`space-y-3 ${className}`}>
-      {/* Uploaded Images Strip */}
       {imageItems.length > 0 && (
         <div className="space-y-2 border-t pt-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -178,7 +232,7 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
               Attached Photos ({imageItems.length}/{maxImages})
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-[11px]">First photo is post thumbnail</span>
+              <span className="text-[11px]">Choose an image or PDF page as the post thumbnail</span>
               {isProject && (
                 <Button
                   type="button"
@@ -196,7 +250,8 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
 
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
             {imageItems.map((item, idx) => {
-              const isCover = Boolean(item.isCover || idx === 0);
+              const hasCover = Boolean(pdfItem?.isCover || imageItems.some((image) => image.isCover));
+              const isCover = Boolean(item.isCover || (!hasCover && idx === 0));
               return (
                 <div
                   key={item.id}
@@ -216,7 +271,6 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
                     </span>
                   )}
 
-                  {/* Overlay Controls */}
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity flex flex-col justify-between p-1">
                     <div className="flex items-center justify-between">
                       {!isCover ? (
@@ -273,13 +327,19 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
         </div>
       )}
 
-      {/* PDF Attachment Preview */}
       {pdfItem && (
         <div className="border rounded-lg p-2.5 bg-slate-50 dark:bg-slate-900/40 flex items-center justify-between gap-3">
           <div className="flex items-center space-x-2.5 min-w-0">
             <div className="h-9 w-9 rounded bg-red-100 dark:bg-red-950/60 flex items-center justify-center text-red-600 shrink-0">
               <FileText className="h-5 w-5" />
             </div>
+            {pdfItem.previewPageUrl && (
+              <img
+                src={pdfItem.previewPageUrl}
+                alt={`Current page preview of ${pdfItem.name || "PDF"}`}
+                className="h-12 w-10 rounded border bg-white object-contain"
+              />
+            )}
             <div className="min-w-0">
               <p className="text-xs font-medium text-foreground truncate max-w-[200px] sm:max-w-xs">
                 {pdfItem.name || "Attachment Document.pdf"}
@@ -302,8 +362,26 @@ export const MediaUploader: React.FC<MediaUploaderProps> = ({
           </Button>
         </div>
       )}
+      {pdfItem?.file && (
+        <PdfPageThumbnailSelector
+          key={pdfItem.id}
+          file={pdfItem.file}
+          selectedPage={pdfItem.thumbnailPage}
+          onPageRendered={(page, pageCount, previewUrl, thumbnailFile) =>
+            handlePdfPageRendered(
+              pdfItem.id,
+              page,
+              pageCount,
+              previewUrl,
+              thumbnailFile,
+            )
+          }
+          onSelectPage={(page, previewUrl, thumbnailFile) =>
+            handleSelectPdfPage(pdfItem.id, page, previewUrl, thumbnailFile)
+          }
+        />
+      )}
 
-      {/* Upload Action Buttons */}
       <div className="flex items-center gap-2 pt-2 border-t">
         <Button
           type="button"
