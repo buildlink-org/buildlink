@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select"
 import { useIsMobile } from "@/hooks/use-mobile"
 import PostTypeSelector from "./PostTypeSelector"
 import UserAvatarHeader from "./UserAvatarHeader"
@@ -20,6 +27,7 @@ import {
 	MediaItem,
 	MediaUploader,
 	MediaLayoutEditor,
+	getPostImageFiles,
 } from "@/components/media"
 import {
 	OPPORTUNITY_TYPES,
@@ -262,9 +270,7 @@ export const PostCreate = () => {
 			let document_url: string | undefined
 			let document_name: string | undefined
 
-			const imageFiles = mediaItems
-				.filter((m) => m.type === "image" && m.file)
-				.map((m) => m.file as File)
+			const imageFiles = getPostImageFiles(mediaItems)
 
 			const pdfItem = mediaItems.find((m) => m.type === "pdf" && m.file)
 
@@ -380,7 +386,7 @@ export const PostCreate = () => {
 				!opportunityDescription.trim()))
 
 	return (
-		<div className={cn("space-y-6 mt-4 mb-24", isMobile && "px-0")}>
+		<div className={cn("core-vertical-grid mb-24", isMobile && "px-0")}>
 			{/* "What would you like to share?" screen */}
 			<PostTypeSelector postType={postType} setPostType={handlePostTypeChange} />
 
@@ -419,7 +425,7 @@ export const PostCreate = () => {
 
 					{/* ── 2. Showcase Project Composer ── */}
 					{isProject && (
-						<div className="space-y-3">
+						<div className="space-y-4">
 							<div className="space-y-1">
 								<Label htmlFor="project-title" className="text-xs font-medium">
 									Title*
@@ -450,7 +456,7 @@ export const PostCreate = () => {
 							<div className="space-y-1">
 								<div className="flex items-center justify-between">
 									<Label htmlFor="project-subject" className="text-xs font-medium">
-										Subject Matter (100 characters max)*
+										Subject Matter*
 									</Label>
 									<span
 										className={cn(
@@ -465,7 +471,7 @@ export const PostCreate = () => {
 								</div>
 								<Textarea
 									id="project-subject"
-									placeholder="Subject Matter (100 characters max)"
+									placeholder="Display and highlight your latest or past work"
 									value={projectSubjectMatter}
 									maxLength={100}
 									onChange={(e) => setProjectSubjectMatter(e.target.value.slice(0, 100))}
@@ -478,7 +484,7 @@ export const PostCreate = () => {
 
 					{/* ── 3. Post Opportunity Composer ── */}
 					{isOpportunity && (
-						<div className="space-y-3">
+						<div className="space-y-4">
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 								<div className="space-y-1">
 									<Label htmlFor="opportunity-title" className="text-xs font-medium">
@@ -521,64 +527,54 @@ export const PostCreate = () => {
 								/>
 							</div>
 
-							{/* Opportunity Type Options (Radio) */}
-							<div className="space-y-1.5">
-								<Label className="text-xs font-medium">Type*</Label>
-								<div className="flex flex-wrap gap-1.5">
-									{OPPORTUNITY_TYPES.map((typeOption) => {
-										const isSelected = opportunityType === typeOption
-										return (
-											<button
-												key={typeOption}
-												type="button"
-												role="radio"
-												aria-checked={isSelected}
-												onClick={() => setOpportunityType(typeOption)}
-												className={cn(
-													"px-2.5 py-1 rounded-full text-xs font-medium border transition-colors",
-													isSelected
-														? "bg-primary text-primary-foreground border-primary shadow-sm"
-														: "bg-muted/40 text-muted-foreground hover:bg-muted border-border"
-												)}
-											>
+							<div className="space-y-1">
+								<Label htmlFor="opportunity-type" className="text-xs font-medium">
+									Type*
+								</Label>
+								<Select
+									value={opportunityType}
+									onValueChange={(value) => setOpportunityType(value as OpportunityType)}
+								>
+									<SelectTrigger id="opportunity-type">
+										<SelectValue placeholder="Select type" />
+									</SelectTrigger>
+									<SelectContent>
+										{OPPORTUNITY_TYPES.map((typeOption) => (
+											<SelectItem key={typeOption} value={typeOption}>
 												{typeOption}
-											</button>
-										)
-									})}
-								</div>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 
-							{/* Opportunity Experience Level Options (Radio) */}
-							<div className="space-y-1.5">
-								<Label className="text-xs font-medium">Experience*</Label>
-								<div className="flex flex-wrap gap-1.5">
-									{EXPERIENCE_LEVELS.map((levelOption) => {
-										const isSelected = opportunityExperience === levelOption
-										return (
-											<button
-												key={levelOption}
-												type="button"
-												role="radio"
-												aria-checked={isSelected}
-												onClick={() => setOpportunityExperience(levelOption)}
-												className={cn(
-													"px-3 py-1 rounded-full text-xs font-medium border transition-colors",
-													isSelected
-														? "bg-primary text-primary-foreground border-primary shadow-sm"
-														: "bg-muted/40 text-muted-foreground hover:bg-muted border-border"
-												)}
-											>
+							<div className="space-y-1">
+								<Label htmlFor="opportunity-experience" className="text-xs font-medium">
+									Experience*
+								</Label>
+								<Select
+									value={opportunityExperience}
+									onValueChange={(value) =>
+										setOpportunityExperience(value as ExperienceLevel)
+									}
+								>
+									<SelectTrigger id="opportunity-experience">
+										<SelectValue placeholder="Select experience level" />
+									</SelectTrigger>
+									<SelectContent>
+										{EXPERIENCE_LEVELS.map((levelOption) => (
+											<SelectItem key={levelOption} value={levelOption}>
 												{levelOption}
-											</button>
-										)
-									})}
-								</div>
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 							</div>
 
 							<div className="space-y-1">
 								<div className="flex items-center justify-between">
 									<Label htmlFor="opportunity-description" className="text-xs font-medium">
-										Description (600 characters max)*
+										Description*
 									</Label>
 									<span
 										className={cn(
@@ -604,12 +600,11 @@ export const PostCreate = () => {
 						</div>
 					)}
 
-					{/* Shared Media Uploader */}
 					<MediaUploader
 						mediaItems={mediaItems}
 						onChange={setMediaItems}
-						allowPdf={!isOpportunity} // No Add PDF on Opportunity per spec
-						isProject={isProject} // Pop-up editor appears only on Showcase Project per spec
+						allowPdf={!isOpportunity}
+						isProject={isProject}
 						onOpenLayoutEditor={() => setLayoutEditorOpen(true)}
 						disabled={isLoading}
 					/>
@@ -659,7 +654,6 @@ export const PostCreate = () => {
 				</CardContent>
 			</Card>
 
-			{/* Project-only Pop-up Layout Editor Window */}
 			{isProject && (
 				<MediaLayoutEditor
 					open={layoutEditorOpen}

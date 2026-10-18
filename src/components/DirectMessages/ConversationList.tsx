@@ -8,6 +8,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageSquare } from 'lucide-react';
 import { useMessagingStore } from '@/stores/messagingStore';
 import { formatTimestamp, cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserListItem {
   id: string;
@@ -19,10 +20,22 @@ interface ConversationsListProps {
   onSelectUser: (user: UserListItem) => void;
 }
 
+const getOtherUserId = (conversation: unknown, currentUserId: string) => {
+  if (typeof conversation === "string") {
+    return conversation === currentUserId ? null : conversation
+  }
+  if (!conversation || typeof conversation !== "object") return null
+
+  const record = conversation as Record<string, unknown>
+  const id = record.other_user_id ?? record.user_id ?? record.id
+  return typeof id === "string" && id !== currentUserId ? id : null
+}
+
 const ConversationsList: React.FC<ConversationsListProps> = ({
   onSelectUser,
 }) => {
   const { user } = useAuth();
+  const { toast } = useToast();
 
   const [users, setUsers] = useState<UserListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,31 +73,33 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         !data ||
         !Array.isArray(data)
       ) {
+        if (error) {
+          console.error("[Messaging] Failed to load conversations:", error);
+          toast({
+            title: "Couldn't load messages",
+            description: error.message,
+            variant: "destructive",
+          });
+        }
         setUsers([]);
         setLoading(false);
         return;
       }
 
       // FETCH PROFILE FOR EACH USER
-      const promises = data.map(async (c: any) => {
-        const otherUserId =
-          c.other_user_id ||
-          c.user_id ||
-          c.id ||
-          c;
-
-        if (
-          !otherUserId ||
-          otherUserId === user.id
-        )
-          return null;
+      const promises = data.map(async (conversation: unknown) => {
+        const otherUserId = getOtherUserId(conversation, user.id)
+        if (!otherUserId) return null
 
         try {
-          const { data: profile } =
+          const { data: profile, error: profileError } =
             await profileService.getProfile(
               otherUserId
             );
 
+          if (profileError) {
+            console.warn("[Messaging] Failed to load conversation profile:", profileError);
+          }
           if (profile) {
             return {
               id: otherUserId,
@@ -92,7 +107,9 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
               avatar: profile.avatar,
             };
           }
-        } catch (e) {}
+        } catch (error) {
+          console.warn("[Messaging] Failed to load conversation profile:", error);
+        }
 
         return {
           id: otherUserId,
@@ -103,16 +120,30 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
 
       const results = await Promise.all(promises);
 
-      const uniqueUsers =
-        results.filter(Boolean) as UserListItem[];
+      const uniqueUsers = Array.from(
+        new Map(
+          results
+            .filter((item): item is UserListItem => Boolean(item))
+            .map((item) => [item.id, item]),
+        ).values(),
+      );
 
       setUsers(uniqueUsers);
 
       // SINGLE BATCHED QUERY for last messages (replaces N+1 prefetch)
-      const { data: lastMsgs } =
+      const { data: lastMsgs, error: lastMessageError } =
         await directMessagesService.getLastMessagesForUser(
           user.id
         );
+
+      if (lastMessageError) {
+        console.error("[Messaging] Failed to load latest messages:", lastMessageError);
+        toast({
+          title: "Some message previews are unavailable",
+          description: lastMessageError.message,
+          variant: "destructive",
+        });
+      }
 
       if (lastMsgs) {
         setLastMessages(lastMsgs);
@@ -122,25 +153,20 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
     };
 
     fetchConversations();
-  }, [user]);
+  }, [user, toast]);
 
   // LAST MESSAGE
   const getLastMessageSnippet = (
     otherUserId: string
   ): string => {
-    // Prefer batched lastMessages, fall back to store
-    const lastMsg = lastMessages[otherUserId];
     const conversationMessages =
       messagesByUserId[otherUserId];
-
-    const message =
-      lastMsg ||
-      (conversationMessages &&
-        conversationMessages.length > 0
-        ? conversationMessages[
-            conversationMessages.length - 1
-          ]
-        : null);
+    const storeMessage = conversationMessages?.at(-1);
+    const fetchedMessage = lastMessages[otherUserId];
+    const message = storeMessage && (
+      !fetchedMessage ||
+      new Date(storeMessage.created_at).getTime() > new Date(fetchedMessage.created_at).getTime()
+    ) ? storeMessage : fetchedMessage;
 
     if (!message) {
       return 'Click to open conversation';
@@ -151,11 +177,15 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
         ? 'You: '
         : '';
 
+    const messageContent = message.content?.trim() || (
+      message.image_type === "pdf" ? "PDF attachment" :
+      message.image_url ? "Image attachment" : "Message"
+    );
     const contentSnippet =
-      message.content.length > 40
-        ? message.content.substring(0, 40) +
+      messageContent.length > 40
+        ? messageContent.substring(0, 40) +
           '...'
-        : message.content;
+        : messageContent;
 
     return prefix + contentSnippet;
   };
@@ -164,18 +194,14 @@ const ConversationsList: React.FC<ConversationsListProps> = ({
   const getLastMessageTimestamp = (
     otherUserId: string
   ): string | null => {
-    const lastMsg = lastMessages[otherUserId];
     const conversationMessages =
       messagesByUserId[otherUserId];
-
-    const message =
-      lastMsg ||
-      (conversationMessages &&
-        conversationMessages.length > 0
-        ? conversationMessages[
-            conversationMessages.length - 1
-          ]
-        : null);
+    const storeMessage = conversationMessages?.at(-1);
+    const fetchedMessage = lastMessages[otherUserId];
+    const message = storeMessage && (
+      !fetchedMessage ||
+      new Date(storeMessage.created_at).getTime() > new Date(fetchedMessage.created_at).getTime()
+    ) ? storeMessage : fetchedMessage;
 
     if (!message) {
       return null;

@@ -14,6 +14,7 @@ import RecipientInput from "./NewChatInput"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { useAuth } from "@/contexts/AuthContext"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { directMessagesService } from "@/services/directMessagesService"
 
 
 interface UserListItem {
@@ -29,12 +30,13 @@ const FloatingMessagingWidget: React.FC = () => {
   const recipientAvatar = useMessagingStore((state) => state.recipientAvatar)
   const clearRecipient = useMessagingStore((state) => state.clearRecipient)
   const setCurrentUser = useMessagingStore((state) => state.setCurrentUser)
+  const setUnreadCounts = useMessagingStore((state) => state.setUnreadCounts)
   const subscribeToMessages = useMessagingStore((state) => state.subscribeToMessages)
   const unsubscribeFromMessages = useMessagingStore((state) => state.unsubscribeFromMessages)
 
   const [isOpen, setIsOpen] = useState(!!recipientId)
   const [selectedUser, setSelectedUser] = useState<UserListItem | null>(null)
-  const [activeTab, setActiveTab] = useState<"inbox" | "chat">("chat")
+  const [activeTab, setActiveTab] = useState<"inbox" | "chat">("inbox")
   const [animate, setAnimate] = useState(false)
 
           
@@ -47,10 +49,16 @@ const FloatingMessagingWidget: React.FC = () => {
 })
 
 useEffect(() => {
-  setPosition({
-    x: window.innerWidth - 70,
-    y: window.innerHeight - 140,
-  })
+  const placeButton = () => {
+    setPosition((current) => ({
+      x: Math.min(current.x || window.innerWidth - 72, window.innerWidth - 72),
+      y: Math.min(current.y || window.innerHeight - 144, window.innerHeight - 144),
+    }))
+  }
+
+  placeButton()
+  window.addEventListener("resize", placeButton)
+  return () => window.removeEventListener("resize", placeButton)
 }, [])
 
   //draggable
@@ -70,33 +78,33 @@ useEffect(() => {
     0
   )
 
-  // 🔒 Refined scroll lock — only on mobile (full-screen mode)
-  // Desktop panel is non-modal, page remains interactive
   useEffect(() => {
     if (!isOpen) return
 
-    // Detect mobile via window width
     const isMobile = window.innerWidth < 768
+    if (!isMobile) return
 
-    
-      const scrollY = window.scrollY
-      document.body.style.position = "fixed"
-      document.body.style.top = `-${scrollY}px`
-      document.body.style.left = "0"
-      document.body.style.right = "0"
-      document.body.style.width = "100%"
-      document.body.style.overflow = "hidden"
+    const scrollY = window.scrollY
+    const previousStyles = {
+      position: document.body.style.position,
+      top: document.body.style.top,
+      left: document.body.style.left,
+      right: document.body.style.right,
+      width: document.body.style.width,
+      overflow: document.body.style.overflow,
+    }
 
-      return () => {
-        const scrollYValue = document.body.style.top
-        document.body.style.position = ""
-        document.body.style.top = ""
-        document.body.style.width = ""
-        document.body.style.overflow = ""
-        window.scrollTo(0, parseInt(scrollYValue || "0") * -1)
-      }
-    
-    // Desktop: no scroll lock, page remains interactive
+    document.body.style.position = "fixed"
+    document.body.style.top = `-${scrollY}px`
+    document.body.style.left = "0"
+    document.body.style.right = "0"
+    document.body.style.width = "100%"
+    document.body.style.overflow = "hidden"
+
+    return () => {
+      Object.assign(document.body.style, previousStyles)
+      window.scrollTo(0, scrollY)
+    }
   }, [isOpen])
 
   // Initialize real-time subscription when user is available
@@ -105,16 +113,27 @@ useEffect(() => {
 
     setCurrentUser(user.id)
     subscribeToMessages()
+    let active = true
+    void directMessagesService.getUnreadCountsForUser(user.id).then(({ data, error }) => {
+      if (!active) return
+      if (error) {
+        console.error("[Messaging] Failed to load unread counts:", error)
+        return
+      }
+      setUnreadCounts(data || {})
+    })
 
     return () => {
+      active = false
       unsubscribeFromMessages()
     }
-  }, [user])
+  }, [setCurrentUser, setUnreadCounts, subscribeToMessages, unsubscribeFromMessages, user])
 
   // ✨ Animate panel
   useEffect(() => {
     if (isOpen) {
-      setTimeout(() => setAnimate(true), 10)
+      const timeout = window.setTimeout(() => setAnimate(true), 10)
+      return () => window.clearTimeout(timeout)
     } else {
       setAnimate(false)
     }
@@ -133,7 +152,10 @@ useEffect(() => {
     }
   }, [recipientId, recipientName, recipientAvatar])
 
-  const handleOpen = () => setIsOpen(true)
+  const handleOpen = () => {
+    setActiveTab("inbox")
+    setIsOpen(true)
+  }
 
   const handleClose = () => {
     setAnimate(false)
@@ -156,6 +178,7 @@ useEffect(() => {
   const handleSelectUser = (user: UserListItem) => {
     setSelectedUser(user)
     setActiveTab("chat")
+    useMessagingStore.getState().openConversation(user.id, user.name, user.avatar)
   }
 
   //handle draggable
@@ -198,10 +221,10 @@ const handlePointerMove = (e: React.PointerEvent<HTMLButtonElement>) => {
 
 const handlePointerUp = () => {
   dragging.current = false
+}
 
-  if (!moved.current) {
-    handleOpen()
-  }
+const handlePointerCancel = () => {
+  dragging.current = false
 }
 
   return (
@@ -213,6 +236,10 @@ const handlePointerUp = () => {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClick={() => {
+          if (!moved.current) handleOpen()
+        }}
        
         style={
           window.innerWidth < 640
@@ -238,6 +265,7 @@ const handlePointerUp = () => {
           sm:bottom-5
           sm:right-5
           "
+        aria-label={`Open messages${unreadCount > 0 ? `, ${unreadCount} unread` : ""}`}
         >
           <MessageSquare className="h-6 w-6" />
 
@@ -269,14 +297,17 @@ const handlePointerUp = () => {
         flex
         items-end
         justify-end
-        p-4
-        md:items-center
-        md:justify-center
+        p-0
+        md:items-end
+        md:justify-end
+        md:p-6
         pointer-events-none
       "
     >
       <div
         onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-label="Messages"
         className={`
           relative
           flex
@@ -291,18 +322,17 @@ const handlePointerUp = () => {
 
           pointer-events-auto
 
-          w-[55vw]
-          h-[55vh]
+          h-[100dvh]
+          w-full
+          min-h-0
+          min-w-0
+          pt-[env(safe-area-inset-top)]
+          pb-[env(safe-area-inset-bottom)]
+          rounded-none
 
+          md:h-[min(650px,calc(100dvh-3rem))]
           md:w-[460px]
-          md:h-[450px]
-
-          min-w-[300px]
-          min-h-[450px]
-
-         
-
-          rounded-2xl
+          md:rounded-2xl
 
           ${
             animate
@@ -329,17 +359,13 @@ const handlePointerUp = () => {
                                     {selectedUser.name?.[0] || "U"}
                                   </AvatarFallback>
                                 </Avatar>
-                                {/* Online status indicator */}
-                                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card" />
                               </div>
 
                               <div className="flex flex-col leading-tight min-w-0">
                                 <span className="text-sm font-semibold text-foreground truncate">
                                   {selectedUser.name}
                                 </span>
-                                <span className="text-[10px] text-muted-foreground">
-                                  Active now
-                                </span>
+                                <span className="text-[10px] text-muted-foreground">Direct message</span>
                               </div>
                             </div>
                           ) : (
@@ -354,6 +380,7 @@ const handlePointerUp = () => {
                             variant="ghost"
                             size="icon"
                             onClick={() => {
+                              clearRecipient()
                               setActiveTab("chat")
                               setSelectedUser(null)
                             }}
@@ -411,6 +438,11 @@ const handlePointerUp = () => {
                           <RecipientInput
                             onStartChat={(user) => {
                               setSelectedUser(user)
+                              useMessagingStore.getState().openConversation(
+                                user.id,
+                                user.name,
+                                user.avatar,
+                              )
                             }}
                           />
                         )}

@@ -9,13 +9,17 @@ import { useAuth } from "@/contexts/AuthContext"
 import { postsService } from "@/services/postsService"
 import { useToast } from "@/hooks/use-toast"
 import { uploadPostImages, uploadPostDocument } from "@/lib/uploadUtils"
-import { MediaItem, MediaUploader, MediaLayoutEditor } from "@/components/media"
+import {
+	MediaItem,
+	MediaUploader,
+	MediaLayoutEditor,
+	getPostImageFiles,
+} from "@/components/media"
+import { POST_STATUS_PLACEHOLDERS, PostStatus } from "@/components/postStatusPlaceholders"
 
 interface CreatePostDialogProps {
 	onPostCreated?: () => void
 }
-
-export type PostStatus = "industry" | "project" | "opportunity"
 
 interface FormData {
 	content: string
@@ -33,16 +37,6 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 	})
 	const [mediaItems, setMediaItems] = useState<MediaItem[]>([])
 	const [layoutEditorOpen, setLayoutEditorOpen] = useState(false)
-
-	// Exact placeholder mapping required by spec:
-	// Industry -> Display & highlight your work
-	// Project -> Share your thoughts, insights or questions
-	// Opportunity -> Post gigs, job openings & any other opportunities
-	const placeholders: Record<PostStatus, string> = {
-		industry: "Display & highlight your work",
-		project: "Share your thoughts, insights or questions",
-		opportunity: "Post gigs, job openings & any other opportunities",
-	}
 
 	const mediaItemsRef = useRef(mediaItems)
 	mediaItemsRef.current = mediaItems
@@ -83,9 +77,7 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 			let document_url: string | undefined
 			let document_name: string | undefined
 
-			const imageFiles = mediaItems
-				.filter((m) => m.type === "image" && m.file)
-				.map((m) => m.file as File)
+			const imageFiles = getPostImageFiles(mediaItems)
 
 			const pdfItem = mediaItems.find((m) => m.type === "pdf" && m.file)
 
@@ -182,7 +174,6 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 					</DialogHeader>
 
 					<form onSubmit={handleSubmit} className="space-y-4">
-						{/* Status selector (replaces Category per spec) */}
 						<div className="space-y-2">
 							<Label htmlFor="post-status">Status</Label>
 							<Select value={formData.status} onValueChange={handleStatusChange}>
@@ -197,7 +188,6 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 							</Select>
 						</div>
 
-						{/* Content textarea with exact placeholders per spec */}
 						<div className="space-y-2">
 							<div className="flex items-center justify-between">
 								<Label htmlFor="content">Content</Label>
@@ -215,13 +205,12 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 										content: e.target.value.slice(0, 600),
 									}))
 								}
-								placeholder={placeholders[formData.status]}
+								placeholder={POST_STATUS_PLACEHOLDERS[formData.status]}
 								rows={4}
 								required
 							/>
 						</div>
 
-						{/* Shared Media Uploader */}
 						<MediaUploader
 							mediaItems={mediaItems}
 							onChange={setMediaItems}
@@ -231,7 +220,6 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 							disabled={isLoading}
 						/>
 
-						{/* Modal Actions */}
 						<div className="flex justify-end space-x-2 pt-4 border-t">
 							<Button
 								type="button"
@@ -249,7 +237,6 @@ export const CreatePostDialog = ({ onPostCreated }: CreatePostDialogProps) => {
 				</DialogContent>
 			</Dialog>
 
-			{/* Project-only Pop-up Layout Editor */}
 			{isProject && (
 				<MediaLayoutEditor
 					open={layoutEditorOpen}

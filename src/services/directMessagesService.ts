@@ -155,4 +155,21 @@ export const directMessagesService = {
 
 		return { data: lastMessages, error: null }
 	},
+
+	async getUnreadCountsForUser(userId: string) {
+		const { data, error } = await supabase
+			.from("direct_messages")
+			.select("sender_id")
+			.eq("recipient_id", userId)
+			.eq("read", false)
+
+		if (error) return { data: null, error }
+
+		const counts: Record<string, number> = {}
+		for (const message of data) {
+			counts[message.sender_id] = (counts[message.sender_id] || 0) + 1
+		}
+
+		return { data: counts, error: null }
+	},
 }

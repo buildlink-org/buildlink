@@ -4,11 +4,7 @@ import PublicProfileView from "@/components/profile/PublicProfileView";
 const PublicProfile: React.FC = () => {
   return (
     <Index 
-      customContent={
-        <div className="mx-auto py-8">
-          <PublicProfileView />
-        </div>
-      }
+      customContent={<PublicProfileView />}
       showNavigation={true}
       showFilters={false}
       initialTab="publicProfile"

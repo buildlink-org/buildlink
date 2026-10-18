@@ -11,12 +11,17 @@ import {
   Paperclip,
   MoreVertical,
   MessageSquare,
+  FileText,
 } from "lucide-react"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { formatTimestamp, compressImage, cn } from "@/lib/utils"
 import EmojiPickerButton from "../EmojiPicker"
-import { supabase } from "@/integrations/supabase/client"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import {
+  ALLOWED_MIME,
+  MAX_SIZE,
+  uploadFile,
+  validateUploadFile,
+} from "@/lib/uploadUtils"
 
 interface ConversationViewProps {
   otherUserId: string
@@ -27,6 +32,8 @@ interface ConversationViewProps {
 type ConversationItem =
   | ({ type: "message" } & Message)
   | { type: "separator"; id: string; dateLabel: string }
+
+const EMPTY_MESSAGES: Message[] = []
 
 const addDateSeparators = (messages: Message[]): ConversationItem[] => {
   const items: ConversationItem[] = []
@@ -74,10 +81,9 @@ const ConversationView: React.FC<
   const { user } = useAuth()
   const { toast } = useToast()
 
-  const messages =
-    useMessagingStore(
-      (s) => s.messagesByUserId[otherUserId]
-    ) ?? []
+  const messages = useMessagingStore(
+    (s) => s.messagesByUserId[otherUserId]
+  ) ?? EMPTY_MESSAGES
 
   const loading =
     useMessagingStore(
@@ -135,21 +141,31 @@ const ConversationView: React.FC<
   )
 
   useEffect(() => {
-    if (!user || !otherUserId) return
+    const userId = user?.id
+    if (!userId || !otherUserId) return
 
-    fetchMessages(user.id, otherUserId)
-  }, [user, otherUserId])
+    fetchMessages(userId, otherUserId)
+  }, [fetchMessages, user?.id, otherUserId])
 
   // Mark messages as read when viewing a conversation
   useEffect(() => {
-    if (!user || !otherUserId) return
+    const userId = user?.id
+    if (!userId || !otherUserId) return
 
     markConversationRead(otherUserId)
-    directMessagesService.markMessagesAsRead(
-      user.id,
+    void directMessagesService.markMessagesAsRead(
+      userId,
       otherUserId
-    )
-  }, [user, otherUserId])
+    ).then(({ error }) => {
+      if (error) {
+        toast({
+          title: "Couldn't update message status",
+          description: error.message,
+          variant: "destructive",
+        })
+      }
+    })
+  }, [markConversationRead, otherUserId, toast, user?.id])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({
@@ -201,23 +217,20 @@ const ConversationView: React.FC<
           fileToUpload = await compressImage(file)
         }
 
-        const path = `chat/${user.id}-${Date.now()}`
+        const extension = file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "file"
+        const uploaded = await uploadFile(fileToUpload, {
+          bucket: "uploads",
+          filePath: `chat/${user.id}-${Date.now()}.${extension}`,
+          allowedMimeTypes: ALLOWED_MIME.chatAttachment,
+          maxSizeBytes: MAX_SIZE.chatAttachment,
+          context: "direct message attachment",
+        })
+        if (uploaded.error || !uploaded.url) {
+          throw new Error(uploaded.error || "The attachment could not be uploaded.")
+        }
 
-        await supabase.storage
-          .from("uploads")
-          .upload(path, fileToUpload)
-
-        const { data } = supabase.storage
-          .from("uploads")
-          .getPublicUrl(path)
-
-        image_url = data.publicUrl
-
-        image_type = file.type.startsWith(
-          "image"
-        )
-          ? "image"
-          : "pdf"
+        image_url = uploaded.url
+        image_type = file.type.startsWith("image/") ? "image" : "pdf"
       }
 
       const { data, error } =
@@ -242,7 +255,9 @@ const ConversationView: React.FC<
 
       setContent("")
       setFile(null)
-    } catch (err: any) {
+      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview)
+      if (fileInputRef.current) fileInputRef.current.value = ""
+    } catch (err: unknown) {
       updateMessage({
         ...optimisticMessage,
         status: "failed",
@@ -250,7 +265,7 @@ const ConversationView: React.FC<
 
       toast({
         title: "Send failed",
-        description: err.message,
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       })
     }
@@ -259,13 +274,38 @@ const ConversationView: React.FC<
   }
 
   const handleDelete = async (id: string) => {
-    await directMessagesService.deleteMessage(id)
-
+    const message = messages.find((item) => item.id === id)
+    const { error } = await directMessagesService.deleteMessage(id)
+    if (error) {
+      toast({
+        title: "Couldn't delete message",
+        description: error.message,
+        variant: "destructive",
+      })
+      return
+    }
+    if (message?.localPreview?.startsWith("blob:")) {
+      URL.revokeObjectURL(message.localPreview)
+    }
     removeMessage(id)
   }
 
   const handleRetry = async (msg: Message) => {
     if (!user || sending) return
+    if (file && msg.localPreview) {
+      if (msg.localPreview.startsWith("blob:")) URL.revokeObjectURL(msg.localPreview)
+      removeMessage(msg.id)
+      void handleSend()
+      return
+    }
+    if (msg.localPreview) {
+      toast({
+        title: "Attachment needs to be reselected",
+        description: "Select the file again before retrying this message.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setSending(true)
 
@@ -300,7 +340,7 @@ const ConversationView: React.FC<
           status: "sent",
         })
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       updateMessage({
         ...retryMessage,
         status: "failed",
@@ -308,7 +348,7 @@ const ConversationView: React.FC<
 
       toast({
         title: "Send failed",
-        description: err.message,
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       })
     }
@@ -317,11 +357,20 @@ const ConversationView: React.FC<
   }
 
   const handleEdit = async (id: string) => {
-    const { data } =
+    const { data, error } =
       await directMessagesService.updateMessage({
         id,
         content: editingText,
       })
+
+    if (error) {
+      toast({
+        title: "Couldn't edit message",
+        description: error.message,
+        variant: "destructive",
+      })
+      return
+    }
 
     if (data) {
       updateMessage(data)
@@ -529,29 +578,40 @@ const ConversationView: React.FC<
                         </p>
                       )}
 
-                      {(msg.localPreview ||
-                        msg.image_url) && (
-                        <img
-                          src={
-                            msg.localPreview ||
-                            msg.image_url!
-                          }
-                          className="mt-2 max-h-60 rounded-xl object-cover"
-                          alt="attachment"
-                        />
+                      {msg.image_type !== "pdf" &&
+                        (msg.localPreview || msg.image_url) && (
+                        <a
+                          href={msg.localPreview || msg.image_url!}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label="Open image attachment"
+                        >
+                          <img
+                            src={msg.localPreview || msg.image_url!}
+                            className="mt-2 max-h-60 max-w-full rounded-xl object-contain"
+                            alt="Image attachment"
+                          />
+                        </a>
                       )}
 
-                      {msg.image_type === "pdf" &&
-                        !msg.localPreview && (
+                      {msg.image_type === "pdf" && (
+                        msg.localPreview ? (
+                          <div className="mt-2 flex items-center gap-2 rounded-lg border border-current/20 px-3 py-2 text-xs">
+                            <FileText className="h-4 w-4 shrink-0" aria-hidden />
+                            <span>PDF attachment</span>
+                          </div>
+                        ) : msg.image_url ? (
                           <a
-                            href={msg.image_url!}
+                            href={msg.image_url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="mt-2 block text-xs underline"
+                            className="mt-2 flex items-center gap-2 rounded-lg border border-current/20 px-3 py-2 text-xs underline"
                           >
-                            📄 View PDF
+                            <FileText className="h-4 w-4 shrink-0" aria-hidden />
+                            Open PDF
                           </a>
-                        )}
+                        ) : null
+                      )}
 
                       <p
                         className={cn(
@@ -634,6 +694,8 @@ const ConversationView: React.FC<
             onClick={() =>
               fileInputRef.current?.click()
             }
+            aria-label="Attach an image or PDF"
+            disabled={sending}
           >
             <Paperclip className="h-4 w-4" />
           </Button>
@@ -653,10 +715,10 @@ const ConversationView: React.FC<
                 }
               }}
               placeholder="Type a message..."
-              rows={5}
+              rows={1}
               className="
-                min-h-[60px]
-                max-h-[160px]
+                min-h-[44px]
+                max-h-[112px]
                 resize-none
                 border-0
                 bg-transparent
@@ -692,10 +754,25 @@ const ConversationView: React.FC<
           type="file"
           hidden
           ref={fileInputRef}
+          accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
           onChange={(e) => {
             const f = e.target.files?.[0]
 
             if (!f) return
+            const validation = validateUploadFile(
+              f,
+              ALLOWED_MIME.chatAttachment,
+              MAX_SIZE.chatAttachment,
+            )
+            if (!validation.valid) {
+              toast({
+                title: "Attachment not accepted",
+                description: validation.error || "Choose an image or PDF up to 10 MB.",
+                variant: "destructive",
+              })
+              e.target.value = ""
+              return
+            }
 
             setFile(f)
 

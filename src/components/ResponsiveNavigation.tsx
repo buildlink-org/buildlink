@@ -124,7 +124,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
 
       {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border shadow-lg" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div className="flex items-center justify-around pt-2 pb-2 max-w-6xl mx-auto">
+        <nav aria-label="Mobile navigation" className="mx-auto grid min-h-14 max-w-6xl grid-cols-4 items-center gap-0 px-1 pt-2 pb-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -135,7 +135,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                 aria-label={item.ariaLabel}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "flex flex-col items-center min-w-[60px] transition-colors",
+                  "flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1 transition-colors",
                   active
                     ? "text-primary"
                     : "text-muted-foreground hover:text-primary",
@@ -148,14 +148,14 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
                     item.id === "post" && active && "bg-primary text-primary-foreground rounded-full p-1 h-8 w-8"
                   )}
                 />
-                <span className="text-xs font-medium">{item.title}</span>
+                <span className="max-w-full truncate whitespace-nowrap text-[10px] font-medium min-[380px]:text-xs">{item.title}</span>
                 {loading && active && (
                   <div className="absolute -top-1 -right-1 animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
                 )}
               </Link>
             );
           })}
-        </div>
+        </nav>
       </div>
     </>
   );
