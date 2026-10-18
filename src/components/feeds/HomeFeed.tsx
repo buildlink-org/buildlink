@@ -330,7 +330,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 
 	if (initialLoading) {
 		return (
-			<div className="space-y-6">
+			<div className="core-vertical-grid">
 				<div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
 					<div className="mb-4 flex items-start justify-between">
 						<div>
@@ -378,7 +378,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 	}
 
 	return (
-		<div className="space-y-6">
+		<div className="core-vertical-grid">
 			{/* Stats Banner */}
 			<div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
 				<div className="mb-4 flex items-start justify-between">
@@ -423,7 +423,7 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 			)}
 
 			{/* Posts Feed */}
-			<div className="space-y-4">
+			<div className="grid gap-y-4">
 				{posts.length > 0 ? (
 					<>
 						{posts.map((post, index) => (

@@ -23,9 +23,9 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 
 	return (
 		<header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-			<div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-4 md:px-8">
+			<div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-2 sm:px-4 md:px-8">
 							{/* Left side - Menu + Logo */}
-				<div className="flex items-center space-x-3">
+				<div className="flex shrink-0 items-center gap-2">
 					<button
 						type="button"
 						onClick={onLogoClick}
@@ -36,7 +36,7 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 							alt=""
 							className="mr-2 h-6 w-6"
 						/>
-						<span className="text-lg font-semibold">BuildLink</span>
+						<span className="hidden text-lg font-semibold min-[360px]:inline">BuildLink</span>
 					</button>
 					{loading && <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary" aria-label="Loading" role="status"></div>}
 				</div>
@@ -47,12 +47,13 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 				</div> 
 
         {/* Right side actions */}
-				<div className="flex items-center space-x-4">
+				<div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
 					<SearchDialog>
 						<Button
 							variant="ghost"
 							size="icon"
-							className="sm:hidden">
+							className="sm:hidden"
+							aria-label="Open search">
 							<Search className="h-5 w-5" />
 						</Button>
 					</SearchDialog>
@@ -74,20 +75,22 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 
 					{isAdmin && (
 						<>
-							<Link to="/admin-analytics">
+							<Link to="/admin-analytics" aria-label="Admin analytics">
 								<Button
 									variant="ghost"
 									size="icon"
 									title="Analytics"
+									aria-label="Admin analytics"
 									className={cn(location.pathname === "/admin-analytics" && "bg-accent text-accent-foreground")}>
 									<BarChart3 className="h-5 w-5" />
 								</Button>
 							</Link>
-							<Link to="/admin-resources">
+							<Link to="/admin-resources" aria-label="Admin resources and settings">
 								<Button
 									variant="ghost"
 									size="icon"
 									title="Admin Panel"
+									aria-label="Admin resources and settings"
 									className={cn(location.pathname === "/admin-resources" && "bg-accent text-accent-foreground")}>
 									<Settings className="h-5 w-5" />
 								</Button>

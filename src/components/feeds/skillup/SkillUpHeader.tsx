@@ -13,7 +13,7 @@ const SkillUpHeader = () => {
       icon: Award,
     },
     {
-      label: "INDUSTRY\nEVENTS",
+      label: "INDUSTRY EVENTS",
       icon: CalendarDays,
     },
     {
@@ -21,18 +21,17 @@ const SkillUpHeader = () => {
       icon: BookOpen,
     },
     {
-      label: "TECHNICAL\nDATA",
+      label: "TECHNICAL DATA",
       icon: FileText,
     },
     {
-      label: "LEGAL",
+      label: "LEGAL & COMPLIANCE",
       icon: Scale,
     },
   ];
 
   return (
-    <header className="relative overflow-hidden rounded-xl shadow-md">
-      {/* Main banner background */}
+    <header className="relative overflow-hidden rounded-lg shadow-md">
       <div
         className="absolute inset-0"
         aria-hidden
@@ -42,7 +41,6 @@ const SkillUpHeader = () => {
         }}
       />
 
-      {/* Subtle background pattern */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.045]"
         aria-hidden
@@ -53,7 +51,6 @@ const SkillUpHeader = () => {
         }}
       />
 
-      {/* Decorative glow */}
       <div
         className="pointer-events-none absolute -right-12 -top-16 h-40 w-40 rounded-full blur-3xl"
         aria-hidden
@@ -62,21 +59,17 @@ const SkillUpHeader = () => {
         }}
       />
 
-      {/* Content */}
-      <div className="relative px-5 py-4 sm:px-6 sm:py-5">
-        {/* Heading */}
-        <div className="mb-3">
-          <h2 className="text-lg font-bold leading-tight text-white sm:text-xl">
+      <div className="relative p-6">
+        <div className="mb-4">
+          <h1 className="mb-2 text-2xl font-bold leading-tight text-white">
             Resource Hub
-          </h2>
+          </h1>
 
-          <p className="mt-0.5 max-w-2xl text-xs leading-relaxed text-white/90 sm:text-sm">
-            Your One-Stop shop to help stay relevant, manage projects
-            efficiently, and ensure compliance.
+          <p className="max-w-2xl text-base leading-relaxed text-white">
+            Your One-Stop shop to help stay relevant, manage projects efficiently, and ensure compliance.
           </p>
         </div>
 
-        {/* Resource category tags */}
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
           {resourceTags.map(({ label, icon: Icon }) => (
             <div
@@ -85,23 +78,20 @@ const SkillUpHeader = () => {
                 flex min-h-[62px]
                 flex-col items-center justify-center
                 rounded-lg
-                border border-white/10
-                bg-white/[0.10]
-                px-2 py-2
+                border border-white/60
+                bg-white/90
+                px-2 py-2.5
                 text-center
-                backdrop-blur-sm
-                transition-all
-                duration-200
-                hover:bg-white/[0.17]
+                text-primary
               "
             >
               <Icon
-                className="mb-1.5 h-5 w-5 text-white/80"
+                className="mb-1 h-5 w-5"
                 strokeWidth={1.8}
                 aria-hidden
               />
 
-              <span className="whitespace-pre-line text-[11px] font-bold leading-tight text-white sm:text-xs">
+              <span className="text-xs font-bold leading-tight sm:text-sm">
                 {label}
               </span>
             </div>

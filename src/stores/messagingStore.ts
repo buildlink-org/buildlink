@@ -21,6 +21,7 @@ interface MessagingState {
 
   // Unread counts keyed by the other user's ID
   unreadCounts: Record<string, number>
+  setUnreadCounts: (counts: Record<string, number>) => void
 
   // Internal real-time channel reference
   _realtimeChannel: RealtimeChannel | null
@@ -74,7 +75,18 @@ export const useMessagingStore =
 
     // ─── SET CURRENT USER ────────────────────────────
     setCurrentUser: (userId) => {
-      set({ currentUserId: userId })
+      set((state) => state.currentUserId === userId
+        ? state
+        : {
+            currentUserId: userId,
+            recipientId: null,
+            recipientName: null,
+            recipientAvatar: null,
+            messagesByUserId: {},
+            loadingStatus: {},
+            unreadCounts: {},
+            _realtimeChannel: null,
+          })
     },
 
     // ─── OPEN CHAT ───────────────────────────────────
@@ -82,12 +94,22 @@ export const useMessagingStore =
       userId,
       name,
       avatar
-    ) =>
+    ) => {
       set({
         recipientId: userId,
         recipientName: name,
         recipientAvatar: avatar,
-      }),
+        unreadCounts: {
+          ...get().unreadCounts,
+          [userId]: 0,
+        },
+      })
+
+      const currentUserId = get().currentUserId
+      if (currentUserId) {
+        void directMessagesService.markMessagesAsRead(currentUserId, userId)
+      }
+    },
 
     // ─── CLEAR CHAT ──────────────────────────────────
     clearRecipient: () =>
@@ -131,12 +153,30 @@ export const useMessagingStore =
         return
       }
 
-      set((state) => ({
-        messagesByUserId: {
-          ...state.messagesByUserId,
-          [otherUserId]: data || [],
-        },
-      }))
+      set((state) => {
+        const fetched = data || []
+        const fetchedIds = new Set(fetched.map((message) => message.id))
+        const fetchedNewest = fetched.reduce(
+          (newest, message) => Math.max(newest, new Date(message.created_at).getTime()),
+          0,
+        )
+        const newerLocal = (state.messagesByUserId[otherUserId] || []).filter(
+          (message) =>
+            !fetchedIds.has(message.id) &&
+            (message.status === "sending" ||
+              message.status === "failed" ||
+              new Date(message.created_at).getTime() > fetchedNewest),
+        )
+
+        return {
+          messagesByUserId: {
+            ...state.messagesByUserId,
+            [otherUserId]: [...fetched, ...newerLocal].sort(
+              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+            ),
+          },
+        }
+      })
     },
 
     // ─── FETCH OLDER MESSAGES ────────────────────────
@@ -226,10 +266,9 @@ export const useMessagingStore =
         return {
           messagesByUserId: {
             ...state.messagesByUserId,
-            [conversationId]: [
-              ...existing,
-              message,
-            ],
+            [conversationId]: [...existing, message].sort(
+              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+            ),
           },
           unreadCounts: unreadDelta
             ? {
@@ -305,6 +344,15 @@ export const useMessagingStore =
       }))
     },
 
+    setUnreadCounts: (counts) => {
+      const recipientId = get().recipientId
+      set({
+        unreadCounts: recipientId
+          ? { ...counts, [recipientId]: 0 }
+          : counts,
+      })
+    },
+
     // ─── REAL-TIME SUBSCRIPTION ──────────────────────
     subscribeToMessages: () => {
       const state = get()
@@ -324,6 +372,19 @@ export const useMessagingStore =
           (payload) => {
             const newMessage = payload.new as Message
             get().addMessage(newMessage)
+
+            const currentState = get()
+            if (
+              newMessage.sender_id !== currentState.currentUserId &&
+              currentState.recipientId === newMessage.sender_id &&
+              currentState.currentUserId
+            ) {
+              get().markConversationRead(newMessage.sender_id)
+              void directMessagesService.markMessagesAsRead(
+                currentState.currentUserId,
+                newMessage.sender_id,
+              )
+            }
           }
         )
         .on(
@@ -339,7 +400,11 @@ export const useMessagingStore =
             get().addMessage(newMessage)
           }
         )
-        .subscribe()
+        .subscribe((status, error) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+            console.error("[Messaging] Realtime subscription failed:", error)
+          }
+        })
 
       set({ _realtimeChannel: channel })
     },

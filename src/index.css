@@ -117,6 +117,15 @@ All colors MUST be HSL.
   }
 }
 
+@layer components {
+  .core-vertical-grid {
+    display: grid;
+    grid-auto-rows: min-content;
+    row-gap: 1.5rem;
+    min-width: 0;
+  }
+}
+
 @layer utilities {
   .bg-hero-gradient {
     background: var(--hero-gradient);

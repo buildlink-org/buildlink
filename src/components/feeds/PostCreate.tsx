@@ -386,7 +386,7 @@ export const PostCreate = () => {
 				!opportunityDescription.trim()))
 
 	return (
-		<div className={cn("space-y-6 mt-4 mb-24", isMobile && "px-0")}>
+		<div className={cn("core-vertical-grid mb-24", isMobile && "px-0")}>
 			{/* "What would you like to share?" screen */}
 			<PostTypeSelector postType={postType} setPostType={handlePostTypeChange} />
 
@@ -425,7 +425,7 @@ export const PostCreate = () => {
 
 					{/* ── 2. Showcase Project Composer ── */}
 					{isProject && (
-						<div className="space-y-3">
+						<div className="space-y-4">
 							<div className="space-y-1">
 								<Label htmlFor="project-title" className="text-xs font-medium">
 									Title*
@@ -484,7 +484,7 @@ export const PostCreate = () => {
 
 					{/* ── 3. Post Opportunity Composer ── */}
 					{isOpportunity && (
-						<div className="space-y-3">
+						<div className="space-y-4">
 							<div className="grid grid-cols-1 md:grid-cols-2 gap-3">
 								<div className="space-y-1">
 									<Label htmlFor="opportunity-title" className="text-xs font-medium">

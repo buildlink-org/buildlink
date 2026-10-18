@@ -363,7 +363,7 @@ const ProfileBoard = () => {
 	const teamCount = profile.people?.length || 0
 
 	return (
-		<div className="mx-auto max-w-7xl space-y-4 px-1 py-4 sm:space-y-6 sm:px-0 sm:py-6">
+		<div className="core-vertical-grid mx-auto max-w-7xl px-1 sm:px-0">
 			{/* Identity header */}
 			<ProfileHeader
 				profile={profile}

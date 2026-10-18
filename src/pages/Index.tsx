@@ -15,11 +15,12 @@ interface IndexProps {
 customContent?: ReactNode
 showNavigation?: boolean
 showFilters?: boolean
+hideSkillUpFilters?: boolean
 initialTab?: string
 isPublicProfile?: boolean
 }
 
-const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, showFilters = true, initialTab = "home", isPublicProfile = false }) => {
+const Index: React.FC<IndexProps> = ({ customContent, showNavigation = true, showFilters = true, hideSkillUpFilters = false, initialTab = "home", isPublicProfile = false }) => {
 const { user } = useAuth()
 const navigate = useNavigate()
 const [activeTab, setActiveTab] = useState(initialTab)
@@ -29,8 +30,8 @@ const [loading, setLoading] = useState(false)
 // Profile tab uses a wider main column to accommodate the right discovery rail
 const isProfileTab = activeTab === "profile" || activeTab === "publicProfile"
 const mainColumnClass = isProfileTab
-? `col-span-12 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
-: `col-span-12 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
+? `col-span-12 min-w-0 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
+: `col-span-12 min-w-0 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
 
 const handleTabChange = useCallback(
 (tab: string) => {
@@ -84,7 +85,7 @@ return <HomeFeed activeFilter={activeFilter} />
 case "post":
 return <PostCreate />
 case "skillup":
-return <SkillUpFeed activeFilter={activeFilter} />
+return <SkillUpFeed />
 case "profile":
 return <ProfileBoard />
 case "publicProfile":
@@ -94,7 +95,9 @@ return <HomeFeed activeFilter={activeFilter} />
 }
 }
 
-const shouldShowFilters = showFilters && (activeTab === "home" || activeTab === "skillup")
+const shouldShowFilters =
+showFilters &&
+(activeTab === "home" || (activeTab === "skillup" && !hideSkillUpFilters))
 
 return (
 <div className="min-h-screen bg-background">
@@ -105,17 +108,17 @@ loading={loading}
 <OfflineIndicator />
 
 {/* Main Content — explicit header offset replaces top-12 positioning */}
-<div className="mx-auto grid w-full max-w-screen-xl grid-cols-12 gap-4 px-4 pt-14 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
+<div className="mx-auto grid w-full max-w-screen-xl grid-cols-12 gap-x-4 gap-y-6 px-4 pt-14 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
 {showNavigation && (
-<div className="col-span-12 md:col-span-3 md:pt-1">
+<div className="col-span-12 min-w-0 md:col-span-3 md:pt-1">
 <ResponsiveNavigation loading={loading} />
 </div>
 )}
 {/* Main Content Area */}
-<div className={mainColumnClass}>
+<main className={`core-vertical-grid ${mainColumnClass}`}>
 {/* Content Filters */}
 {shouldShowFilters && (
-<div className="mb-4">
+<div>
 <ContentFilters
 activeFilter={activeFilter}
 onFilterChange={setActiveFilter}
@@ -125,8 +128,8 @@ filterType={activeTab}
 )}
 
 {/* Content Area */}
-<div className={`transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
-</div>
+<div className={`min-w-0 transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
+</main>
 </div>
 
 {user && <FloatingMessagingWidget />}

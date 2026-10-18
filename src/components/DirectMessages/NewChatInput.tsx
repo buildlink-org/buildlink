@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
@@ -9,6 +9,7 @@ import { directMessagesService } from "@/services/directMessagesService"
 import { useMessagingStore } from "@/stores/messagingStore"
 import { useToast } from "@/hooks/use-toast"
 import { compressImage } from "@/lib/utils"
+import { ALLOWED_MIME, MAX_SIZE, uploadFile, validateUploadFile } from "@/lib/uploadUtils"
 import EmojiPickerButton from "../EmojiPicker"
 
 interface RecipientInputProps {
@@ -49,6 +50,32 @@ export default function RecipientInput({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // CLOSE DROPDOWN
+  const fetchUsers = useCallback(async (search: string) => {
+    if (!currentUserId) return
+
+    setLoading(true)
+
+    const { data } = await supabase
+      .from("profiles")
+      .select("id, full_name, avatar")
+      .ilike("full_name", `%${search}%`)
+      .neq("id", currentUserId)
+      .limit(10)
+
+    if (data) {
+      const users = data.map((u) => ({
+        id: u.id,
+        name: u.full_name,
+        avatar: u.avatar,
+      }))
+
+      setResults(users)
+      setOpen(users.length > 0)
+    }
+
+    setLoading(false)
+  }, [currentUserId])
+
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (!wrapperRef.current?.contains(e.target as Node)) {
@@ -75,33 +102,7 @@ export default function RecipientInput({
   }, 300)
 
   return () => clearTimeout(timeout)
-}, [query, selectedUser])
-
-  const fetchUsers = async (search: string) => {
-    if (!currentUserId) return
-
-    setLoading(true)
-
-    const { data } = await supabase
-      .from("profiles")
-      .select("id, full_name, avatar")
-      .ilike("full_name", `%${search}%`)
-      .neq("id", currentUserId)
-      .limit(10)
-
-    if (data) {
-      const users = data.map((u) => ({
-        id: u.id,
-        name: u.full_name,
-        avatar: u.avatar,
-      }))
-
-      setResults(users)
-      setOpen(users.length > 0)
-    }
-
-    setLoading(false)
-  }
+}, [query, selectedUser, fetchUsers])
 
  const handleSelectUser = (user: UserListItem) => {
   setSelectedUser(user)
@@ -126,36 +127,31 @@ export default function RecipientInput({
         if (file.type.startsWith("image/")) {
           try {
             fileToUpload = await compressImage(file)
-          } catch { }
+          } catch (error) {
+            console.warn("[Messaging] Image compression failed; uploading original file:", error)
+          }
         }
 
-        if (fileToUpload.size > 10 * 1024 * 1024) {
+        const uploadPath = `chat/${currentUserId}-${Date.now()}.${file.name.split(".").pop()?.replace(/[^a-zA-Z0-9]/g, "") || "file"}`
+        const uploaded = await uploadFile(fileToUpload, {
+          bucket: "uploads",
+          filePath: uploadPath,
+          allowedMimeTypes: ALLOWED_MIME.chatAttachment,
+          maxSizeBytes: MAX_SIZE.chatAttachment,
+          context: "direct message attachment",
+        })
+
+        if (uploaded.error || !uploaded.url) {
           toast({
-            title: "File too large",
-            description: "Max size is 10MB",
+            title: "Attachment upload failed",
+            description: uploaded.error || "Please try a different file.",
             variant: "destructive",
           })
           setCreating(false)
           return
         }
 
-        const fileExt = file.name.split(".").pop()
-        const fileName = `${currentUserId}-${Date.now()}.${fileExt}`
-        const filePath = `chat/${fileName}`
-
-        const { error } = await supabase.storage
-          .from("uploads")
-          .upload(filePath, fileToUpload, {
-            contentType: fileToUpload.type,
-          })
-
-        if (error) throw error
-
-        const { data } = supabase.storage
-          .from("uploads")
-          .getPublicUrl(filePath)
-
-        image_url = data.publicUrl
+        image_url = uploaded.url
         image_type = file.type.startsWith("image") ? "image" : "pdf"
       }
 
@@ -184,10 +180,10 @@ export default function RecipientInput({
       
 
       if (fileInputRef.current) fileInputRef.current.value = ""
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Send failed",
-        description: err.message,
+        description: err instanceof Error ? err.message : "Please try again.",
         variant: "destructive",
       })
     }
@@ -211,7 +207,7 @@ export default function RecipientInput({
   return (
     <div
       ref={wrapperRef}
-      className="w-full max-w-md space-y-4 rounded-xl bg-card p-4"
+      className="h-full w-full max-w-md space-y-4 overflow-y-auto rounded-xl bg-card p-4"
     >
       <h2 className="text-center text-lg font-semibold">
         Create New Message
@@ -345,10 +341,24 @@ export default function RecipientInput({
             type="file"
             ref={fileInputRef}
             className="hidden"
-            accept="image/*,application/pdf"
+            accept="image/jpeg,image/png,image/gif,image/webp,application/pdf"
             onChange={(e) => {
               const selected = e.target.files?.[0]
               if (!selected) return
+              const validation = validateUploadFile(
+                selected,
+                ALLOWED_MIME.chatAttachment,
+                MAX_SIZE.chatAttachment,
+              )
+              if (!validation.valid) {
+                toast({
+                  title: "Attachment not accepted",
+                  description: validation.error || "Choose an image or PDF up to 10 MB.",
+                  variant: "destructive",
+                })
+                e.target.value = ""
+                return
+              }
               setFile(selected)
               toast({
                 title: "File attached",
