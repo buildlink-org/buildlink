@@ -330,19 +330,19 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 
 	if (initialLoading) {
 		return (
-			<div className="core-vertical-grid">
-				<div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
+			<div className="core-vertical-grid w-full min-w-0">
+				<div className="min-w-0 rounded-lg bg-gradient-to-r from-primary to-primary/80 p-4 text-white sm:p-6">
 					<div className="mb-4 flex items-start justify-between">
-						<div>
-							<h2 className="mb-2 text-2xl font-bold">Welcome to BuildLink Kenya</h2>
-							<p className="text-white">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
+						<div className="min-w-0">
+							<h2 className="mb-2 text-xl font-bold leading-tight sm:text-2xl">Welcome to BuildLink Kenya</h2>
+							<p className="break-words text-sm leading-relaxed text-white sm:text-base">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
 						</div>
 					</div>
-					<div className="grid grid-cols-3 gap-4">
+					<div className="grid min-w-0 grid-cols-3 gap-2 sm:gap-4">
 						<div className="text-center">
-							<div className="text-2xl font-bold">
+							<div className="text-xl font-bold sm:text-2xl">
 								{isLoadingStats ? (
-									<div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
+									<div className="mx-auto h-8 w-16 animate-pulse rounded bg-white/20 sm:w-24" />
 								) : (
 									(statsData?.data?.studentsCount?.toLocaleString() ?? "0") // Fixed: added toLocaleString
 								)}
@@ -350,9 +350,9 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 							<div className="text-sm text-primary-foreground/80">Students</div>
 						</div>
 						<div className="text-center">
-							<div className="text-2xl font-bold">
+							<div className="text-xl font-bold sm:text-2xl">
 								{isLoadingStats ? (
-									<div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
+									<div className="mx-auto h-8 w-16 animate-pulse rounded bg-white/20 sm:w-24" />
 								) : (
 									(statsData?.data?.professionalsCount?.toLocaleString() ?? "0") // Fixed: added toLocaleString
 								)}
@@ -360,9 +360,9 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 							<div className="text-sm text-primary-foreground/80">Professionals</div>
 						</div>
 						<div className="text-center">
-							<div className="text-2xl font-bold">
+							<div className="text-xl font-bold sm:text-2xl">
 								{isLoadingStats ? (
-									<div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" />
+									<div className="mx-auto h-8 w-16 animate-pulse rounded bg-white/20 sm:w-24" />
 								) : (
 									(statsData?.data?.companiesCount?.toLocaleString() ?? "0") // Fixed: added toLocaleString
 								)}
@@ -378,26 +378,26 @@ const HomeFeed = ({ activeFilter }: HomeFeedProps) => {
 	}
 
 	return (
-		<div className="core-vertical-grid">
+		<div className="core-vertical-grid w-full min-w-0">
 			{/* Stats Banner */}
-			<div className="rounded-lg bg-gradient-to-r from-primary to-primary/80 p-6 text-white">
+			<div className="min-w-0 rounded-lg bg-gradient-to-r from-primary to-primary/80 p-4 text-white sm:p-6">
 				<div className="mb-4 flex items-start justify-between">
-					<div>
-						<h2 className="mb-2 text-2xl font-bold">Welcome to BuildLink Kenya</h2>
-						<p className="text-white">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
+					<div className="min-w-0">
+						<h2 className="mb-2 text-xl font-bold leading-tight sm:text-2xl">Welcome to BuildLink Kenya</h2>
+						<p className="break-words text-sm leading-relaxed text-white sm:text-base">Connect with professionals, discover opportunities, and grow your career in Kenya's construction industry.</p>
 					</div>
 				</div>
-				<div className="grid grid-cols-3 gap-4">
+				<div className="grid min-w-0 grid-cols-3 gap-2 sm:gap-4">
 					<div className="text-center">
-						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : (statsData?.data?.studentsCount?.toLocaleString() ?? "0")}</div>
+						<div className="text-xl font-bold sm:text-2xl">{isLoadingStats ? <div className="mx-auto h-8 w-16 animate-pulse rounded bg-white/20 sm:w-24" /> : (statsData?.data?.studentsCount?.toLocaleString() ?? "0")}</div>
 						<div className="text-sm text-primary-foreground/80">Students</div>
 					</div>
 					<div className="text-center">
-						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : (statsData?.data?.professionalsCount?.toLocaleString() ?? "0")}</div>
+						<div className="text-xl font-bold sm:text-2xl">{isLoadingStats ? <div className="mx-auto h-8 w-16 animate-pulse rounded bg-white/20 sm:w-24" /> : (statsData?.data?.professionalsCount?.toLocaleString() ?? "0")}</div>
 						<div className="text-sm text-primary-foreground/80">Professionals</div>
 					</div>
 					<div className="text-center">
-						<div className="text-2xl font-bold">{isLoadingStats ? <div className="mx-auto h-8 w-24 animate-pulse rounded bg-white/20" /> : (statsData?.data?.companiesCount?.toLocaleString() ?? "0")}</div>
+						<div className="text-xl font-bold sm:text-2xl">{isLoadingStats ? <div className="mx-auto h-8 w-16 animate-pulse rounded bg-white/20 sm:w-24" /> : (statsData?.data?.companiesCount?.toLocaleString() ?? "0")}</div>
 						<div className="text-sm text-primary-foreground/80">Companies</div>
 					</div>
 				</div>

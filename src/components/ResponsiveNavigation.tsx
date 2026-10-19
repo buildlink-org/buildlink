@@ -28,37 +28,39 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
   return (
     <>
       {/* Desktop Sidebar — sticky within the parent grid column, not fixed */}
-      <div className="hidden md:block md:w-full">
-        <nav className="space-y-2" aria-label="Main navigation">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.path);
+      <div className="hidden md:sticky md:top-16 md:block md:h-[calc(100vh-5rem)] md:w-full">
+        <nav className="flex h-full flex-col" aria-label="Main navigation">
+          <div className="space-y-2">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.path);
 
-            return (
-              <Link
-                key={item.id}
-                to={item.path}
-                aria-label={item.ariaLabel}
-                aria-current={active ? "page" : undefined}
-                className={cn(
-                  "flex items-center gap-3 w-full p-3 rounded-md text-left transition-colors",
-                  "hover:bg-accent hover:text-accent-foreground",
-                  active
-                    ? "bg-accent text-accent-foreground font-semibold"
-                    : "text-foreground/90",
-                  loading && "opacity-50 cursor-not-allowed"
-                )}
-              >
-                <Icon size={20} aria-hidden />
-                <span>{item.title}</span>
-                {loading && active && (
-                  <div className="ml-auto animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                )}
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={item.id}
+                  to={item.path}
+                  aria-label={item.ariaLabel}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "flex items-center gap-3 w-full p-3 rounded-md text-left transition-colors",
+                    "hover:bg-accent hover:text-accent-foreground",
+                    active
+                      ? "bg-accent text-accent-foreground font-semibold"
+                      : "text-foreground/90",
+                    loading && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <Icon size={20} aria-hidden />
+                  <span>{item.title}</span>
+                  {loading && active && (
+                    <div className="ml-auto animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
 
-          <div className="pt-6 space-y-4">
+          <div className="mt-auto space-y-4 pt-6">
             {/* Quick Links */}
             <div className="flex flex-col space-y-2">
               <a

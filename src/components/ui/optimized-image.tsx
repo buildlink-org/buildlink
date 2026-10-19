@@ -116,7 +116,7 @@ const OptimizedImage = ({
           'bg-muted flex items-center justify-center text-muted-foreground text-sm',
           className
         )}
-        style={{ width, height }}
+        style={{ width: '100%', maxWidth: width, height }}
       >
         📷 Image (Data Saver)
       </div>
@@ -124,7 +124,7 @@ const OptimizedImage = ({
   }
 
   return (
-    <div className={cn('relative overflow-hidden', className)} style={{ width, height }}>
+    <div className={cn('relative w-full max-w-full overflow-hidden', className)} style={{ maxWidth: width, height }}>
       {/* Blur placeholder */}
       {!isLoaded && blurPlaceholder && (
         <img

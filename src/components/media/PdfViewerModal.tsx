@@ -10,13 +10,12 @@ import { Badge } from "@/components/ui/badge";
 import {
   FileText,
   ExternalLink,
-  Download,
   Eye,
   SlidersHorizontal,
   Maximize2,
   RefreshCw,
 } from "lucide-react";
-import { downloadFile, getFilenameFromUrl } from "@/lib/utils";
+import { getFilenameFromUrl } from "@/lib/utils";
 
 export interface PdfViewerModalProps {
   open: boolean;
@@ -53,11 +52,6 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
       return `${cleanUrl}#toolbar=1&navpanes=0&scrollbar=1&view=${fitMode}`;
     }
   }, [url, viewMode, fitMode]);
-
-  const handleDownload = async () => {
-    if (!url) return;
-    await downloadFile(url, documentName);
-  };
 
   const handleOpenNewTab = () => {
     if (!url) return;
@@ -128,19 +122,6 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
               <span>{fitMode === "FitH" ? "Fit Width" : "Fit Page"}</span>
             </Button>
 
-            {/* Download Button */}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownload}
-              className="h-7 sm:h-8 px-2 sm:px-2.5 text-xs gap-1.5"
-              title="Download PDF"
-              aria-label="Download PDF"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Download</span>
-            </Button>
-
             {/* Open in New Tab Button */}
             <Button
               variant="outline"
@@ -177,9 +158,6 @@ export const PdfViewerModal: React.FC<PdfViewerModalProps> = ({
               <div className="flex items-center gap-2">
                 <Button size="sm" onClick={handleOpenNewTab} className="gap-1.5 text-xs">
                   <ExternalLink className="h-3.5 w-3.5" /> Open in New Tab
-                </Button>
-                <Button size="sm" variant="outline" onClick={handleDownload} className="gap-1.5 text-xs">
-                  <Download className="h-3.5 w-3.5" /> Download
                 </Button>
               </div>
             </div>
