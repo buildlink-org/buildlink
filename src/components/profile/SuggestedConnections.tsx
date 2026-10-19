@@ -6,28 +6,90 @@ import { connectionsService } from "@/services/connectionsService"
 import { Button } from "@/components/ui/button"
 import SectionHeader from "@/components/profile/SectionHeader"
 import ConnectButton from "@/components/ConnectButton"
+import { Link } from "react-router-dom"
 
-interface SuggestionRow {
+interface ProfileRow {
 	id: string
 	full_name: string | null
 	avatar: string | null
 	title: string | null
 	profession: string | string[] | null
 	user_type: string | null
+	skills: unknown
+	certifications: unknown
+	verification_badges: unknown
+	portfolio: unknown
+}
+
+interface RecentPost {
+	author_id: string
+	content: string | null
+	location: string | null
+	created_at: string | null
+}
+
+interface SuggestionRow {
+	profile: ProfileRow
+	subtitle: string
+	reason: string
+	score: number
 }
 
 interface SuggestedConnectionsProps {
 	profileId: string
-	/** Current member's professions — shared-profession suggestions rank first */
+	/** Current member's professions — used to prioritize trade compatibility */
 	myProfessions?: string[]
 }
 
-/**
- * "People you may know" rail module (report §4.1/§15).
- * Suggests public profiles not already connected to the member,
- * preferring shared professions. Hides itself when there are no
- * suggestions — no decorative empty modules.
- */
+const flattenStrings = (value: unknown): string[] => {
+	if (typeof value === "string") return [value]
+	if (Array.isArray(value)) return value.flatMap(flattenStrings)
+	if (value && typeof value === "object") return Object.values(value).flatMap(flattenStrings)
+	return []
+}
+
+const normalize = (value: string) => value.trim().toLowerCase()
+
+const sharedValues = (left: string[], right: string[]) => {
+	const normalizedRight = right.map(normalize).filter(Boolean)
+	return [...new Set(left.map(normalize).filter(Boolean))].filter((item) =>
+		normalizedRight.some((other) => item === other || (item.length > 3 && other.includes(item)) || (other.length > 3 && item.includes(other))),
+	)
+}
+
+const getProfileTradeTerms = (profile: ProfileRow) => [
+	...(Array.isArray(profile.profession) ? profile.profession : [profile.profession || ""]),
+	profile.title || "",
+	...flattenStrings(profile.skills),
+].filter(Boolean)
+
+const getPortfolioValues = (portfolio: unknown, keys: string[]) => {
+	if (!Array.isArray(portfolio)) return []
+	return portfolio.flatMap((item) => {
+		if (!item || typeof item !== "object") return []
+		return keys.flatMap((key) => {
+			const value = (item as Record<string, unknown>)[key]
+			return typeof value === "string" && value.trim() ? [value] : []
+		})
+	})
+}
+
+const getIndustryBoards = (profile: ProfileRow) => {
+	const credentials = [...flattenStrings(profile.certifications), ...flattenStrings(profile.verification_badges)].join(" ").toLowerCase()
+	return ["EBK", "BORAQS", "NCA"].filter((board) => credentials.includes(board.toLowerCase()))
+}
+
+const getActivityDescription = (post: RecentPost) => {
+	const content = (post.content || "").toLowerCase()
+	if (/tender|bid|procurement|quotation|request for proposal|\brfp\b/.test(content)) return "shared a tender or procurement opportunity"
+	if (/site progress|site update|construction progress|foundation|concrete pour|site visit/.test(content)) return "shared a site or project update"
+	if (/technical|structural|engineering|specification|building code|safety|boq/.test(content)) return "posted a technical industry insight"
+	if (post.location === "opportunity") return "shared an industry opportunity"
+	if (post.location === "project") return "shared a project update"
+	if (post.location === "industry") return "joined an industry discussion"
+	return "posted a recent construction-industry update"
+}
+
 const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, myProfessions = [] }) => {
 	const [suggestions, setSuggestions] = useState<SuggestionRow[]>([])
 	const [loading, setLoading] = useState(true)
@@ -41,36 +103,100 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 		setError(null)
 		try {
 			// Exclude self + everyone already connected (either direction)
-			const { data: conns } = await connectionsService.getConnections(profileId)
+			const { data: conns, error: connectionsError } = await connectionsService.getConnections(profileId)
+			if (connectionsError) throw connectionsError
 			const excluded = new Set<string>([profileId])
 			;(conns || []).forEach((c) => {
 				if (c.user_id === profileId && c.connected_user_id) excluded.add(c.connected_user_id)
 				else if (c.user_id) excluded.add(c.user_id)
 			})
 
+			const activeSince = new Date()
+			activeSince.setDate(activeSince.getDate() - 30)
+			const [viewerResult, activityResult] = await Promise.all([
+				supabase
+					.from("profiles")
+					.select("id, full_name, avatar, title, profession, user_type, skills, certifications, verification_badges, portfolio")
+					.eq("id", profileId)
+					.maybeSingle(),
+				supabase
+					.from("posts")
+					.select("author_id, content, location, created_at")
+					.eq("visibility", "public")
+					.gte("created_at", activeSince.toISOString())
+					.order("created_at", { ascending: false })
+					.limit(100),
+			])
+
+			if (viewerResult.error) throw viewerResult.error
+			if (activityResult.error) throw activityResult.error
+
+			const recentPosts = ((activityResult.data || []) as RecentPost[])
+				.filter((post) => !excluded.has(post.author_id))
+			const activeUserIds = [...new Set(recentPosts.map((post) => post.author_id))]
+			if (activeUserIds.length === 0) {
+				setSuggestions([])
+				return
+			}
+
 			const { data, error: queryError } = await supabase
 				.from("profiles")
-				.select("id, full_name, avatar, title, profession, user_type")
-				.not("id", "in", `(${Array.from(excluded).join(",")})`)
+				.select("id, full_name, avatar, title, profession, user_type, skills, certifications, verification_badges, portfolio")
+				.in("id", activeUserIds)
+				.in("user_type", ["student", "graduate", "professional"])
 				.or("profile_visibility.eq.public,profile_visibility.is.null")
-				.limit(8)
+				.not("full_name", "is", null)
+				.neq("full_name", "")
+				.neq("full_name", "New User")
 
 			if (queryError) throw queryError
 
-			const rows = (data || []) as SuggestionRow[]
-
-			// Prefer shared professions, then fill with others (max 4)
-			const mine = myProfessions.map((p) => p.toLowerCase().trim()).filter(Boolean)
-			const matchScore = (row: SuggestionRow): number => {
-				if (mine.length === 0) return 0
-				const theirs = (Array.isArray(row.profession) ? row.profession : [row.profession])
-					.filter(Boolean)
-					.map((p) => String(p).toLowerCase())
-				const title = (row.title || "").toLowerCase()
-				return mine.reduce((acc, m) => acc + (theirs.some((t) => t.includes(m) || m.includes(t)) || title.includes(m) ? 1 : 0), 0)
+			const viewer = viewerResult.data as ProfileRow | null
+			const viewerTrades = [...myProfessions, ...(viewer ? getProfileTradeTerms(viewer) : [])]
+			const viewerBoards = viewer ? getIndustryBoards(viewer) : []
+			const viewerProjectTypes = viewer ? getPortfolioValues(viewer.portfolio, ["projectType"]) : []
+			const viewerLocations = viewer ? getPortfolioValues(viewer.portfolio, ["location"]) : []
+			const latestPostByAuthor = new Map<string, RecentPost>()
+			for (const post of recentPosts) {
+				if (!latestPostByAuthor.has(post.author_id)) latestPostByAuthor.set(post.author_id, post)
 			}
 
-			setSuggestions([...rows].sort((a, b) => matchScore(b) - matchScore(a)).slice(0, 4))
+			const rankedSuggestions = ((data || []) as ProfileRow[]).flatMap((profile) => {
+				const recentPost = latestPostByAuthor.get(profile.id)
+				if (!recentPost) return []
+				const tradeOverlap = sharedValues(viewerTrades, getProfileTradeTerms(profile))
+				const boardOverlap = sharedValues(viewerBoards, getIndustryBoards(profile))
+				const projectOverlap = sharedValues(
+					viewerProjectTypes,
+					getPortfolioValues(profile.portfolio, ["projectType"]),
+				)
+				const locationOverlap = sharedValues(
+					viewerLocations,
+					getPortfolioValues(profile.portfolio, ["location"]),
+				)
+				const overlaps = [
+					...boardOverlap.map((board) => `shared ${board} board`),
+					...projectOverlap.map((project) => `shared ${project} project focus`),
+					...locationOverlap.map((location) => `projects in ${location}`),
+					...tradeOverlap.map((trade) => `trade overlap: ${trade}`),
+				]
+				const activity = getActivityDescription(recentPost)
+				const score =
+					boardOverlap.length * 5 +
+					projectOverlap.length * 4 +
+					locationOverlap.length * 3 +
+					tradeOverlap.length * 2 +
+					(/tender|bid|procurement|site progress|technical|structural|engineering|boq/i.test(recentPost.content || "") ? 2 : 0)
+				const profession = Array.isArray(profile.profession) ? profile.profession.join(", ") : profile.profession
+				return [{
+					profile,
+					subtitle: profile.title || profession || profile.user_type || "Construction professional",
+					reason: `${overlaps[0] ? `${overlaps[0]}; recently ${activity}` : `Recently ${activity}`}.`,
+					score,
+				}]
+			})
+
+			setSuggestions(rankedSuggestions.sort((a, b) => b.score - a.score).slice(0, 4))
 		} catch (e) {
 			setError(e instanceof Error ? e.message : "Could not load suggestions")
 		} finally {
@@ -132,27 +258,30 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 				<SectionHeader title="People you may know" description="Grow your built-environment network" />
 				<div className="space-y-3">
 					{suggestions.map((s) => {
-						const subtitle = s.title || (Array.isArray(s.profession) ? s.profession.join(", ") : s.profession) || s.user_type
+						const profile = s.profile
 						return (
-							<div key={s.id} className="flex items-center gap-3">
-								{s.avatar ? (
+							<div key={profile.id} className="flex items-start gap-3">
+								{profile.avatar ? (
 									<img
-										src={s.avatar}
-										alt={s.full_name || "Member"}
+										src={profile.avatar}
+										alt={profile.full_name || "Member"}
 										loading="lazy"
 										className="h-10 w-10 shrink-0 rounded-full object-cover"
 									/>
 								) : (
 									<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground">
-										{(s.full_name || "?").charAt(0).toUpperCase()}
+										{(profile.full_name || "?").charAt(0).toUpperCase()}
 									</div>
 								)}
 								<div className="min-w-0 flex-1">
-									<p className="truncate text-sm font-medium text-foreground">{s.full_name || "BuildLink member"}</p>
-									{subtitle && <p className="truncate text-xs text-muted-foreground">{subtitle}</p>}
+									<Link to={`/profile/${profile.id}`} className="block truncate text-sm font-medium text-foreground hover:text-primary">
+										{profile.full_name}
+									</Link>
+									<p className="truncate text-xs text-muted-foreground">{s.subtitle}</p>
+									<p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">{s.reason}</p>
 								</div>
 								<div className="shrink-0 [&_button]:h-8 [&_button]:px-3 [&_button]:text-xs">
-									<ConnectButton targetUserId={s.id} />
+									<ConnectButton targetUserId={profile.id} />
 								</div>
 							</div>
 						)
@@ -160,7 +289,7 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 				</div>
 				<div className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-[11px] text-muted-foreground">
 					<UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
-					Suggestions are based on public profiles you're not connected to yet.
+					Active industry peers are suggested based on recent public posts and shared trade, project, location, or board signals.
 				</div>
 			</CardContent>
 		</Card>
