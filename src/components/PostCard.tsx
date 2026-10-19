@@ -154,9 +154,9 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 
 	return (
 		<Card
-			className="w-full transition-all hover:shadow-md"
+			className="w-full min-w-0 overflow-hidden transition-all hover:shadow-md"
 			onMouseEnter={handleMouseEnter}>
-			<CardHeader className="pb-3">
+			<CardHeader className="min-w-0 p-4 pb-3 sm:p-6 sm:pb-3">
 				<div className="flex items-start justify-between">
 					<div className="capitalize flex items-center space-x-3">
 						<Avatar
@@ -214,7 +214,7 @@ const PostCard = ({ post, isLiked = false, onLike, onComment, onShare, onRepost,
 				</div>
 			</CardHeader>
 
-			<CardContent className="pt-0">
+			<CardContent className="min-w-0 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
 				<div className="space-y-3">
 					<div>
 						<p className="whitespace-pre-wrap text-muted-foreground">

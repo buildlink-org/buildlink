@@ -78,15 +78,15 @@ const SkillUpHeader = () => {
                 flex min-h-[62px]
                 flex-col items-center justify-center
                 rounded-lg
-                border border-white/60
-                bg-white/90
+                border border-white/20
+                bg-white/10
                 px-2 py-2.5
                 text-center
-                text-primary
+                text-white
               "
             >
               <Icon
-                className="mb-1 h-5 w-5"
+                className="mb-1 h-5 w-5 text-white/80"
                 strokeWidth={1.8}
                 aria-hidden
               />

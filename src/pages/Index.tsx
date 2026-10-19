@@ -10,6 +10,7 @@ import ResponsiveNavigation from "@/components/ResponsiveNavigation"
 import ContentFilters from "@/components/ContentFilters"
 import { OfflineIndicator } from "@/components/OfflineIndicator"
 import FloatingMessagingWidget from "@/components/DirectMessages/FloatingMessageWidget"
+import SuggestedConnections from "@/components/profile/SuggestedConnections"
 
 interface IndexProps {
 customContent?: ReactNode
@@ -29,8 +30,13 @@ const [loading, setLoading] = useState(false)
 
 // Profile tab uses a wider main column to accommodate the right discovery rail
 const isProfileTab = activeTab === "profile" || activeTab === "publicProfile"
+const hasHomeSuggestions = activeTab === "home" && !!user
 const mainColumnClass = isProfileTab
 ? `col-span-12 min-w-0 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
+: activeTab === "home" && hasHomeSuggestions
+? `col-span-12 min-w-0 ${showNavigation ? "md:col-start-4 md:col-span-9 lg:col-span-6" : "lg:col-span-9"}`
+: activeTab === "home"
+? `col-span-12 min-w-0 ${showNavigation ? "md:col-start-4 md:col-span-9 lg:col-span-9" : ""}`
 : `col-span-12 min-w-0 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
 
 const handleTabChange = useCallback(
@@ -130,6 +136,14 @@ filterType={activeTab}
 {/* Content Area */}
 <div className={`min-w-0 transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
 </main>
+
+{hasHomeSuggestions && user && (
+<aside className="hidden min-w-0 lg:col-span-3 lg:col-start-10 lg:row-start-1 lg:block">
+<div className="sticky top-16">
+<SuggestedConnections profileId={user.id} />
+</div>
+</aside>
+)}
 </div>
 
 {user && <FloatingMessagingWidget />}
