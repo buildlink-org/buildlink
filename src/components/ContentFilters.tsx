@@ -26,10 +26,13 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
 
   const filters = filterType === "skillup" ? skillUpFilters : homeFilters;
 
- {/**
-   return (
+  return (
     <div className="mb-5 overflow-hidden">
-      <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+      <div
+        className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar"
+        role="group"
+        aria-label={filterType === "skillup" ? "Resource filters" : "Home feed filters"}
+      >
         {filters.map((filter) => {
           const isActive = activeFilter === filter.id;
           return (
@@ -40,7 +43,7 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
               aria-pressed={isActive}
               size="sm"
               className={cn(
-                "whitespace-nowrap text-xs h-8 px-3.5 rounded-full font-medium transition-all shrink-0",
+                "h-8 shrink-0 whitespace-nowrap rounded-full px-3.5 text-xs font-medium transition-all",
                 isActive
                   ? "bg-primary text-primary-foreground shadow-sm"
                   : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -52,7 +55,7 @@ const ContentFilters = ({ activeFilter, onFilterChange, filterType = "home" }: C
         })}
       </div>
     </div>
-  ); */}
+  );
 };
 
 export default ContentFilters;

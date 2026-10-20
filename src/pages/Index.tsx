@@ -134,7 +134,7 @@ filterType={activeTab}
 )}
 
 {/* Content Area */}
-<div className={`min-w-0 transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
+<div className={`core-vertical-grid min-w-0 transition-opacity duration-300 ${loading ? "opacity-50" : "opacity-100"}`}>{renderActiveContent()}</div>
 </main>
 
 {hasHomeSuggestions && user && (
