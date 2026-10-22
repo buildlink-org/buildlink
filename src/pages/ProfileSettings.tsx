@@ -171,7 +171,7 @@ const ProfileSettings = () => {
     return (
       <div className="min-h-screen bg-background">
         <TopBar onLogoClick={handleGoBack} />
-        <div className="mx-auto max-w-4xl p-6 pt-12">
+        <div className="core-vertical-grid mx-auto max-w-4xl p-6 pt-12">
           <div className="animate-pulse space-y-6">
             <div className="h-8 w-1/3 rounded bg-muted"></div>
             <div className="h-96 rounded bg-muted"></div>
@@ -185,8 +185,8 @@ const ProfileSettings = () => {
     <div className="min-h-screen bg-background">
       <TopBar onLogoClick={handleGoBack} />
 
-      <div className="mx-auto max-w-4xl p-6 pt-12">
-        <div className="mb-6">
+      <main className="core-vertical-grid mx-auto max-w-4xl p-6 pt-12">
+        <div>
           <Button variant="ghost" onClick={handleGoBack} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Home Feed
@@ -201,7 +201,7 @@ const ProfileSettings = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="theme" className="space-y-6">
+        <Tabs defaultValue="theme" className="core-vertical-grid">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="theme">Colour Theme</TabsTrigger>
             <TabsTrigger value="account">Account Actions</TabsTrigger>
@@ -390,7 +390,7 @@ const ProfileSettings = () => {
           </div>
         </Tabs>
 
-      </div>
+      </main>
 
       {/* Delete Account Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
