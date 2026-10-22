@@ -47,7 +47,7 @@ export default function SearchResultsPage() {
 					<ResponsiveNavigation loading={loading} />
 				</div>
 
-				<div className="col-span-12 space-y-6 md:col-start-4 lg:col-span-9 xl:col-span-7">
+				<main className="core-vertical-grid col-span-12 min-w-0 md:col-start-4 lg:col-span-9 xl:col-span-7">
 					<form
 						onSubmit={submit}
 						className="flex gap-2 pt-4">
@@ -107,7 +107,7 @@ export default function SearchResultsPage() {
 							</div>
 						))}
 					</div>
-				</div>
+				</main>
 			</div>
 		</div>
   )

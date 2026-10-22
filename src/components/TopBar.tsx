@@ -42,7 +42,7 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 				</div>
 
 				{/* Center - Search Bar */}
-				<div className="mx-2 hidden max-w-md flex-1 sm:flex lg:mx-4">
+				<div className="mx-2 hidden max-w-[38.5rem] flex-1 sm:flex lg:mx-4">
 					<SearchDropdown />
 				</div> 
 
