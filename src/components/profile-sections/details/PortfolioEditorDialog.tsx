@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Plus, BadgePlus, X, Image as ImageIcon, Upload } from "lucide-react";
@@ -61,12 +61,28 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement | null>(null);
   const thumbnailInput = useRef<HTMLInputElement | null>(null);
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [selectedPreviews, setSelectedPreviews] = useState<string[]>([]);
+  const [selectedThumbnailIndex, setSelectedThumbnailIndex] = useState(0);
   const [thumbnailUploading, setThumbnailUploading] = useState(false);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [thumbnailPreview, setThumbnailPreview] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
 
+  const isHttpUrl = (value: string) => {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const previews = selectedFiles.map((file) => URL.createObjectURL(file));
+    setSelectedPreviews(previews);
+    return () => previews.forEach((preview) => URL.revokeObjectURL(preview));
+  }, [selectedFiles]);
 
   // Fix #2 — persistence now surfaces failures so success feedback is never shown for failed saves
   const updatePortfolio = async (newPortfolio: PortfolioItem[]): Promise<boolean> => {
@@ -78,38 +94,10 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     return true;
   };
 
-  // Fast meta title fetching with timeout
-  const fetchMetaTitle = async (url: string): Promise<string> => {
-    try {
-      // Use a reliable CORS proxy with timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-      
-      const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`, {
-        signal: controller.signal
-      });
-      
-      clearTimeout(timeoutId);
-      
-      if (response.ok) {
-        const html = await response.text();
-        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
-        if (titleMatch && titleMatch[1]) {
-          const title = titleMatch[1].trim();
-          // Clean up common title suffixes
-          return title.replace(/\s*[-|â€"].*$/, '').trim() || title;
-        }
-      }
-    } catch (error) {
-      console.warn('Failed to fetch meta title:', error);
-    }
-    
-    // Fallback: extract domain name from URL for a cleaner display
+  const getLinkTitle = (url: string): string => {
     try {
       const urlObj = new URL(url);
-      let domain = urlObj.hostname.replace('www.', '');
-      // Capitalize first letter and remove TLD for cleaner display
-      domain = domain.split('.')[0];
+      const domain = urlObj.hostname.replace(/^www\./, "").split(".")[0];
       return domain.charAt(0).toUpperCase() + domain.slice(1);
     } catch {
       return url;
@@ -117,26 +105,37 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    const file = files && files.length > 0 ? files[0] : null;
-    setSelectedFile(file);
-    if (file) {
-      setProjectName((prev) => (prev.trim() ? prev : file.name.replace(/\.[^/.]+$/, "")));
-    }
+    const files = Array.from(event.target.files || []);
+    selectMediaFiles(files);
   };
 
   const handleFileDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
     setDragOver(false);
-    const file = event.dataTransfer.files?.[0] ?? null;
-    if (!file) return;
-    setSelectedFile(file);
-    setProjectName((prev) => (prev.trim() ? prev : file.name.replace(/\.[^/.]+$/, "")));
+    selectMediaFiles(Array.from(event.dataTransfer.files || []));
   };
 
-  const handleFileDelete = () => {
-    setSelectedFile(null);
-    setProjectName("");
+  const selectMediaFiles = (files: File[]) => {
+    if (!files.length) return;
+    const isImageGroup = files.every((file) => file.type.startsWith("image/"));
+    const hasInvalidType = files.some((file) => !file.type.startsWith("image/") && file.type !== "application/pdf");
+    if (hasInvalidType || (files.length > 1 && !isImageGroup)) {
+      setError("Upload one PDF or group multiple images in a single portfolio item.");
+      return;
+    }
+    if (files.reduce((total, file) => total + file.size, 0) > 20 * 1024 * 1024) {
+      setError("The combined media size for each item must be 20MB or less.");
+      return;
+    }
+    setError(null);
+    setSelectedFiles(files);
+    setSelectedThumbnailIndex(0);
+    setProjectName((previous) => previous.trim() ? previous : files[0].name.replace(/\.[^/.]+$/, ""));
+  };
+
+  const removeSelectedFile = (index: number) => {
+    setSelectedFiles((files) => files.filter((_, fileIndex) => fileIndex !== index));
+    setSelectedThumbnailIndex(0);
     if (fileInput.current) {
       fileInput.current.value = '';
     }
@@ -146,6 +145,17 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     const files = event.target.files;
     if (!files || files.length === 0) return;
     const file = files[0];
+    if (!file.type.startsWith("image/")) {
+      setError("Choose an image file for the thumbnail.");
+      event.target.value = "";
+      return;
+    }
+    const selectedSize = selectedFiles.reduce((total, selected) => total + selected.size, 0);
+    if (selectedSize + file.size > 20 * 1024 * 1024) {
+      setError("The combined media size for each item must be 20MB or less.");
+      event.target.value = "";
+      return;
+    }
 
     // Show local preview immediately
     const reader = new FileReader();
@@ -161,59 +171,58 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       .from("portfolio")
       .upload(filename, file, { upsert: false });
     setThumbnailUploading(false);
-    if (error || !data) return;
+    if (error || !data) {
+      setError("Thumbnail upload failed. Please try again.");
+      setThumbnailPreview(null);
+      return;
+    }
     const { data: publicUrlData } = supabase.storage.from("portfolio").getPublicUrl(filename);
     setThumbnailUrl(publicUrlData.publicUrl);
   };
 
   // Handle project file upload (main project asset - images only)
-  const handleFileUpload = async (file: File) => {
+  const handleFileUpload = async (files: File[]) => {
     setError(null);
-    
-    const isImage = file.type.startsWith('image/')
-    const isPDF = file.type === 'application/pdf'
-
-    if (!isImage && !isPDF) {
-      setError("Only image or PDF files are allowed.")
-      return false
+    const isPDF = files[0]?.type === "application/pdf";
+    const isImageGroup = files.length > 0 && files.every((file) => file.type.startsWith("image/"));
+    if (!files.length || (!isPDF && !isImageGroup) || files.reduce((total, file) => total + file.size, 0) > 20 * 1024 * 1024) {
+      setError("Add one PDF or a group of images with a combined size of 20MB or less.");
+      return false;
     }
-
-    if (file.size > 10 * 1024 * 1024) {
-      setError("File size must be 10MB or less.")
-      return false
-    }
-    // Check portfolio limit (max 20 items)
-    if (portfolioList.length >= 20) {
-      setError("You can upload up to 20 portfolio items.");
+    if (portfolioList.length >= 3) {
+      setError("You can add up to 3 portfolio items.");
       return false;
     }
 
-    const ext = file.name.split(".").pop();
-    const filename = `${profileId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     setUploading(true);
-    setProgress(50);
-
-    const { data, error: uploadError } = await supabase
-      .storage
-      .from("portfolio")
-      .upload(filename, file, { upsert: false });
+    setProgress(25);
+    const uploadResults = await Promise.all(files.map(async (file) => {
+      const ext = file.name.split(".").pop();
+      const filename = `${profileId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
+      const result = await supabase.storage.from("portfolio").upload(filename, file, { upsert: false });
+      return { ...result, filename };
+    }));
+    const uploadedPaths = uploadResults.flatMap((result) => result.data ? [result.filename] : []);
+    const uploadError = uploadResults.find((result) => result.error)?.error;
     if (uploadError) {
-      setError("Upload failed");
+      if (uploadedPaths.length) await supabase.storage.from("portfolio").remove(uploadedPaths);
+      setError("Media upload failed. Please try again.");
       setUploading(false);
       setProgress(0);
       return false;
     }
-
-    const { data: publicUrlData } = supabase.storage.from("portfolio").getPublicUrl(filename);
-    const url = publicUrlData.publicUrl;
+    setProgress(75);
+    const urls = uploadResults.map(({ filename }) => supabase.storage.from("portfolio").getPublicUrl(filename).data.publicUrl);
+    const url = urls[0];
 
     const item: PortfolioItem = {
       id: Math.random().toString(36).substring(2),
-      name: projectName.trim() || file.name.replace(/\.[^/.]+$/, ""),
+      name: projectName.trim() || files[0].name.replace(/\.[^/.]+$/, ""),
       url,
       type: isPDF ? "pdf" : "image",
-      description: desc,
-      thumbnailUrl: isPDF ? thumbnailUrl || "" : thumbnailUrl || url,
+      description: desc.trim().slice(0, 100),
+      mediaUrls: isImageGroup ? urls : undefined,
+      thumbnailUrl: thumbnailUrl || urls[selectedThumbnailIndex] || url,
       role: projectRole.trim() || undefined,
       location: projectLocation.trim() || undefined,
       projectType: projectType || undefined,
@@ -236,7 +245,8 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
     setProjectType("");
     setProjectStatus("");
     setProjectYear("");
-    setSelectedFile(null);
+    setSelectedFiles([]);
+    setSelectedThumbnailIndex(0);
     setThumbnailUrl("");
     setThumbnailPreview(null);
     if (onPortfolioAdd) onPortfolioAdd(item);
@@ -246,26 +256,28 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
 
   // Handle adding portfolio (both files and links)
   const handleAddPortfolio = async () => {
-    if (!linkURL && !selectedFile) return;
+    if (!linkURL && !selectedFiles.length) return;
+    if (linkURL && !isHttpUrl(linkURL)) {
+      setError("Enter a valid HTTP or HTTPS link.");
+      return;
+    }
     
-    // Check portfolio limit (max 20 items)
-    if (portfolioList.length >= 20) {
-      setError("You can upload up to 20 portfolio items.");
+    if (portfolioList.length >= 3) {
+      setError("You can add up to 3 portfolio items.");
       return;
     }
     
     setUploading(true);
     
     // Handle file upload
-    if (selectedFile) {
-      await handleFileUpload(selectedFile);
+    if (selectedFiles.length) {
+      await handleFileUpload(selectedFiles);
       return;
     }
     
     // Handle link addition
     if (linkURL) {
-      // Fetch meta title with timeout
-      const linkName = await fetchMetaTitle(linkURL);
+      const linkName = getLinkTitle(linkURL);
       const resolvedName = projectName.trim() || linkName;
       
       const item: PortfolioItem = {
@@ -273,7 +285,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
         name: resolvedName,
         url: linkURL,
         type: "link",
-        description: desc,
+        description: desc.trim().slice(0, 100),
         thumbnailUrl: thumbnailUrl || "", // Use thumbnail if provided
         role: projectRole.trim() || undefined,
         location: projectLocation.trim() || undefined,
@@ -296,7 +308,8 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setProjectType("");
       setProjectStatus("");
       setProjectYear("");
-      setSelectedFile(null);
+      setSelectedFiles([]);
+      setSelectedThumbnailIndex(0);
       setThumbnailUrl("");
       setThumbnailPreview(null);
       if (onPortfolioAdd) onPortfolioAdd(item);
@@ -307,10 +320,10 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
   };
 
   // Updated validation logic - only one item at a time
-  const hasFile = selectedFile !== null;
+  const hasFile = selectedFiles.length > 0;
   const hasLink = linkURL.trim() !== "";
   const hasBothInputs = hasFile && hasLink;
-  const hasValidInput = (hasFile || hasLink) && !hasBothInputs;
+  const hasValidInput = (hasFile || hasLink) && !hasBothInputs && (!hasLink || isHttpUrl(linkURL));
 
   // Reset form when dialog closes
   const handleDialogClose = (open: boolean) => {
@@ -323,13 +336,17 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
       setProjectType("");
       setProjectStatus("");
       setProjectYear("");
-      setSelectedFile(null);
+      setSelectedFiles([]);
+      setSelectedThumbnailIndex(0);
       setThumbnailUrl("");
       setThumbnailPreview(null);
       setError(null);
       setProgress(0);
       if (fileInput.current) {
         fileInput.current.value = '';
+      }
+      if (thumbnailInput.current) {
+        thumbnailInput.current.value = '';
       }
     }
     setOpen(open);
@@ -365,41 +382,50 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
           <div
             className={`relative flex flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed px-4 py-5 text-center transition-colors cursor-pointer
               ${dragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50 hover:bg-muted/40"}
-              ${selectedFile ? "bg-muted/30" : ""}
+              ${selectedFiles.length ? "bg-muted/30" : ""}
               ${uploading || disabled ? "pointer-events-none opacity-50" : ""}`}
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={handleFileDrop}
-            onClick={() => !selectedFile && fileInput.current?.click()}
+            onClick={() => !selectedFiles.length && fileInput.current?.click()}
           >
             <input
               title="Upload an Image/Document"
               type="file"
-              accept="image/*, .pdf"
+              accept="image/*,.pdf"
+              multiple
               ref={fileInput}
               onChange={handleFileChange}
               disabled={uploading || disabled}
               className="sr-only"
             />
 
-            {selectedFile ? (
-              <div className="flex w-full items-center gap-3">
+            {selectedFiles.length ? (
+              <div className="w-full space-y-2 text-left">
+                {selectedFiles.map((file, index) => (
+                  <div key={`${file.name}-${index}`} className="flex items-center gap-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10">
                   <Upload className="h-5 w-5 text-primary" />
                 </div>
                 <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-sm font-medium text-foreground">{selectedFile.name}</p>
-                  <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024).toFixed(0)} KB</p>
+                  <p className="truncate text-sm font-medium text-foreground">{file.name}</p>
+                  <p className="text-xs text-muted-foreground">{(file.size / 1024).toFixed(0)} KB</p>
                 </div>
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); handleFileDelete(); }}
+                  onClick={(e) => { e.stopPropagation(); removeSelectedFile(index); }}
                   disabled={uploading || disabled}
                   className="shrink-0 rounded-full p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive disabled:opacity-50"
                   aria-label="Remove selected file"
                 >
                   <X className="h-4 w-4" />
                 </button>
+                  </div>
+                ))}
+                <p className="text-xs text-muted-foreground">
+                  {selectedFiles.length > 1 ? `${selectedFiles.length} images grouped as one item · ` : ""}
+                  {(selectedFiles.reduce((total, file) => total + file.size, 0) / (1024 * 1024)).toFixed(1)} MB of 20 MB
+                </p>
               </div>
             ) : (
               <>
@@ -408,7 +434,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
                   <p className="text-sm font-medium text-foreground">
                     <span className="text-primary">Click to upload</span> or drag & drop
                   </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">JPG, PNG, GIF, WebP, PDF — max 10 MB</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Images or PDF — max 20 MB per item</p>
                 </div>
               </>
             )}
@@ -418,33 +444,61 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
             <Progress value={progress} className="mt-2" />
           )}
 
-          {portfolioList.length >= 20 && (
-            <p className="mt-1.5 text-xs text-destructive">Portfolio limit reached (20/20). Remove an item to add a new one.</p>
+          {portfolioList.length >= 3 && (
+            <p className="mt-1.5 text-xs text-destructive">Portfolio limit reached (3/3). Remove an item to add a new one.</p>
           )}
-          {portfolioList.length > 0 && portfolioList.length < 20 && (
+          {portfolioList.length > 0 && portfolioList.length < 3 && (
             <p className="mt-1.5 text-xs text-blue-500 dark:text-blue-400">{portfolioList.length} items uploaded</p>
           )}
         </div>
 
         {/* ── Project name — shown as soon as a file or link is present ── */}
-        {(selectedFile || linkURL.trim() !== "") && (
+        {selectedFiles.length > 0 && selectedFiles.every((file) => file.type.startsWith("image/")) && (
+          <div className="grid grid-cols-3 gap-2">
+            {selectedPreviews.map((preview, index) => (
+              <button
+                key={preview}
+                type="button"
+                className={`relative overflow-hidden rounded-md border-2 ${selectedThumbnailIndex === index ? "border-primary" : "border-border"}`}
+                onClick={() => setSelectedThumbnailIndex(index)}
+                aria-label={`Choose ${selectedFiles[index]?.name} as cover image`}
+                aria-pressed={selectedThumbnailIndex === index}>
+                <img src={preview} alt="" className="h-20 w-full object-cover" />
+                {selectedThumbnailIndex === index && <span className="absolute inset-x-0 bottom-0 bg-primary/90 px-1 text-xs text-primary-foreground">Cover</span>}
+              </button>
+            ))}
+          </div>
+        )}
+        {selectedFiles.length === 1 && selectedFiles[0].type === "application/pdf" && selectedPreviews[0] && (
+          <iframe src={selectedPreviews[0]} title={`Preview ${selectedFiles[0].name}`} className="h-48 w-full rounded-md border" />
+        )}
+
+        {linkURL.trim() && isHttpUrl(linkURL) && (
+          <div className="rounded-md border bg-muted/30 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Link preview</p>
+            <a className="break-all text-sm text-primary underline" href={linkURL} target="_blank" rel="noreferrer">{projectName || linkURL}</a>
+            {desc && <p className="mt-1 text-sm text-muted-foreground">{desc.slice(0, 100)}</p>}
+          </div>
+        )}
+
+        {(selectedFiles.length > 0 || linkURL.trim() !== "") && (
           <div className="mt-4">
             <label className="block text-sm font-semibold mb-1.5 text-foreground">Project name</label>
             <input
               type="text"
               value={projectName}
               onChange={(e) => setProjectName(e.target.value)}
-              placeholder={selectedFile ? selectedFile.name.replace(/\.[^/.]+$/, "") : "e.g., My Project"}
+              placeholder={selectedFiles.length ? selectedFiles[0].name.replace(/\.[^/.]+$/, "") : "e.g., My Project"}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               disabled={uploading || disabled}
-              maxLength={80}
+              maxLength={100}
             />
             <p className="text-xs text-muted-foreground mt-1">This name appears on your portfolio card.</p>
           </div>
         )}
 
         {/* ── Project details (optional but high-value) ── */}
-        {(selectedFile || linkURL.trim() !== "") && (
+        {(selectedFiles.length > 0 || linkURL.trim() !== "") && (
           <div className="mt-4 space-y-3 rounded-lg border border-border bg-muted/40 p-3">
             <p className="text-sm font-semibold text-foreground">
               Project details <span className="font-normal text-muted-foreground">(optional — helps you get discovered)</span>
@@ -455,7 +509,7 @@ const PortfolioEditorDialog: React.FC<PortfolioEditorDialogProps> = ({
               onChange={(e) => setDesc(e.target.value)}
               placeholder="What did you deliver on this project? What was the outcome?"
               rows={2}
-              maxLength={280}
+              maxLength={100}
               className={`${inputClass} h-20 resize-y`}
               disabled={uploading || disabled}
             />

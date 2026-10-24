@@ -1,7 +1,6 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 interface Education {
@@ -14,7 +13,6 @@ interface Education {
   fieldOfStudy?: string;
   /** Legacy free-form year/duration — kept so existing entries stay editable */
   year?: string;
-  description?: string;
 }
 
 interface EducationFormFieldsProps {
@@ -108,19 +106,6 @@ const EducationFormFields = ({
           </p>
         </div>
       ) : null}
-      <div>
-        {showLabels && (
-          <Label htmlFor={`${idPrefix}-description`}>Description (Optional)</Label>
-        )}
-        <Textarea
-          id={`${idPrefix}-description`}
-          value={education.description}
-          onChange={(e) => onChange({ ...education, description: e.target.value })}
-          placeholder="Relevant coursework, achievements, or specializations..."
-          rows={3}
-          disabled={disabled}
-        />
-      </div>
     </div>
   );
 };

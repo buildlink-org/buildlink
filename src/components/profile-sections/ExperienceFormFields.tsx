@@ -1,14 +1,12 @@
 
 import React from "react";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
 interface Experience {
   title: string;
   company: string;
   duration: string;
-  description?: string;
 }
 
 interface ExperienceFormFieldsProps {
@@ -37,6 +35,7 @@ const ExperienceFormFields = ({
             value={experience.title}
             onChange={(e) => onChange({ ...experience, title: e.target.value })}
             placeholder="e.g., Senior Civil Engineer"
+            maxLength={100}
             disabled={disabled}
           />
         </div>
@@ -47,6 +46,7 @@ const ExperienceFormFields = ({
             value={experience.company}
             onChange={(e) => onChange({ ...experience, company: e.target.value })}
             placeholder="e.g., ABC Construction Ltd"
+            maxLength={100}
             disabled={disabled}
           />
         </div>
@@ -58,19 +58,7 @@ const ExperienceFormFields = ({
           value={experience.duration}
           onChange={(e) => onChange({ ...experience, duration: e.target.value })}
           placeholder="e.g., Jan 2020 - Present"
-          disabled={disabled}
-        />
-      </div>
-      <div>
-        {showLabels && (
-          <Label htmlFor={`${idPrefix}-description`}>Description (Optional)</Label>
-        )}
-        <Textarea
-          id={`${idPrefix}-description`}
-          value={experience.description}
-          onChange={(e) => onChange({ ...experience, description: e.target.value })}
-          placeholder="Describe your key responsibilities and achievements..."
-          rows={3}
+          maxLength={100}
           disabled={disabled}
         />
       </div>

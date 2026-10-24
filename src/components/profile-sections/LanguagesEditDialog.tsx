@@ -20,12 +20,25 @@ interface LanguagesEditDialogProps {
   onProfileUpdated?: () => void;
 }
 
+const MAX_LANGUAGES = 5;
+
+const normalizeLanguages = (value: unknown): Language[] => {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (typeof item === "string" && item.trim()) return [{ name: item.trim(), proficiency: "" }];
+    if (item && typeof item === "object" && "name" in item && typeof item.name === "string" && item.name.trim()) {
+      return [{ name: item.name.trim(), proficiency: "proficiency" in item && typeof item.proficiency === "string" ? item.proficiency : "" }];
+    }
+    return [];
+  }).slice(0, MAX_LANGUAGES);
+};
+
 const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: LanguagesEditDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [languages, setLanguages] = useState<Language[]>(currentProfile?.languages || []);
+  const [languages, setLanguages] = useState<Language[]>(normalizeLanguages(currentProfile?.languages));
   const [newLanguage, setNewLanguage] = useState({ name: '', proficiency: '' });
 
   const proficiencyLevels = [
@@ -37,7 +50,7 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
   ];
 
   const addLanguage = () => {
-    if (newLanguage.name.trim() && newLanguage.proficiency && 
+    if (languages.length < MAX_LANGUAGES && newLanguage.name.trim() && newLanguage.proficiency &&
         !languages.find(lang => lang.name.toLowerCase() === newLanguage.name.toLowerCase())) {
       setLanguages([...languages, { ...newLanguage, name: newLanguage.name.trim() }]);
       setNewLanguage({ name: '', proficiency: '' });
@@ -78,7 +91,10 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (isOpen) setLanguages(normalizeLanguages(currentProfile?.languages));
+      setOpen(isOpen);
+    }}>
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
@@ -113,12 +129,13 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
                 </SelectContent>
               </Select>
             </div>
+            <p className="text-xs text-muted-foreground">Add up to 5 languages.</p>
             <Button 
               type="button" 
               onClick={addLanguage} 
               variant="outline" 
               className="w-full"
-              disabled={!newLanguage.name.trim() || !newLanguage.proficiency}
+              disabled={languages.length >= MAX_LANGUAGES || !newLanguage.name.trim() || !newLanguage.proficiency}
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Language
@@ -126,7 +143,7 @@ const LanguagesEditDialog = ({ children, currentProfile, onProfileUpdated }: Lan
           </div>
 
           <div className="space-y-2">
-            <Label>Your Languages</Label>
+            <Label>Your Languages ({languages.length}/{MAX_LANGUAGES})</Label>
             <div className="space-y-2 min-h-[100px] p-3 border border-border rounded-md bg-card/50">
               {languages.length > 0 ? (
                 languages.map((language, index) => (

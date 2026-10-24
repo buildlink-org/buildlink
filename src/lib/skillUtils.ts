@@ -2,6 +2,23 @@ export interface Skill {
   name: string;
 }
 
+export const BUILT_ENVIRONMENT_SKILLS = [
+  "Architecture",
+  "BIM",
+  "Civil Engineering",
+  "Construction Management",
+  "Cost Estimation",
+  "GIS",
+  "Interior Design",
+  "Landscape Architecture",
+  "Project Management",
+  "Quantity Surveying",
+  "Revit",
+  "Structural Engineering",
+  "Sustainable Design",
+  "Urban Planning",
+];
+
 // Convert legacy string skills and sanitize malformed skill objects
 export const convertAndSanitizeSkills = (skills: any[]): Skill[] => {
   if (!skills) return [];

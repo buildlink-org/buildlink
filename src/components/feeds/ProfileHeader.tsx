@@ -11,6 +11,7 @@ import { UserProfile } from "@/types"
 import SocialMediaLinks from "../profile/SocialMediaLinks"
 import SocialLinksEditDialog from "../profile/SocialLinksEditDialog"
 import VerificationBadgeButton from "./VerificationBadges"
+import { getProfileSubtitle } from "@/lib/profileDisplay"
 
 interface ProfileHeaderProps {
 	profile: UserProfile
@@ -37,17 +38,17 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-[#ffb3a7] dark:bg-orange-950/60",
-				borderColor: "border-[#ffb3a7] dark:border-orange-800/50",
+				bgColor: "bg-[#fed7aa] dark:bg-orange-950/60",
+				borderColor: "border-[#fed7aa] dark:border-orange-800/50",
 				titleColor: "text-black dark:text-foreground",
 				descColor: "text-black/80 dark:text-muted-foreground",
 				iconEmoji: "",
-				message: "Ready to connect, grow and lead in Kenya's Built Environment?",
+				message: "Ready to connect, grow and lead in Kenya’s Built Environment?",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-[#f0433d] dark:bg-red-950/70",
-				borderColor: "border-[#f0433d] dark:border-red-800/60",
+				bgColor: "bg-green-100 dark:bg-green-950/60",
+				borderColor: "border-green-200 dark:border-green-800/50",
 				titleColor: "text-black dark:text-foreground",
 				descColor: "text-black/80 dark:text-muted-foreground",
 				iconEmoji: "",
@@ -67,12 +68,16 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 	}
 
 	const welcomeConfig = getWelcomeConfig()
+	const displayName = profile.user_type === "company"
+		? profile.organization || profile.full_name || "Your Company"
+		: profile.full_name || "User"
+	const subtitle = getProfileSubtitle(profile)
 
 	return (
 		<>
 			<Card className={`mt-4 border ${welcomeConfig.borderColor} ${welcomeConfig.bgColor}`}>
 				<CardHeader>
-					<CardTitle className={welcomeConfig.titleColor}>Welcome {profile.user_type === "company" ? profile.organization || profile.full_name || "Your Company" : profile.full_name || "User"}!</CardTitle>
+					<CardTitle className={welcomeConfig.titleColor}>Welcome {displayName}!</CardTitle>
 					<CardDescription className={welcomeConfig.descColor}>
 						{welcomeConfig.message} {welcomeConfig.iconEmoji}
 					</CardDescription>
@@ -86,7 +91,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 						<div className="relative">
 							<AvatarUploader
 								avatarUrl={profile.avatar || ""}
-								fullName={profile.full_name}
+								fullName={displayName}
 								uploading={uploading}
 								onAvatarChange={handleAvatarChange}
 								onAvatarRemove={profile.avatar ? handleAvatarRemove : undefined}
@@ -98,7 +103,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 								<div className="flex items-start gap-3">
 									<div className="flex-1">
 										<div className="flex items-center gap-2">
-											<h1 className="mb-1 text-2xl font-bold text-foreground">{profile.full_name || "User"}</h1>
+											<h1 className="mb-1 text-2xl font-bold text-foreground">{displayName}</h1>
 											<VerificationBadgeButton profile={profile} />
 										</div>
 										<div className="mt-1 flex items-center gap-2">
@@ -106,10 +111,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 										</div>
 									</div>
 								</div>
-								<p className="mb-1 text-base text-muted-foreground">
-									{profile.profession || "No profession specified"}
-									{profile.organization && <span> - {profile.organization}</span>}
-								</p>
+								{subtitle && <p className="mb-1 text-base text-muted-foreground">{subtitle}</p>}
 							</div>
 						</div>
 					</div>
@@ -120,7 +122,8 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 								<Button
 									variant="outline"
 									size="icon"
-									className="flex-shrink-0">
+									className="flex-shrink-0"
+									aria-label="Profile settings">
 									<Settings className="h-4 w-4" />
 								</Button>
 							</ProfileSettingsDialog>
@@ -128,7 +131,7 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 							<ProfileEditDialog
 								currentProfile={profile}
 								onProfileUpdated={handleProfileUpdate}>
-								<Button className="flex-1 bg-primary text-primary-foreground hover:bg-primary/90 sm:flex-none dark:bg-primary dark:hover:bg-primary/80">
+								<Button className="flex-1 bg-red-700 text-white hover:bg-red-800 sm:flex-none">
 									<Edit className="mr-1 h-4 w-4" />
 									Edit Profile
 								</Button>

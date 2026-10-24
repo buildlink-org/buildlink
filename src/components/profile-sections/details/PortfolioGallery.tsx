@@ -401,7 +401,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 						<div className="w-full space-y-2">
 							{titleRow}
 							{metaBlock}
-							{item.description && <p className="line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
+							{item.description && <p className="line-clamp-2 text-xs text-muted-foreground">{item.description.slice(0, 100)}</p>}
 							<span className={`inline-block text-xs px-2 py-1 rounded-md font-medium ${item.type === "pdf" ? "bg-red-100 text-red-800 dark:bg-red-950/60 dark:text-red-300" : "bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300"}`}>
 								{item.type === "pdf" ? "PDF Document" : "External Link"}
 							</span>
@@ -438,7 +438,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 				<div className="min-h-[68px] border-t border-border bg-muted/40 px-3 py-3">
 					{titleRow}
 					{metaBlock}
-					{item.description && <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.description}</div>}
+					{item.description && <div className="mt-1 line-clamp-2 text-xs text-muted-foreground">{item.description.slice(0, 100)}</div>}
 					<span className="mt-2 inline-block rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-800 dark:bg-green-950/60 dark:text-green-300">{item.type.toUpperCase()}</span>
 				</div>
 			</div>
@@ -627,10 +627,21 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 												<div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/90 w-full h-full">
 													<ExternalLink className="h-14 w-14 text-blue-400 mb-3 animate-bounce" />
 													<h4 className="text-lg font-bold mb-1 text-white">{item.name}</h4>
-													{item.description && <p className="text-xs text-gray-300 mb-4 line-clamp-3">{item.description}</p>}
+													{item.description && <p className="text-xs text-gray-300 mb-4 line-clamp-3">{item.description.slice(0, 100)}</p>}
 													<Button onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")} size="sm" className="gap-2 font-semibold">
 														<ExternalLink className="h-3.5 w-3.5" /> Open Project Link
 													</Button>
+												</div>
+											) : item.mediaUrls && item.mediaUrls.length > 1 ? (
+												<div className="grid h-full w-full grid-cols-2 gap-2 overflow-y-auto bg-black/40 p-3">
+													{item.mediaUrls.map((url: string, mediaIndex: number) => (
+														<img
+															key={`${url}-${mediaIndex}`}
+															src={url}
+															alt={`${item.name}, image ${mediaIndex + 1}`}
+															className="h-auto max-h-full w-full rounded-lg object-contain"
+														/>
+													))}
 												</div>
 											) : (
 												<div className="w-full h-full flex items-center justify-center bg-black/40 p-2">
@@ -645,7 +656,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 											{/* Bottom label banner on active center card */}
 											{isCenter && item.description && item.type !== "link" && (
 												<div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent backdrop-blur-sm text-center z-40">
-													<p className="text-xs text-gray-200 line-clamp-2">{item.description}</p>
+													<p className="text-xs text-gray-200 line-clamp-2">{item.description.slice(0, 100)}</p>
 												</div>
 											)}
 										</div>

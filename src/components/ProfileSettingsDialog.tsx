@@ -63,7 +63,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
               Profile Settings
             </DialogTitle>
             <DialogDescription>
-              Manage your account settings, privacy, and preferences
+              Manage your theme, account actions, and notification preferences
             </DialogDescription>
           </DialogHeader>
 
@@ -71,7 +71,7 @@ const ProfileSettingsDialog = ({ children }: ProfileSettingsDialogProps) => {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="theme">Colour Theme</TabsTrigger>
               <TabsTrigger value="account">Account Actions</TabsTrigger>
-              <TabsTrigger value="notifications">Notifications</TabsTrigger>
+              <TabsTrigger value="notifications">Notification Preferences</TabsTrigger>
             </TabsList>
 
             <div className="mt-4 max-h-[60vh] overflow-y-auto">

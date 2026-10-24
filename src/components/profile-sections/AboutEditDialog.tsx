@@ -19,7 +19,7 @@ const AboutEditDialog = ({ children, currentProfile, onProfileUpdated }: AboutEd
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [bio, setBio] = useState<string>(currentProfile?.bio || '');
-  const maxLength = 1000;
+  const maxLength = 300;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,13 +99,13 @@ const AboutEditDialog = ({ children, currentProfile, onProfileUpdated }: AboutEd
               id="bio"
               value={bio}
               onChange={(e) => setBio(e.target.value)}
-              placeholder="Write a compelling summary about your professional background, expertise, and career goals. Share your passions, key achievements, and what drives you in your career..."
+              placeholder="Share a short introduction about your background and goals."
               rows={8}
               className={`resize-none ${isOverLimit ? 'border-red-500 focus:border-red-500' : ''}`}
             />
             <div className="flex items-center justify-between">
               <p className="text-xs text-gray-500">
-                Express yourself authentically - your story matters
+                Maximum 300 characters.
               </p>
               <p className={`text-xs ${isOverLimit ? 'text-red-500' : remainingChars <= 50 ? 'text-yellow-600' : 'text-gray-500'}`}>
                 {remainingChars} characters remaining

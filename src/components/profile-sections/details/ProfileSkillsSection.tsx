@@ -27,7 +27,7 @@ const isTool = (name: string): boolean => {
 }
 
 const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }: CompactSkillsSectionProps) => {
-	const skills: Skill[] = convertAndSanitizeSkills(profile?.skills || [])
+	const skills: Skill[] = convertAndSanitizeSkills(profile?.skills || []).slice(0, 5)
 
 	const userType = profile.user_type?.toLowerCase() || "student"
 

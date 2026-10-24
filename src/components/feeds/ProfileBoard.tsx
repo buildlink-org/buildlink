@@ -12,8 +12,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import ProfileCompletionIndicator from "@/components/profile/ProfileCompletionIndicator"
 import SectionHeader from "@/components/profile/SectionHeader"
 import EmptyState from "@/components/profile/EmptyState"
-import { BookOpen, Users, Sparkles, Package } from "lucide-react"
-import { UserProfile } from "@/types"
+import { BookOpen, Users } from "lucide-react"
+import { CompanyProfile, UserProfile } from "@/types"
 import { connectionsService } from "@/services/connectionsService"
 import { publicProfileService } from "@/services/publicProfileService"
 import { useToast } from "@/hooks/use-toast"
@@ -23,6 +23,7 @@ import AboutActivitySection from "../profile-sections/details/AboutActivitySecti
 import SuggestedConnections from "@/components/profile/SuggestedConnections"
 import ShareProfileDialog from "@/components/profile/ShareProfileDialog"
 import { Share2 } from "lucide-react"
+import CompanyProfileSections from "@/components/profile/CompanyProfileSections"
 
 // ---------------------------------------------------------------------------
 // Shared profile types
@@ -149,10 +150,10 @@ const ProfileRail = ({
 			<Card>
 				<CardContent className="py-5">
 					<SectionHeader
-						title="Connections"
+						title={profile.user_type === "company" ? "Following" : "Connections"}
 						count={connections.length}
-						countUnit="connections"
-						description="People in your professional network"
+						countUnit={profile.user_type === "company" ? "following" : "connections"}
+						description={profile.user_type === "company" ? "Profiles your company follows" : "People in your professional network"}
 					/>
 					{connectionsLoading ? (
 						<p className="text-sm text-muted-foreground">Loading connections…</p>
@@ -193,100 +194,13 @@ const ProfileRail = ({
 	)
 }
 
-// ---------------------------------------------------------------------------
-// Company profile sections (data-driven, no placeholder content)
-// ---------------------------------------------------------------------------
-
-const CompanyFeatured = ({ profile }: { profile: UserProfile }) => {
-	const featured = Array.isArray(profile.featured) ? profile.featured : []
-
-	return (
-		<Card>
-			<CardContent className="p-5">
-				<SectionHeader
-					title="Featured"
-					count={featured.length}
-					countUnit="items"
-					description="Highlighted products and services"
-				/>
-				{featured.length > 0 ? (
-					<div className="space-y-3">
-						{featured.map((item, index) => (
-							<div key={`${item.title || item.name || "featured"}-${index}`} className="flex items-start gap-3 rounded-lg border border-border p-3">
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-									<Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-								</div>
-								<div className="min-w-0 flex-1">
-									<p className="text-sm font-semibold text-foreground">{item.title || item.name}</p>
-									{item.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
-									{item.link && (
-										<a className="mt-1 inline-block text-xs text-primary hover:underline" href={item.link} target="_blank" rel="noreferrer">
-											View details
-										</a>
-									)}
-								</div>
-							</div>
-						))}
-					</div>
-				) : (
-					<EmptyState
-						icon={<Sparkles className="h-5 w-5" />}
-						title="No featured items yet"
-						description="Showcase your company’s key products and services to stand out."
-					/>
-				)}
-			</CardContent>
-		</Card>
-	)
-}
-
-const CompanyProducts = ({ profile }: { profile: UserProfile }) => {
-	const products = Array.isArray(profile.products) ? profile.products : []
-
-	return (
-		<Card>
-			<CardContent className="p-5">
-				<SectionHeader
-					title="Products & Services"
-					count={products.length}
-					countUnit="products"
-					description="What your company offers"
-				/>
-				{products.length > 0 ? (
-					<div className="space-y-3">
-						{products.map((item, index) => (
-							<div key={`${item.name || item.title || "product"}-${index}`} className="flex items-start gap-3 rounded-lg border border-border p-3">
-								<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-									<Package className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-								</div>
-								<div className="min-w-0 flex-1">
-									<p className="text-sm font-semibold text-foreground">{item.name || item.title}</p>
-									{item.description && <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>}
-									{item.link && (
-										<a className="mt-1 inline-block text-xs text-primary hover:underline" href={item.link} target="_blank" rel="noreferrer">
-											View details
-										</a>
-									)}
-								</div>
-							</div>
-						))}
-					</div>
-				) : (
-					<EmptyState
-						icon={<Package className="h-5 w-5" />}
-						title="No products or services listed"
-						description="Add the products and services your company provides."
-					/>
-				)}
-			</CardContent>
-		</Card>
-	)
-}
-
 const ProfileBoard = () => {
 	const { profile, userPosts, loading, uploading, handleProfileUpdate, handleAvatarChange, handleAvatarRemove } = useProfile()
 	const [connections, setConnections] = useState<ConnectionProfileRow[]>([])
+	const [connectionsCount, setConnectionsCount] = useState(0)
 	const [connectionsLoading, setConnectionsLoading] = useState(false)
+	const [staffCount, setStaffCount] = useState<number | null>(null)
+	const [staffCountLoading, setStaffCountLoading] = useState(false)
 	// Fix #5 — working profile visibility control
 	const [savingVisibility, setSavingVisibility] = useState(false)
 	const { toast } = useToast()
@@ -322,6 +236,11 @@ const ProfileBoard = () => {
 		;(async () => {
 			const { data } = await connectionsService.getConnections(profile.id)
 			const accepted = (data || []).filter((row) => row.status === "accepted")
+			setConnectionsCount(
+				profile.user_type === "company"
+					? accepted.filter((row) => row.user_id === profile.id).length
+					: accepted.length,
+			)
 			const otherIds = accepted
 				.map((row) => (row.user_id === profile.id ? row.connected_user_id : row.user_id) as string)
 				.slice(0, 8)
@@ -338,7 +257,34 @@ const ProfileBoard = () => {
 
 			setConnections(profiles || [])
 		})().finally(() => setConnectionsLoading(false))
-	}, [profile?.id])
+	}, [profile?.id, profile?.user_type])
+
+	useEffect(() => {
+		if (!profile?.id || profile.user_type !== "company" || !profile.organization) {
+			setStaffCount(null)
+			return
+		}
+		setStaffCountLoading(true)
+		void supabase
+			.from("profiles")
+			.select("id", { count: "exact", head: true })
+			.eq("organization", profile.organization)
+			.neq("id", profile.id)
+			.in("user_type", ["student", "professional"])
+			.eq("profile_visibility", "public")
+			.then(({ count, error }) => {
+				if (error) {
+					toast({
+						title: "Staff count unavailable",
+						description: "Public staff profiles could not be loaded.",
+						variant: "destructive",
+					})
+					return
+				}
+				setStaffCount(count || 0)
+			})
+			.finally(() => setStaffCountLoading(false))
+	}, [profile?.id, profile?.organization, profile?.user_type, toast])
 
 	if (loading) {
 		return (
@@ -360,7 +306,12 @@ const ProfileBoard = () => {
 	const userType = profile.user_type?.toLowerCase() || "student"
 	const isCompany = userType === "company"
 	const portfolio = Array.isArray(profile.portfolio) ? profile.portfolio : []
-	const teamCount = profile.people?.length || 0
+	const completion = profile.profile_completion_score || 0
+	const summaryTone = isCompany
+		? { bg: "bg-company-100 dark:bg-company-900/50", text: "text-company-700 dark:text-company-300" }
+		: userType === "professional"
+			? { bg: "bg-professional-100 dark:bg-professional-900/50", text: "text-professional-700 dark:text-professional-300" }
+			: { bg: "bg-student-100 dark:bg-student-900/50", text: "text-student-700 dark:text-student-300" }
 
 	return (
 		<div className="core-vertical-grid mx-auto max-w-7xl px-1 sm:px-0">
@@ -373,18 +324,17 @@ const ProfileBoard = () => {
 				handleProfileUpdate={handleProfileUpdate}
 			/>
 
-			{/* Stat cards — live data (profile completion lives in the right rail "Profile strength" module) */}
-			<div className="grid grid-cols-2 gap-4">
+			<div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
 				<Card className="border border-border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
 					<CardContent className="p-3 sm:p-4 relative">
-						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-green-500/10 dark:bg-green-500/5" />
+						<div className={`absolute top-0 right-0 h-16 w-16 rounded-bl-full ${summaryTone.bg} opacity-60`} />
 						<div className="relative flex items-center justify-between">
 							<div className="min-w-0">
-								<p className="text-xs sm:text-sm text-muted-foreground truncate">{isCompany ? "Team Members" : "Portfolio Items"}</p>
-								<p className="text-2xl sm:text-4xl font-bold text-foreground">{isCompany ? teamCount : portfolio.length}</p>
+								<p className="text-xs sm:text-sm text-muted-foreground truncate">{isCompany ? "Staff" : "Portfolio Items"}</p>
+								<p className="text-2xl sm:text-4xl font-bold text-foreground">{isCompany ? (staffCountLoading ? "…" : staffCount ?? 0) : portfolio.length}</p>
 							</div>
-							<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-green-500/15 dark:bg-green-500/10 flex-shrink-0">
-								<BookOpen className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 dark:text-green-400" aria-hidden="true" />
+							<div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${summaryTone.bg}`}>
+								<BookOpen className={`h-5 w-5 sm:h-6 sm:w-6 ${summaryTone.text}`} aria-hidden="true" />
 							</div>
 						</div>
 					</CardContent>
@@ -392,36 +342,57 @@ const ProfileBoard = () => {
 
 				<Card className="border border-border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
 					<CardContent className="p-3 sm:p-4 relative">
-						<div className="absolute top-0 right-0 h-16 w-16 rounded-bl-full bg-purple-500/10 dark:bg-purple-500/5" />
+						<div className={`absolute top-0 right-0 h-16 w-16 rounded-bl-full ${summaryTone.bg} opacity-60`} />
 						<div className="relative flex items-center justify-between">
 							<div className="min-w-0">
-								<p className="text-xs sm:text-sm text-muted-foreground truncate">Connections</p>
-								<p className="text-2xl sm:text-4xl font-bold text-foreground">{connectionsLoading ? "…" : connections.length}</p>
+								<p className="text-xs sm:text-sm text-muted-foreground truncate">{isCompany ? "Following" : "Connections"}</p>
+								<p className="text-2xl sm:text-4xl font-bold text-foreground">{connectionsLoading ? "…" : connectionsCount}</p>
 							</div>
-							<div className="flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-lg bg-purple-500/15 dark:bg-purple-500/10 flex-shrink-0">
-								<Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" aria-hidden="true" />
+							<div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${summaryTone.bg}`}>
+								<Users className={`h-5 w-5 sm:h-6 sm:w-6 ${summaryTone.text}`} aria-hidden="true" />
 							</div>
 						</div>
+					</CardContent>
+				</Card>
+				<Card className="border border-border overflow-hidden transition-all hover:shadow-md hover:-translate-y-0.5">
+					<CardContent className="p-3 sm:p-4">
+						<ProfileCompletionIndicator score={completion} />
 					</CardContent>
 				</Card>
 			</div>
 
-			{/* Main content + right discovery rail */}
-			<div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_300px] xl:gap-6">
-				<div className="order-2 min-w-0 space-y-4 sm:space-y-6 xl:order-1">
-					<AboutActivitySection
+			<div className="space-y-4 sm:space-y-6">
+				<AboutActivitySection
 						profile={profile}
 						publicProfile={false}
 						userPosts={userPosts}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-{isCompany ? (
+				{isCompany ? (
 						<>
-							<CompanyFeatured profile={profile} />
-							<CompanyProducts profile={profile} />
+						<ProfileSkillsSection
+								profile={profile}
+								canEdit={true}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+						<PortfolioSection
+								profile={profile}
+								canEdit={true}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
+							<CompanyProfileSections
+								profile={profile as CompanyProfile}
+								canEdit
+								onProfileUpdated={handleProfileUpdate}
+							/>
 						</>
 					) : (
 						<>
+							<ProfileSkillsSection
+								profile={profile}
+								canEdit={true}
+								handleProfileUpdate={handleProfileUpdate}
+							/>
 							{/* Featured projects — project-first hierarchy */}
 							<PortfolioSection
 								profile={profile}
@@ -432,12 +403,6 @@ const ProfileBoard = () => {
 							<ProfileExperience
 								canEdit={true}
 								profile={profile}
-								handleProfileUpdate={handleProfileUpdate}
-							/>
-							{/* Skills */}
-							<ProfileSkillsSection
-								profile={profile}
-								canEdit={true}
 								handleProfileUpdate={handleProfileUpdate}
 							/>
 							{/* Education & training */}
@@ -460,18 +425,13 @@ const ProfileBoard = () => {
 							/>
 						</>
 					)}
-				</div>
-
-				{/* Right discovery rail (desktop >= xl; stacks below on smaller screens) */}
-				<div className="order-1 min-w-0 xl:order-2">
-					<ProfileRail
+				<ProfileRail
 					profile={profile}
 					connections={connections}
 					connectionsLoading={connectionsLoading}
 					onChangeVisibility={handleChangeVisibility}
 					savingVisibility={savingVisibility}
-					/>
-				</div>
+				/>
 			</div>
 		</div>
 	)
