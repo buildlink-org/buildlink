@@ -24,7 +24,6 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 	return (
 		<header className="fixed top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 			<div className="mx-auto flex h-12 max-w-7xl items-center justify-between px-2 sm:px-4 md:px-8">
-							{/* Left side - Menu + Logo */}
 				<div className="flex shrink-0 items-center gap-2">
 					<button
 						type="button"
@@ -41,12 +40,10 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 					{loading && <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-primary" aria-label="Loading" role="status"></div>}
 				</div>
 
-				{/* Center - Search Bar */}
 				<div className="mx-2 hidden max-w-[38.5rem] flex-1 sm:flex lg:mx-4">
 					<SearchDropdown />
 				</div> 
 
-        {/* Right side actions */}
 				<div className="flex shrink-0 items-center gap-0.5 sm:gap-2">
 					<SearchDialog>
 						<Button
@@ -58,7 +55,6 @@ const TopBar = ({ onLogoClick, onMenuClick, loading }: TopBarProps) => {
 						</Button>
 					</SearchDialog>
 
-					{/* Dark / Light mode toggle */}
 					<Button
 						variant="ghost"
 						size="icon"
