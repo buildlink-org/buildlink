@@ -392,7 +392,6 @@ const ProfileSettings = () => {
 
       </main>
 
-      {/* Delete Account Confirmation Dialog */}
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -432,7 +431,6 @@ const ProfileSettings = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Change Password Dialog */}
       <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
