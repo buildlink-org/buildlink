@@ -41,10 +41,10 @@ fixplan.md
 
 # Supabase CLI local link cache
 supabase/.temp
-Buildlink App Dev, July Checklist. 28.08.2026.pdf
 Buildlink Full Updated SQL.md
 buildlink-profile-sections-ui-ux-redesign-report.md
 .env
 tests
 .vscode
-Buildlink App Dev, July Checklist. 28.08.2026.pdf
+
+*.pdf
