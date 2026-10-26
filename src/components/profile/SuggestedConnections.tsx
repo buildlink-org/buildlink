@@ -1,11 +1,11 @@
-import React, { useCallback, useEffect, useState } from "react"
+import React, { useCallback, useEffect, useRef, useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { AlertCircle, Loader2, UserPlus } from "lucide-react"
+import { AlertCircle, ChevronRight, Loader2 } from "lucide-react"
 import { supabase } from "@/integrations/supabase/client"
 import { connectionsService } from "@/services/connectionsService"
 import { Button } from "@/components/ui/button"
 import SectionHeader from "@/components/profile/SectionHeader"
-import ConnectButton from "@/components/ConnectButton"
+import AccountTypeBadge from "@/components/AccountTypeBadge"
 import { Link } from "react-router-dom"
 
 interface ProfileRow {
@@ -19,19 +19,19 @@ interface ProfileRow {
 	certifications: unknown
 	verification_badges: unknown
 	portfolio: unknown
+	organization: string | null
+	education_level: string | null
 }
 
 interface RecentPost {
 	author_id: string
 	content: string | null
-	location: string | null
 	created_at: string | null
 }
 
 interface SuggestionRow {
 	profile: ProfileRow
 	subtitle: string
-	reason: string
 	score: number
 }
 
@@ -39,6 +39,7 @@ interface SuggestedConnectionsProps {
 	profileId: string
 	/** Current member's professions — used to prioritize trade compatibility */
 	myProfessions?: string[]
+	showEmpty?: boolean
 }
 
 const flattenStrings = (value: unknown): string[] => {
@@ -79,21 +80,11 @@ const getIndustryBoards = (profile: ProfileRow) => {
 	return ["EBK", "BORAQS", "NCA"].filter((board) => credentials.includes(board.toLowerCase()))
 }
 
-const getActivityDescription = (post: RecentPost) => {
-	const content = (post.content || "").toLowerCase()
-	if (/tender|bid|procurement|quotation|request for proposal|\brfp\b/.test(content)) return "shared a tender or procurement opportunity"
-	if (/site progress|site update|construction progress|foundation|concrete pour|site visit/.test(content)) return "shared a site or project update"
-	if (/technical|structural|engineering|specification|building code|safety|boq/.test(content)) return "posted a technical industry insight"
-	if (post.location === "opportunity") return "shared an industry opportunity"
-	if (post.location === "project") return "shared a project update"
-	if (post.location === "industry") return "joined an industry discussion"
-	return "posted a recent construction-industry update"
-}
-
-const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, myProfessions = [] }) => {
+const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, myProfessions = [], showEmpty = false }) => {
 	const [suggestions, setSuggestions] = useState<SuggestionRow[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
+	const scrollRef = useRef<HTMLDivElement>(null)
 
 	const myProfessionsKey = myProfessions.join(",")
 
@@ -116,7 +107,7 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 			const [viewerResult, activityResult] = await Promise.all([
 				supabase
 					.from("profiles")
-					.select("id, full_name, avatar, title, profession, user_type, skills, certifications, verification_badges, portfolio")
+					.select("id, full_name, avatar, title, profession, user_type, skills, certifications, verification_badges, portfolio, organization, education_level")
 					.eq("id", profileId)
 					.maybeSingle(),
 				supabase
@@ -133,21 +124,17 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 
 			const recentPosts = ((activityResult.data || []) as RecentPost[])
 				.filter((post) => !excluded.has(post.author_id))
-			const activeUserIds = [...new Set(recentPosts.map((post) => post.author_id))]
-			if (activeUserIds.length === 0) {
-				setSuggestions([])
-				return
-			}
 
 			const { data, error: queryError } = await supabase
 				.from("profiles")
-				.select("id, full_name, avatar, title, profession, user_type, skills, certifications, verification_badges, portfolio")
-				.in("id", activeUserIds)
+				.select("id, full_name, avatar, title, profession, user_type, skills, certifications, verification_badges, portfolio, organization, education_level")
 				.in("user_type", ["student", "graduate", "professional"])
 				.or("profile_visibility.eq.public,profile_visibility.is.null")
 				.not("full_name", "is", null)
+				.neq("id", profileId)
 				.neq("full_name", "")
 				.neq("full_name", "New User")
+				.limit(100)
 
 			if (queryError) throw queryError
 
@@ -156,6 +143,7 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 			const viewerBoards = viewer ? getIndustryBoards(viewer) : []
 			const viewerProjectTypes = viewer ? getPortfolioValues(viewer.portfolio, ["projectType"]) : []
 			const viewerLocations = viewer ? getPortfolioValues(viewer.portfolio, ["location"]) : []
+			const viewerInstitutions = viewer ? [viewer.organization, viewer.education_level].filter((value): value is string => Boolean(value)) : []
 			const latestPostByAuthor = new Map<string, RecentPost>()
 			for (const post of recentPosts) {
 				if (!latestPostByAuthor.has(post.author_id)) latestPostByAuthor.set(post.author_id, post)
@@ -163,7 +151,6 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 
 			const rankedSuggestions = ((data || []) as ProfileRow[]).flatMap((profile) => {
 				const recentPost = latestPostByAuthor.get(profile.id)
-				if (!recentPost) return []
 				const tradeOverlap = sharedValues(viewerTrades, getProfileTradeTerms(profile))
 				const boardOverlap = sharedValues(viewerBoards, getIndustryBoards(profile))
 				const projectOverlap = sharedValues(
@@ -174,24 +161,29 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 					viewerLocations,
 					getPortfolioValues(profile.portfolio, ["location"]),
 				)
+				const institutionOverlap = sharedValues(
+					viewerInstitutions,
+					[profile.organization, profile.education_level].filter((value): value is string => Boolean(value)),
+				)
 				const overlaps = [
+					...institutionOverlap.map((institution) => `shared organization or institution: ${institution}`),
 					...boardOverlap.map((board) => `shared ${board} board`),
 					...projectOverlap.map((project) => `shared ${project} project focus`),
 					...locationOverlap.map((location) => `projects in ${location}`),
 					...tradeOverlap.map((trade) => `trade overlap: ${trade}`),
 				]
-				const activity = getActivityDescription(recentPost)
+				if (overlaps.length === 0) return []
 				const score =
 					boardOverlap.length * 5 +
 					projectOverlap.length * 4 +
 					locationOverlap.length * 3 +
+					institutionOverlap.length * 3 +
 					tradeOverlap.length * 2 +
-					(/tender|bid|procurement|site progress|technical|structural|engineering|boq/i.test(recentPost.content || "") ? 2 : 0)
+					(recentPost && /tender|bid|procurement|site progress|technical|structural|engineering|boq/i.test(recentPost.content || "") ? 2 : 0)
 				const profession = Array.isArray(profile.profession) ? profile.profession.join(", ") : profile.profession
 				return [{
 					profile,
 					subtitle: profile.title || profession || profile.user_type || "Construction professional",
-					reason: `${overlaps[0] ? `${overlaps[0]}; recently ${activity}` : `Recently ${activity}`}.`,
 					score,
 				}]
 			})
@@ -213,7 +205,7 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 		return (
 			<Card>
 				<CardContent className="py-5">
-					<SectionHeader title="People you may know" />
+					<SectionHeader title="Recommendations" />
 					<div className="space-y-3">
 						{[0, 1, 2].map((i) => (
 							<div key={i} className="flex items-center gap-3">
@@ -235,7 +227,7 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 		return (
 			<Card>
 				<CardContent className="py-5">
-					<SectionHeader title="People you may know" />
+					<SectionHeader title="Recommendations" />
 					<div className="flex items-center gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
 						<AlertCircle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
 						<span className="min-w-0 flex-1">{error}</span>
@@ -250,46 +242,53 @@ const SuggestedConnections: React.FC<SuggestedConnectionsProps> = ({ profileId, 
 	}
 
 	// No suggestions — hide the module entirely (report: no decorative empty modules)
-	if (suggestions.length === 0) return null
+	if (suggestions.length === 0) {
+		return showEmpty ? (
+			<Card>
+				<CardContent className="py-5">
+					<SectionHeader title="Recommendations" description="Profiles connected by skills, profession, or organization" />
+					<p className="mt-3 text-sm text-muted-foreground">No related profiles to recommend yet.</p>
+				</CardContent>
+			</Card>
+		) : null
+	}
 
 	return (
 		<Card>
 			<CardContent className="py-5">
-				<SectionHeader title="People you may know" description="Grow your built-environment network" />
-				<div className="space-y-3">
+				<div className="mb-3 flex items-center justify-between">
+					<SectionHeader title="Recommendations" description="Profiles connected by skills, profession, or organization" />
+					<Button variant="ghost" size="sm" className="shrink-0" onClick={() => scrollRef.current?.scrollBy({ left: 300, behavior: "smooth" })}>
+						More <ChevronRight className="ml-1 h-4 w-4" />
+					</Button>
+				</div>
+				<div ref={scrollRef} className="flex snap-x gap-3 overflow-x-auto pb-2">
 					{suggestions.map((s) => {
 						const profile = s.profile
 						return (
-							<div key={profile.id} className="flex items-start gap-3">
-								{profile.avatar ? (
-									<img
-										src={profile.avatar}
-										alt={profile.full_name || "Member"}
-										loading="lazy"
-										className="h-10 w-10 shrink-0 rounded-full object-cover"
-									/>
-								) : (
-									<div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground">
-										{(profile.full_name || "?").charAt(0).toUpperCase()}
-									</div>
-								)}
-								<div className="min-w-0 flex-1">
-									<Link to={`/profile/${profile.id}`} className="block truncate text-sm font-medium text-foreground hover:text-primary">
-										{profile.full_name}
-									</Link>
-									<p className="truncate text-xs text-muted-foreground">{s.subtitle}</p>
-									<p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-muted-foreground">{s.reason}</p>
+						<div key={profile.id} className="flex min-w-[220px] max-w-[260px] snap-start items-start gap-3 rounded-lg border border-border bg-card p-3">
+							{profile.avatar ? (
+								<img
+									src={profile.avatar}
+									alt={profile.full_name || "Member"}
+									loading="lazy"
+									className="h-11 w-11 shrink-0 rounded-full object-cover"
+								/>
+							) : (
+								<div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-muted text-sm font-semibold text-muted-foreground">
+									{(profile.full_name || "?").charAt(0).toUpperCase()}
 								</div>
-								<div className="shrink-0 [&_button]:h-8 [&_button]:px-3 [&_button]:text-xs">
-									<ConnectButton targetUserId={profile.id} />
-								</div>
+							)}
+							<div className="min-w-0 flex-1">
+								<Link to={`/profile/${profile.id}`} className="block truncate text-sm font-medium text-foreground hover:text-primary">
+									{profile.full_name}
+								</Link>
+								<AccountTypeBadge userType={profile.user_type || "student"} className="mt-1 text-[10px]" />
+								<p className="truncate text-xs text-muted-foreground">{s.subtitle}</p>
 							</div>
+						</div>
 						)
 					})}
-				</div>
-				<div className="mt-3 flex items-center gap-1.5 border-t border-border pt-3 text-[11px] text-muted-foreground">
-					<UserPlus className="h-3.5 w-3.5" aria-hidden="true" />
-					Active industry peers are suggested based on recent public posts and shared trade, project, location, or board signals.
 				</div>
 			</CardContent>
 		</Card>

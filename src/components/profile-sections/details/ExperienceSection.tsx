@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Briefcase, ChevronDown, ChevronUp, Plus } from "lucide-react"
 import ExperienceEditDialog from "@/components/profile-sections/ExperienceEditDialog"
 import { Experiences, UserProfile } from "@/types"
-import ReadMoreText from "@/components/ReadMore"
 import EmptyState from "@/components/profile/EmptyState"
 import EditIconButton from "@/components/profile/EditIconButton"
 
@@ -27,7 +26,7 @@ const experienceDate = (exp: Experiences): string | null => {
 const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = false }: ExperienceSectionProps) => {
 	const [isExpanded, setIsExpanded] = useState(false)
 	const experiences = (profile.experiences || []).filter(
-		(exp) => exp?.title || exp?.company || exp?.description
+		(exp) => exp?.title || exp?.company
 	)
 	const defaultLimit =2
 	const limit = isExpanded ? experiences.length : (maxVisible ?? defaultLimit)
@@ -36,6 +35,11 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 	const hiddenCount = experiences.length - limit
 
 	const userType = profile.user_type?.toLowerCase() || "student"
+	const colorTheme = userType === "company"
+		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
+		: userType === "professional"
+			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
+			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
 	let iconBg = "bg-student-100 dark:bg-yellow-950"
 	let iconText = "text-student-700 dark:text-yellow-200"
 	if (userType === "professional") {
@@ -49,7 +53,7 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 	if (!canEdit && experiences.length ===0 && profile.user_type !== "student") return null
 
 	return (
-		<Card className="rounded-lg border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
+		<Card className={`rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md ${colorTheme}`}>
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
@@ -71,7 +75,7 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 						<>
 							{visibleExperiences.map((exp, index) => {
 								const date = experienceDate(exp)
-								if (!exp.title && !exp.company && !exp.description) return null
+								if (!exp.title && !exp.company) return null
 								return (
 									<div
 										key={exp.title + "-" + index}
@@ -95,14 +99,6 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 													</span>
 												)}
 											</div>
-											{exp.description && (
-												<p className="mt-2 text-sm text-muted-foreground">
-													<ReadMoreText
-														text={exp.description}
-														maxLength={300}
-													/>
-												</p>
-											)}
 										</div>
 									</div>
 								)

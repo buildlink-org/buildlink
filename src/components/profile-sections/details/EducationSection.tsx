@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { GraduationCap, ChevronDown, ChevronUp, Plus } from "lucide-react"
 import EducationEditDialog from "@/components/profile-sections/EducationEditDialog"
 import { Education, UserProfile } from "@/types"
-import ReadMoreText from "@/components/ReadMore"
 import EmptyState from "@/components/profile/EmptyState"
 import EditIconButton from "@/components/profile/EditIconButton"
 
@@ -27,7 +26,7 @@ const educationDate = (edu: Education): string | null => {
 const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = false }: EducationSectionProps) => {
 	const [isExpanded, setIsExpanded] = useState(false)
 	const education = (profile.education || []).filter(
-		(edu) => edu?.degree || edu?.institution || edu?.description
+		(edu) => edu?.degree || edu?.institution
 	)
 	const defaultLimit = 2
 	const limit = isExpanded ? education.length : (maxVisible ?? defaultLimit)
@@ -36,6 +35,11 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 	const hiddenCount = education.length - limit
 
 	const userType = profile.user_type?.toLowerCase() || "student"
+	const colorTheme = userType === "company"
+		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
+		: userType === "professional"
+			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
+			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
 	let iconBg = "bg-yellow-100 dark:bg-yellow-950"
 	let iconText = "text-yellow-700 dark:text-yellow-200"
 	if (userType === "professional") {
@@ -48,7 +52,7 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 
 	if (!canEdit && education.length === 0) return null
 	return (
-		<Card className="rounded-lg border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
+		<Card className={`rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md ${colorTheme}`}>
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
@@ -70,7 +74,7 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 						<>
 							{visibleEducation.map((edu, index) => {
 								const period = educationDate(edu)
-								if (!edu.degree && !edu.institution && !edu.description) return null
+								if (!edu.degree && !edu.institution) return null
 								return (
 									<div
 										key={`${edu.degree || edu.institution || "edu"}-${index}`}
@@ -97,14 +101,6 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 													</span>
 												)}
 											</div>
-											{edu.description && (
-												<p className="mt-2 text-sm text-muted-foreground">
-													<ReadMoreText
-														text={edu.description}
-														maxLength={300}
-													/>
-												</p>
-											)}
 										</div>
 									</div>
 								)

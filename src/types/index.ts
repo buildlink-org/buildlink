@@ -5,6 +5,7 @@ export type PortfolioItem = {
 	type: string
 	description?: string
 	thumbnailUrl?: string
+	mediaUrls?: string[]
 	/** Project role / contribution, e.g. "Project Coordinator" */
 	role?: string
 	/** Project location, e.g. "Nairobi" */
@@ -60,6 +61,7 @@ export type BaseProfile = {
 	education_level?: string
 	skills?: string[]
 	languages?: string[]
+	locations?: string[]
 	experience?: string[]
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any -- legacy shape, kept as-is
 	Certification?: any[]
@@ -139,6 +141,10 @@ export type CompanyProfile = BaseProfile & {
 	services?: {
 		name: string
 		description?: string
+	}[]
+	milestones?: {
+		title: string
+		year?: string
 	}[]
 	events?: {
 		name: string

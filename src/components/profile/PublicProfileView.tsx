@@ -3,8 +3,8 @@ import { useParams } from "react-router-dom"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
-import {MessageCircle,UserPlus,Pencil,Clock,ThumbsUp,Eye,Users,Briefcase,Star,Sparkles,} from "lucide-react"
+import { MessageCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { useAuth } from "@/contexts/AuthContext"
 import { publicProfileService } from "@/services/publicProfileService"
 import { useToast } from "@/hooks/use-toast"
@@ -22,7 +22,9 @@ import PortfolioSection from "../profile-sections/details/PortfolioSection"
 import ProfileSkillsSection from "../profile-sections/details/ProfileSkillsSection"
 import LanguagesSection from "../profile-sections/details/LanguagesSection"
 import SocialMediaLinks from "./SocialMediaLinks"
-import EmptyState from "./EmptyState"
+import CompanyProfileSections from "./CompanyProfileSections"
+import SuggestedConnections from "./SuggestedConnections"
+import { getProfileSubtitle } from "@/lib/profileDisplay"
 
 type ConnectionStatus =
    | "not_connected"
@@ -35,33 +37,6 @@ type ConnectionStatus =
 // Helpers
 // ---------------------------------------------------------------------------
 
-// Fix #2a — Profession: stored as string or string[] depending on user type.
-const getProfessionDisplay = (profile: UserProfile): string | null => {
-  const p = (profile as any).profession
-  if (!p) return null
-  if (Array.isArray(p)) return p.filter(Boolean).join(", ") || null
-  return String(p) || null
-}
-
-// Fix #2b — Years Active: stored on company profile rows.
-const getYearsActive = (profile: UserProfile): string | null => {
-  return (profile as any).years_active || null
-}
-
-const getSafeExternalUrl = (value?: string): string | null => {
-  if (!value) return null
-
-  try {
-    const url = new URL(value)
-    return url.protocol === "http:" || url.protocol === "https:" ? url.href : null
-  } catch {
-    return null
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 const PublicProfileView: React.FC = () => {
   const { profileId } = useParams<{ profileId: string }>()
   const { user } = useAuth()
@@ -73,15 +48,11 @@ const PublicProfileView: React.FC = () => {
   const [connectionStatus, setConnectionStatus] =
     useState<ConnectionStatus>("not_connected")
   const [userPosts, setUserPosts] = useState<any[]>([])
-  const [profileViews, setProfileViews] = useState(0)
-  const [connectionsCount, setConnectionsCount] = useState(0)
-  const [profileCompletion, setProfileCompletion] = useState(0)
 
   const openConversation = useMessagingStore((state) => state.openConversation)
 
   const isOwner = user?.id === profileId
   const isCompanyProfile = profile?.user_type === "company"
-  const connectLabel = isCompanyProfile ? "Follow" : "Connect"
 
   // LOAD PROFILE
   const loadPublicProfile = useCallback(async () => {
@@ -93,33 +64,12 @@ const PublicProfileView: React.FC = () => {
       if (error || !data) throw error
       setProfile(data)
 
-      setProfileCompletion(
-        (data as any)?.profile_completion_score || 0
-      )
       const postsResult = await postsService.getPosts()
       if (postsResult.data) {
         setUserPosts(
           postsResult.data.filter((post: any) => post.author_id === profileId)
         )
       }
-      const viewsResult =
-          await publicProfileService.getProfileViews(profileId)
-
-        if (viewsResult.data) {
-          setProfileViews(viewsResult.data.length)
-        }
-
-        const connectionsResult =
-          await connectionsService.getConnections(profileId)
-
-        // Fix #6 — count only accepted connections (pending requests are not connections)
-        if (connectionsResult.data) {
-          setConnectionsCount(
-            connectionsResult.data.filter(
-              (row: { status?: string }) => row.status === "accepted"
-            ).length
-          )
-        }
     } catch {
       toast({
         title: "Error",
@@ -169,16 +119,6 @@ const PublicProfileView: React.FC = () => {
   setConnectionStatus("not_connected")
   }, [user, profileId])
 
-  const refreshConnectionsCount = useCallback(async () => {
-  if (!profileId) return
-
-  const { data } = await connectionsService.getConnections(profileId)
-
-  //setConnectionsCount(data?.length ?? 0)
-  setConnectionsCount(
-    data?.filter(c => c.status === "accepted").length ?? 0)
-}, [profileId])
-
   useEffect(() => {
     loadPublicProfile()
   }, [loadPublicProfile])
@@ -217,7 +157,6 @@ const handleConnect = async () => {
 
   // Refresh directly from database
   await refreshConnectionStatus();
-  await refreshConnectionsCount();
 
   toast({
     title: isCompanyProfile ? "Following" : "Request Sent",
@@ -242,7 +181,6 @@ const handleAccept = async () => {
   }
 
   await refreshConnectionStatus()
-  await refreshConnectionsCount()
 
   toast({
     title: "Connected",
@@ -267,7 +205,6 @@ const handleCancelRequest = async () => {
   }
 
   await refreshConnectionStatus();
-  await refreshConnectionsCount();
 
   toast({
     title: "Request Cancelled",
@@ -297,7 +234,6 @@ const handleDisconnect = async () => {
 
   // Refresh directly from database
   await refreshConnectionStatus();
-  await refreshConnectionsCount();
 
   toast({
     title: "Success",
@@ -413,242 +349,66 @@ const renderButtons = () => {
 
   if (!profile) return null
 
-  const professionDisplay = getProfessionDisplay(profile)
-  const yearsActive = getYearsActive(profile)
-
-  // Fix #1 — real featured data for company profiles (Products[] rows)
-  const featuredItems = Array.isArray(profile.featured) ? profile.featured : []
+  const displayName = profile.user_type === "company"
+    ? profile.organization || profile.full_name
+    : profile.full_name
+  const subtitle = getProfileSubtitle(profile)
+  const professions = Array.isArray(profile.profession)
+    ? profile.profession
+    : profile.profession
+      ? [profile.profession]
+      : []
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-2 sm:px-4">
 
       {/* ── PROFILE BANNER ─────────────────────────────────────────────── */}
-      <Card>
+      <Card className={isCompanyProfile ? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30" : profile.user_type === "professional" ? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30" : "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"}>
         <CardContent className="py-6">
-          <div className="flex flex-col gap-6 md:flex-row md:justify-between">
-
-            {/* Avatar + Identity block */}
-            <div className="flex flex-col sm:flex-row gap-4 items-center sm:items-start text-center sm:text-left">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
               <Avatar className="h-20 w-20 sm:h-24 sm:w-24">
                 <AvatarImage src={profile.avatar || undefined} />
-                <AvatarFallback>
-                  {profile.full_name?.[0]?.toUpperCase()}
-                </AvatarFallback>
+                <AvatarFallback>{displayName?.[0]?.toUpperCase()}</AvatarFallback>
               </Avatar>
 
               <div className="space-y-1.5">
-                {/* Name */}
-                <h1 className="text-2xl font-bold capitalize leading-tight">
-                  {profile.full_name}
-                </h1>
-
-                {/* Account type badge */}
+                <h1 className="text-2xl font-bold leading-tight">{displayName}</h1>
                 <AccountTypeBadge userType={profile.user_type || "student"} />
-
-                {professionDisplay && (
-                  <p className="text-sm text-muted-foreground">
-                    {professionDisplay}
-                  </p>
-                )}
-
-                {isCompanyProfile && yearsActive && (
-                  <p className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Clock className="h-3.5 w-3.5 shrink-0" />
-                    {yearsActive} years active
-                  </p>
-                )}
-
-                {isCompanyProfile &&
-                  (profile as any).organization && (
-                    <p className="text-sm text-muted-foreground">
-                      {(profile as any).organization}
-                    </p>
-                )}
+                {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
               </div>
             </div>
-
-            {/* Action buttons + social links */}
-              <div className="flex flex-col items-center md:items-end gap-3">
-                {isOwner ? (
-                  <Button
-                    variant="outline"
-                    onClick={() => (window.location.href = "/profile")}
-                  >
-                    <Pencil className="mr-1 h-4 w-4" />
-                    Edit
-                  </Button>
-                ) : (
-                  <div className="flex flex-row justify-end gap-2">
-                    {renderButtons()}
-                  </div>
-                )}
-                <div className="flex flex-wrap items-center justify-end gap-2 mt-2">
-                  <SocialMediaLinks
-                    links={profile.social_links || {}}
-                    editable={false}
-                  />
-                </div>
-              </div>
-            
+            <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
+              {!isOwner && renderButtons()}
+              <Dialog>
+                <DialogTrigger asChild><Button variant="outline">Social Links</Button></DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader><DialogTitle>Social Links</DialogTitle></DialogHeader>
+                  <SocialMediaLinks links={profile.social_links || {}} />
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
-        
         </CardContent>
       </Card>
-
-      {isOwner && (
-          <CardContent className="py-5 px-0">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-
-              <div className="rounded-lg border p-4 text-center">
-                <Eye className="mx-auto mb-2 h-5 w-5 text-primary" />
-                <p className="text-2xl font-bold">
-                  {profileViews}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Profile Views
-                </p>
-              </div>
-
-              <div className="rounded-lg border p-4 text-center">
-                <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
-                <p className="text-2xl font-bold">
-                  {connectionsCount}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Connections
-                </p>
-              </div>
-
-              <div className="rounded-lg border p-4 text-center">
-                <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
-                <p className="text-2xl font-bold">
-                  {userPosts.length}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Posts
-                </p>
-              </div>
-
-              <div className="rounded-lg border p-4 text-center">
-                <Star className="mx-auto mb-2 h-5 w-5 text-primary" />
-                <p className="text-2xl font-bold">
-                  {profileCompletion}%
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Completion
-                </p>
-              </div>
-
-            </div>
-          </CardContent>
-      ) 
-      } 
-
-      {!isOwner && (
-          <CardContent className="py-5 px-0">
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-             
-
-              <div className="rounded-lg border p-4 text-center">
-                <Users className="mx-auto mb-2 h-5 w-5 text-primary" />
-                <p className="text-2xl font-bold">
-                  {connectionsCount}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Connections
-                </p>
-              </div>
-
-              <div className="rounded-lg border p-4 text-center">
-                <Briefcase className="mx-auto mb-2 h-5 w-5 text-primary" />
-                <p className="text-2xl font-bold">
-                  {userPosts.length}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Posts
-                </p>
-                
-              </div>
-            </div>
-          </CardContent>
-      )}
-
-      {/* ── BODY SECTIONS ──────────────────────────────────────────────── */}
-
-      {/* About / Activity — owner only (private info) */}
-     
       <AboutActivitySection
         publicProfile
         profile={profile}
         userPosts={userPosts}
       />
-    
-
-      {/* Fix #1 — Skills always rendered; ProfileSkillsSection handles the empty state */}
       <ProfileSkillsSection profile={profile} />
-
-      {isCompanyProfile && (
-        <Card className="border border-border shadow-sm">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-foreground">Featured</h3>
-              {featuredItems.length > 0 && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                  {featuredItems.length} {featuredItems.length === 1 ? "item" : "items"}
-                </span>
-              )}
-            </div>
-            {/* Fix #1 — renders real featured data instead of hardcoded placeholder cards */}
-            {featuredItems.length > 0 ? (
-              <div className="space-y-3">
-                {featuredItems.map((item, index) => {
-                  const safeLink = getSafeExternalUrl(item.link)
-
-                  return (
-                    <div
-                      key={`${item.title|| item.name || "featured"}-${index}`}
-                      className="flex items-start gap-3 rounded-lg border border-border p-3"
-                    >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
-                        <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-foreground">{item.title || item.name}</p>
-                        {item.description && (
-                          <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{item.description}</p>
-                        )}
-                        {safeLink && (
-                          <a
-                            className="mt-1 inline-block text-xs text-primary hover:underline"
-                            href={safeLink}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            View details
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            ) : (
-              <EmptyState
-                icon={<Sparkles className="h-5 w-5" />}
-                title="No featured items yet"
-                description="Highlighted products and services will appear here."
-              />
-            )}
-          </CardContent>
-        </Card>
+      <PortfolioSection profile={profile} maxItems={3} />
+      {isCompanyProfile ? (
+        <CompanyProfileSections profile={profile} />
+      ) : (
+        <>
+          <ExperienceSection profile={profile} />
+          <EducationSection profile={profile} />
+          <CertificationsSection profile={profile} />
+          <LanguagesSection profile={profile} handleProfileUpdate={() => {}} />
+        </>
       )}
-
-      <PortfolioSection profile={profile} />
-      <ExperienceSection profile={profile} />
-      <EducationSection profile={profile} />
-      <CertificationsSection profile={profile} />
-      {/* Fix #4 — languages now render on public profiles too */}
-      <LanguagesSection profile={profile} handleProfileUpdate={() => {}} />
+      <SuggestedConnections profileId={profile.id} myProfessions={professions} showEmpty />
     </div>
   )
 }

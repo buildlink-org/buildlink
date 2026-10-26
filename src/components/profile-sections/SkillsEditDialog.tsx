@@ -14,9 +14,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { profileService } from "@/services/profileService";
 import { useToast } from "@/hooks/use-toast";
 import {
+  BUILT_ENVIRONMENT_SKILLS,
   Skill,
   convertAndSanitizeSkills,
 } from "@/lib/skillUtils";
+
+const MAX_SKILLS = 5;
 
 interface SkillsEditDialogProps {
   children: React.ReactNode;
@@ -42,6 +45,7 @@ const SkillsEditDialog = ({
 
   const addSkill = () => {
     if (
+      skills.length < MAX_SKILLS &&
       newSkill.trim() &&
       !skills.find(
         (skill) => skill.name.toLowerCase() === newSkill.trim().toLowerCase()
@@ -127,18 +131,24 @@ const SkillsEditDialog = ({
                   value={newSkill}
                   onChange={(e) => setNewSkill(e.target.value)}
                   placeholder="e.g., AutoCAD, Project Management"
+                  list="built-environment-skills"
                   onKeyPress={(e) =>
                     e.key === "Enter" && (e.preventDefault(), addSkill())
                   }
                 />
+                <datalist id="built-environment-skills">
+                  {BUILT_ENVIRONMENT_SKILLS.map((skill) => <option key={skill} value={skill} />)}
+                </datalist>
               </div>
+              <Button type="button" variant="outline" onClick={addSkill} disabled={skills.length >= MAX_SKILLS || !newSkill.trim()}>
+                <Plus className="mr-2 h-4 w-4" /> Add
+              </Button>
             </div>
+            <p className="text-xs text-muted-foreground">Choose up to 5 skills. Start typing to see suggestions.</p>
           </div>
 
           <div className="space-y-4">
-            <Label className="text-base font-medium">
-              Your Skills ({skills.length})
-            </Label>
+            <Label className="text-base font-medium">Your Skills ({skills.length}/{MAX_SKILLS})</Label>
             <div className="space-y-3 max-h-80 overflow-y-auto">
               {skills.length > 0 ? (
                 skills.map((skill, index) => (
@@ -208,7 +218,7 @@ const SkillsEditDialog = ({
               onClick={() => setOpen(false)}>
               Cancel
             </Button>
-            <Button type="submit" onClick={addSkill} disabled={isLoading}>
+            <Button type="submit" disabled={isLoading || skills.length > MAX_SKILLS}>
               {isLoading ? "Updating..." : "Update Skills"}
             </Button>
           </div>

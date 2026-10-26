@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Award, BadgeCheck, ChevronDown, ChevronUp, Plus } from "lucide-react"
 import CertificationsEditDialog from "@/components/profile-sections/CertificationsEditDialog"
 import { UserProfile } from "@/types"
-import ReadMoreText from "@/components/ReadMore"
 import EmptyState from "@/components/profile/EmptyState"
 import EditIconButton from "@/components/profile/EditIconButton"
 
@@ -38,6 +37,11 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 	const hiddenCount = certifications.length - limit
 
 	const userType = profile.user_type?.toLowerCase() || "student"
+	const colorTheme = userType === "company"
+		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
+		: userType === "professional"
+			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
+			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
 	let iconBg = "bg-yellow-100 dark:bg-yellow-950"
 	let iconText = "text-yellow-700 dark:text-yellow-200"
 	if (userType === "professional") {
@@ -50,7 +54,7 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 
 	if (!canEdit && certifications.length === 0) return null
 	return (
-		<Card className="rounded-lg border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
+		<Card className={`rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md ${colorTheme}`}>
 			<CardContent className="px-4 py-4">
 				<div className="mb-4 flex items-center justify-between">
 					<div className="flex items-center gap-2">
@@ -95,11 +99,6 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 													</span>
 												)}
 											</div>
-											{cert.description && (
-												<p className="mt-1 text-sm text-muted-foreground">
-													<ReadMoreText text={cert.description} maxLength={200} />
-												</p>
-											)}
 											{/* Verification row — only rendered with real evidence (ID or link). No fake verified appearance for self-claimed credentials (report §6.5). */}
 											<div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
 												{cert.credential_id && (

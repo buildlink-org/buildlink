@@ -40,7 +40,7 @@ const normalizeLanguages = (raw: unknown[] | undefined | null): Language[] => {
  * text proficiency labels — never color-only signaling (report §11).
  */
 const LanguagesSection = ({ profile, handleProfileUpdate, canEdit = false }: LanguagesSectionProps) => {
-	const languages = normalizeLanguages((profile as { languages?: unknown[] }).languages)
+	const languages = normalizeLanguages((profile as { languages?: unknown[] }).languages).slice(0, 5)
 
 	const userType = profile.user_type?.toLowerCase() || "student"
 

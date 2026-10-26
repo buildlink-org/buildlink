@@ -12,9 +12,10 @@ interface PortfolioSectionProps {
 	profile: UserProfile
 	handleProfileUpdate?: () => void
 	canEdit?: boolean
+	maxItems?: number
 }
 
-const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProfileUpdate, canEdit: canEditProp }) => {
+const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProfileUpdate, canEdit: canEditProp, maxItems }) => {
 	const [editorOpen, setEditorOpen] = useState(false)
 	const [galleryOpen, setGalleryOpen] = useState(false)
 	const [directViewerMode, setDirectViewerMode] = useState(false)
@@ -34,8 +35,9 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	const thumbInputRef = useRef<HTMLInputElement | null>(null)
 
 	useEffect(() => {
-		setPortfolioList(Array.isArray(profile.portfolio) ? profile.portfolio : [])
-	}, [profile.portfolio])
+		const portfolio = Array.isArray(profile.portfolio) ? profile.portfolio : []
+		setPortfolioList(maxItems ? portfolio.slice(0, maxItems) : portfolio)
+	}, [profile.portfolio, maxItems])
 
 	useEffect(() => {
 		if (portfolioList.length > 0 && activeIndex >= portfolioList.length) {
@@ -44,6 +46,12 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	}, [portfolioList.length, activeIndex])
 
 	const canEdit = canEditProp !== undefined ? canEditProp : false
+	const userType = profile.user_type?.toLowerCase() || "student"
+	const colorTheme = userType === "company"
+		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
+		: userType === "professional"
+			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
+			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
 
 	const persistPortfolio = async (updated: PortfolioItem[]) => {
 		setUpdating(true)
@@ -54,10 +62,10 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	}
 
 	const handlePortfolioAdd = async (item: PortfolioItem) => {
-		if (portfolioList.length >= 20) {
+		if (portfolioList.length >= 3) {
 			toast({
 				title: "Portfolio Limit Reached",
-				description: "You can upload up to 20 portfolio items.",
+				description: "You can add up to 3 portfolio items.",
 				variant: "destructive",
 			})
 			return
@@ -186,12 +194,12 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 	if (!portfolioList || (!canEdit && portfolioList.length === 0 && profile.user_type !== "professional" && profile.user_type !== "student")) return null
 
 	return (
-		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md h-auto">
+		<Card className={`border shadow-sm overflow-hidden transition-all hover:shadow-md h-auto ${colorTheme}`}>
 			<CardContent className="p-4 sm:p-5 flex flex-col space-y-4">
 				{/* Top Header Row */}
 				<div className="flex items-center justify-between gap-2 flex-wrap pb-1 border-b border-border/40">
 					<div className="flex items-center space-x-2">
-						<h3 className="text-lg font-bold text-foreground">Portfolio</h3>
+						<h3 className="text-lg font-bold text-foreground">{profile.user_type === "company" ? "Portfolio / Featured" : "Portfolio"}</h3>
 						<span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
 							{portfolioList.length} {portfolioList.length === 1 ? "item" : "items"}
 						</span>

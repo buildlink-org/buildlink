@@ -786,16 +786,20 @@ export type Database = {
           education: Json | null
           education_level: string | null
           experiences: Json | null
+          featured: Json
           full_name: string
           id: string
           interests: string[] | null
           languages: Json | null
+          locations: string[]
+          milestones: Json
           organization: string | null
           portfolio: Json | null
           premium_features: Json | null
           profession: string | null
           profile_completion_score: number | null
           profile_visibility: string | null
+          products: Json
           skills: string[] | null
           social_links: Json | null
           title: string | null
@@ -816,16 +820,20 @@ export type Database = {
           education?: Json | null
           education_level?: string | null
           experiences?: Json | null
+          featured?: Json
           full_name: string
           id: string
           interests?: string[] | null
           languages?: Json | null
+          locations?: string[]
+          milestones?: Json
           organization?: string | null
           portfolio?: Json | null
           premium_features?: Json | null
           profession?: string | null
           profile_completion_score?: number | null
           profile_visibility?: string | null
+          products?: Json
           skills?: string[] | null
           social_links?: Json | null
           title?: string | null
@@ -846,16 +854,20 @@ export type Database = {
           education?: Json | null
           education_level?: string | null
           experiences?: Json | null
+          featured?: Json
           full_name?: string
           id?: string
           interests?: string[] | null
           languages?: Json | null
+          locations?: string[]
+          milestones?: Json
           organization?: string | null
           portfolio?: Json | null
           premium_features?: Json | null
           profession?: string | null
           profile_completion_score?: number | null
           profile_visibility?: string | null
+          products?: Json
           skills?: string[] | null
           social_links?: Json | null
           title?: string | null
@@ -1146,14 +1158,28 @@ export type Database = {
         Returns: {
           avatar: string
           bio: string
+          certifications: Json
           created_at: string
+          education: Json
+          education_level: string
+          experiences: Json
+          featured: Json
           full_name: string
           id: string
+          languages: Json
+          locations: string[]
+          milestones: Json
           organization: string
+          portfolio: Json
           profession: string
+          products: Json
+          profile_completion_score: number
+          social_links: Json
           skills: string[]
           title: string
           user_type: string
+          verification_badges: Json
+          verification_level: string
         }[]
       }
       get_filtered_profile: {
@@ -1199,13 +1225,29 @@ export type Database = {
         Args: { user_id_param: string }
         Returns: {
           avatar: string
+          bio: string
+          certifications: Json
           created_at: string
+          education: Json
+          education_level: string
+          experiences: Json
+          featured: Json
           full_name: string
           id: string
+          languages: Json
+          locations: string[]
+          milestones: Json
           organization: string
+          portfolio: Json
           profession: string
+          products: Json
+          profile_completion_score: number
+          social_links: Json
+          skills: string[]
           title: string
           user_type: string
+          verification_badges: Json
+          verification_level: string
         }[]
       }
       get_user_post_interactions: {
