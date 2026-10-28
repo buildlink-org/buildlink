@@ -77,8 +77,8 @@ const PdfCanvasViewer = ({ url, title }: { url: string; title: string }) => {
 	}
 
 	return (
-		<div className="flex flex-col items-center justify-center w-full max-w-4xl">
-			<div className="relative flex items-center justify-center bg-slate-900/90 p-2 rounded-lg border border-white/10 shadow-2xl max-h-[68vh] overflow-auto">
+		<div className="flex h-full min-h-0 w-full min-w-0 flex-col items-center overflow-hidden">
+			<div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden rounded-lg border border-white/10 bg-slate-900/90 p-2 shadow-2xl">
 				{loading && (
 					<div className="absolute inset-0 flex items-center justify-center bg-slate-900/90 text-white z-10 rounded-lg">
 						<div className="flex flex-col items-center gap-2">
@@ -87,11 +87,11 @@ const PdfCanvasViewer = ({ url, title }: { url: string; title: string }) => {
 						</div>
 					</div>
 				)}
-				<canvas ref={canvasRef} className="max-h-[64vh] object-contain rounded shadow-lg" />
+				<canvas ref={canvasRef} className="max-h-full max-w-full rounded object-contain shadow-lg" />
 			</div>
 
 			{numPages > 1 && (
-				<div className="mt-3 flex items-center space-x-3 bg-black/60 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/10 shadow-lg z-50">
+				<div className="mt-2 flex shrink-0 items-center space-x-3 rounded-full border border-white/10 bg-black/60 px-4 py-1.5 shadow-lg backdrop-blur-md">
 					<Button
 						variant="ghost"
 						size="sm"
@@ -536,9 +536,12 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 			{/* Sideways Carousel Project View Screen */}
 			{currentViewerItem && (
 				<Dialog open={viewerOpen} onOpenChange={(v) => { if (!v) handleCloseViewer() }}>
-					<DialogContent showCloseButton={false} className="max-w-[95vw] max-h-[95vh] w-full h-[90vh] p-0 bg-slate-950/95 text-white border-none flex flex-col justify-between overflow-hidden shadow-2xl">
+					<DialogContent
+						showCloseButton={false}
+						overlayClassName="z-[1000]"
+						className="z-[1001] inset-0 left-0 top-0 h-[100dvh] max-h-none w-full max-w-none translate-x-0 translate-y-0 rounded-none border-none bg-slate-950/95 p-0 text-white shadow-2xl sm:left-[50%] sm:top-[50%] sm:h-[90dvh] sm:max-h-[calc(100dvh-2rem)] sm:w-[95vw] sm:max-w-6xl sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-lg">
 						{/* Top Header */}
-						<div className="flex items-center justify-between p-4 bg-slate-900/80 backdrop-blur-md border-b border-white/10 z-50">
+						<div className="z-50 flex shrink-0 items-center justify-between border-b border-white/10 bg-slate-900/80 px-3 pb-3 pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-md sm:p-4">
 							<div className="flex items-center space-x-3 min-w-0 flex-1">
 								<div className="min-w-0">
 									<h3 className="text-base sm:text-lg font-bold text-white truncate">{currentViewerItem.name}</h3>
@@ -553,115 +556,50 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 								</span>
 							</div>
 
-							<div className="flex items-center space-x-3 shrink-0">
+							<div className="flex shrink-0 items-center space-x-1 sm:space-x-3">
 								{localOrder.length > 1 && (
-									<span className="text-xs text-gray-400 font-mono bg-white/10 px-2 py-1 rounded-md">
+									<span className="hidden rounded-md bg-white/10 px-2 py-1 font-mono text-xs text-gray-400 min-[380px]:inline">
 										Project {viewerIndex + 1} of {localOrder.length}
 									</span>
 								)}
-								<Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20 rounded-full" onClick={handleCloseViewer}>
+								<Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-full text-white hover:bg-white/20" onClick={handleCloseViewer}>
 									<X className="h-5 w-5" />
 								</Button>
 							</div>
 						</div>
 
-						{/* Main 3D Cover Flow Content Area */}
-						<div className="relative flex-1 w-full h-full flex flex-col items-center justify-center p-4 overflow-hidden">
-							{/* 3D Cover Flow Cards Stack */}
-							<div className="relative w-full max-w-5xl h-[62vh] flex items-center justify-center">
-								{localOrder.map((item, idx) => {
-									const offset = idx - viewerIndex
-									const isCenter = offset === 0
-									const isLeft1 = offset === -1
-									const isRight1 = offset === 1
-									const isLeft2 = offset === -2
-									const isRight2 = offset === 2
-									const isVisible = Math.abs(offset) <= 2
-
-									if (!isVisible) return null
-
-									// Calculate 3D transforms matching cover flow screenshot
-									let transform = ""
-									let zIndex = 0
-									let opacity = 1
-
-									if (isCenter) {
-										transform = "translateX(0%) scale(1)"
-										zIndex = 30
-										opacity = 1
-									} else if (isLeft1) {
-										transform = "translateX(-70%) scale(0.88)"
-										zIndex = 20
-										opacity = 0.8
-									} else if (isRight1) {
-										transform = "translateX(70%) scale(0.88)"
-										zIndex = 20
-										opacity = 0.8
-									} else if (isLeft2) {
-										transform = "translateX(-135%) scale(0.76)"
-										zIndex = 10
-										opacity = 0.45
-									} else if (isRight2) {
-										transform = "translateX(135%) scale(0.76)"
-										zIndex = 10
-										opacity = 0.45
-									}
-
-									return (
-										<div
-											key={item.id}
-											onClick={() => !isCenter && openViewer(idx)}
-											style={{
-												transform,
-												zIndex,
-												opacity,
-												transition: "all 0.4s cubic-bezier(0.25, 1, 0.5, 1)",
-											}}
-											className={`absolute top-1/2 -translate-y-1/2 w-[70vw] max-w-2xl h-[54vh] max-h-[520px] rounded-2xl overflow-hidden shadow-2xl border border-white/20 bg-slate-900 flex flex-col items-center justify-center select-none ${
-												isCenter ? "ring-2 ring-primary/50 shadow-primary/20 cursor-default" : "cursor-pointer hover:opacity-90"
-											}`}
-										>
-											{item.type === "pdf" ? (
-												<PdfCanvasViewer url={item.url} title={item.name} />
-											) : item.type === "link" ? (
-												<div className="flex flex-col items-center justify-center text-center p-6 bg-slate-900/90 w-full h-full">
-													<ExternalLink className="h-14 w-14 text-blue-400 mb-3 animate-bounce" />
-													<h4 className="text-lg font-bold mb-1 text-white">{item.name}</h4>
-													{item.description && <p className="text-xs text-gray-300 mb-4 line-clamp-3">{item.description.slice(0, 100)}</p>}
-													<Button onClick={() => window.open(item.url, "_blank", "noopener,noreferrer")} size="sm" className="gap-2 font-semibold">
-														<ExternalLink className="h-3.5 w-3.5" /> Open Project Link
-													</Button>
-												</div>
-											) : item.mediaUrls && item.mediaUrls.length > 1 ? (
-												<div className="grid h-full w-full grid-cols-2 gap-2 overflow-y-auto bg-black/40 p-3">
-													{item.mediaUrls.map((url: string, mediaIndex: number) => (
-														<img
-															key={`${url}-${mediaIndex}`}
-															src={url}
-															alt={`${item.name}, image ${mediaIndex + 1}`}
-															className="h-auto max-h-full w-full rounded-lg object-contain"
-														/>
-													))}
-												</div>
-											) : (
-												<div className="w-full h-full flex items-center justify-center bg-black/40 p-2">
-													<img
-														src={item.url}
-														alt={item.name}
-														className="max-h-full max-w-full object-contain rounded-lg shadow-xl"
-													/>
-												</div>
-											)}
-
-											{/* Bottom label banner on active center card */}
-											{isCenter && item.description && item.type !== "link" && (
-												<div className="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/95 via-black/70 to-transparent backdrop-blur-sm text-center z-40">
-													<p className="text-xs text-gray-200 line-clamp-2">{item.description.slice(0, 100)}</p>
-												</div>
-											)}
-										</div>
-									)
-								})}
+						{/* Active project viewer */}
+						<div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden px-1 py-2 sm:p-6">
+							<div className="flex h-full min-h-0 w-full max-w-5xl items-center justify-center overflow-hidden rounded-xl bg-black/40">
+								{currentViewerItem.type === "pdf" ? (
+									<PdfCanvasViewer url={currentViewerItem.url} title={currentViewerItem.name} />
+								) : currentViewerItem.type === "link" ? (
+									<div className="flex h-full w-full flex-col items-center justify-center bg-slate-900/90 p-6 text-center">
+										<ExternalLink className="mb-3 h-14 w-14 text-blue-400" />
+										<h4 className="mb-1 text-lg font-bold text-white">{currentViewerItem.name}</h4>
+										{currentViewerItem.description && <p className="mb-4 line-clamp-3 text-xs text-gray-300">{currentViewerItem.description}</p>}
+										<Button onClick={() => window.open(currentViewerItem.url, "_blank", "noopener,noreferrer")} size="sm" className="gap-2 font-semibold">
+											<ExternalLink className="h-3.5 w-3.5" /> Open Project Link
+										</Button>
+									</div>
+								) : currentViewerItem.mediaUrls && currentViewerItem.mediaUrls.length > 1 ? (
+									<div className="grid h-full min-h-0 w-full auto-rows-fr grid-cols-1 gap-2 overflow-y-auto p-2 sm:grid-cols-2 sm:p-3">
+										{currentViewerItem.mediaUrls.map((url, mediaIndex) => (
+											<img
+												key={`${url}-${mediaIndex}`}
+												src={url}
+												alt={`${currentViewerItem.name}, image ${mediaIndex + 1}`}
+												className="h-full min-h-0 w-full rounded-lg object-contain"
+											/>
+										))}
+									</div>
+								) : (
+									<img
+										src={currentViewerItem.url}
+										alt={currentViewerItem.name}
+										className="max-h-full max-w-full rounded-lg object-contain"
+									/>
+								)}
 							</div>
 
 							{/* Left Arrow Navigation */}
@@ -670,7 +608,7 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 									variant="ghost"
 									size="icon"
 									onClick={handleViewerPrev}
-									className="absolute left-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 z-40 transition-all active:scale-95 shadow-2xl"
+									className="absolute left-2 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white shadow-2xl transition-all hover:bg-black/90 active:scale-95 sm:left-4 sm:h-12 sm:w-12"
 									aria-label="Previous project"
 								>
 									<ChevronLeft className="h-6 w-6" />
@@ -683,33 +621,18 @@ const PortfolioGallery: React.FC<PortfolioGalleryProps> = ({
 									variant="ghost"
 									size="icon"
 									onClick={handleViewerNext}
-									className="absolute right-4 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-black/70 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 z-40 transition-all active:scale-95 shadow-2xl"
+									className="absolute right-2 top-1/2 z-40 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-black/70 text-white shadow-2xl transition-all hover:bg-black/90 active:scale-95 sm:right-4 sm:h-12 sm:w-12"
 									aria-label="Next project"
 								>
 									<ChevronRight className="h-6 w-6" />
 								</Button>
 							)}
 
-							{/* 3D Cover Flow Pagination Dots (• • •) matching prompt design */}
-							{localOrder.length > 1 && (
-								<div className="mt-2 flex items-center justify-center space-x-2 z-50">
-									{localOrder.map((_, idx) => (
-										<button
-											key={idx}
-											onClick={() => openViewer(idx)}
-											className={`h-3 rounded-full transition-all duration-300 ${
-												idx === viewerIndex ? "w-8 bg-white shadow-lg shadow-white/50" : "w-3 bg-white/30 hover:bg-white/60"
-											}`}
-											aria-label={`Go to slide ${idx + 1}`}
-										/>
-									))}
-								</div>
-							)}
 						</div>
 
 						{/* Bottom Thumbnail Ribbon */}
 						{localOrder.length > 1 && (
-							<div className="p-3 bg-slate-900/80 backdrop-blur-md border-t border-white/10 flex items-center justify-center space-x-2 overflow-x-auto z-50">
+							<div className="z-50 flex max-h-20 shrink-0 items-center justify-start space-x-2 overflow-x-auto border-t border-white/10 bg-slate-900/80 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-md sm:justify-center sm:p-3">
 								{localOrder.map((item, idx) => (
 									<button
 										key={item.id}

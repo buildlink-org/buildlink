@@ -360,7 +360,7 @@ const renderButtons = () => {
       : []
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6 px-2 sm:px-4">
+    <div className="core-vertical-grid mx-auto max-w-7xl px-1 sm:px-0">
 
       {/* ── PROFILE BANNER ─────────────────────────────────────────────── */}
       <Card className={isCompanyProfile ? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30" : profile.user_type === "professional" ? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30" : "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"}>

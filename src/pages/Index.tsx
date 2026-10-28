@@ -2,6 +2,7 @@ import { useState, useCallback, ReactNode } from "react"
 import { useAuth } from "@/contexts/AuthContext"
 import { useNavigate } from "react-router-dom"
 import TopBar from "@/components/TopBar"
+import CorePageGrid from "@/components/CorePageGrid"
 import HomeFeed from "@/components/feeds/HomeFeed"
 import SkillUpFeed from "@/components/feeds/SkillUpFeed"
 import PostCreate from "@/components/feeds/PostCreate"
@@ -28,16 +29,7 @@ const [activeTab, setActiveTab] = useState(initialTab)
 const [activeFilter, setActiveFilter] = useState("latest")
 const [loading, setLoading] = useState(false)
 
-// Profile tab uses a wider main column to accommodate the right discovery rail
-const isProfileTab = activeTab === "profile" || activeTab === "publicProfile"
 const hasHomeSuggestions = activeTab === "home" && !!user
-const mainColumnClass = isProfileTab
-? `col-span-12 min-w-0 md:col-span-9 ${showNavigation ? "md:col-start-4" : ""}`
-: activeTab === "home" && hasHomeSuggestions
-? `col-span-12 min-w-0 ${showNavigation ? "md:col-start-4 md:col-span-9 lg:col-span-6" : "lg:col-span-9"}`
-: activeTab === "home"
-? `col-span-12 min-w-0 ${showNavigation ? "md:col-start-4 md:col-span-9 lg:col-span-9" : ""}`
-: `col-span-12 min-w-0 md:col-span-7 ${showNavigation ? "md:col-start-4" : ""}`
 
 const handleTabChange = useCallback(
 (tab: string) => {
@@ -114,14 +106,9 @@ loading={loading}
 <OfflineIndicator />
 
 {/* Main Content — explicit header offset replaces top-12 positioning */}
-<div className="mx-auto grid w-full max-w-screen-xl grid-cols-12 gap-x-4 gap-y-6 px-4 pt-14 pb-[calc(5rem+env(safe-area-inset-bottom))] md:pb-8">
-{showNavigation && (
-<div className="col-span-12 min-w-0 md:col-span-3 md:pt-1">
-<ResponsiveNavigation loading={loading} />
-</div>
-)}
-{/* Main Content Area */}
-<main className={`core-vertical-grid ${mainColumnClass}`}>
+<CorePageGrid navigation={showNavigation ? <ResponsiveNavigation loading={loading} /> : undefined}>
+<div className={`${hasHomeSuggestions ? "lg:grid lg:grid-cols-12 lg:items-start lg:gap-4" : ""}`}>
+<main className={`core-vertical-grid min-w-0 ${hasHomeSuggestions ? "lg:col-span-8" : ""}`}>
 {/* Content Filters */}
 {shouldShowFilters && (
 <div>
@@ -138,13 +125,14 @@ filterType={activeTab}
 </main>
 
 {hasHomeSuggestions && user && (
-<aside className="hidden min-w-0 lg:col-span-3 lg:col-start-10 lg:row-start-1 lg:block">
+<aside className="hidden min-w-0 lg:col-span-4 lg:block">
 <div className="sticky top-16">
 <SuggestedConnections profileId={user.id} />
 </div>
 </aside>
 )}
 </div>
+</CorePageGrid>
 
 {user && <FloatingMessagingWidget />}
 </div>

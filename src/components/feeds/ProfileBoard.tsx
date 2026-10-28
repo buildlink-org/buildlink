@@ -361,21 +361,22 @@ const ProfileBoard = () => {
 				</Card>
 			</div>
 
-			<div className="space-y-4 sm:space-y-6">
-				<AboutActivitySection
+			<div className="grid min-w-0 gap-4 2xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:items-start">
+				<div className="min-w-0 space-y-4 sm:space-y-6">
+					<AboutActivitySection
 						profile={profile}
 						publicProfile={false}
 						userPosts={userPosts}
 						handleProfileUpdate={handleProfileUpdate}
 					/>
-				{isCompany ? (
+					{isCompany ? (
 						<>
-						<ProfileSkillsSection
+							<ProfileSkillsSection
 								profile={profile}
 								canEdit={true}
 								handleProfileUpdate={handleProfileUpdate}
 							/>
-						<PortfolioSection
+							<PortfolioSection
 								profile={profile}
 								canEdit={true}
 								handleProfileUpdate={handleProfileUpdate}
@@ -425,13 +426,16 @@ const ProfileBoard = () => {
 							/>
 						</>
 					)}
-				<ProfileRail
-					profile={profile}
-					connections={connections}
-					connectionsLoading={connectionsLoading}
-					onChangeVisibility={handleChangeVisibility}
-					savingVisibility={savingVisibility}
-				/>
+				</div>
+				<aside className="min-w-0">
+					<ProfileRail
+						profile={profile}
+						connections={connections}
+						connectionsLoading={connectionsLoading}
+						onChangeVisibility={handleChangeVisibility}
+						savingVisibility={savingVisibility}
+					/>
+				</aside>
 			</div>
 		</div>
 	)
