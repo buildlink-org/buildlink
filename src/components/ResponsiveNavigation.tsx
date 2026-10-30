@@ -20,7 +20,7 @@ const ResponsiveNavigation = ({ loading }: ResponsiveNavigationProps) => {
       path: "/resource-hub",
       ariaLabel: "Resource hub",
     },
-    { id: "profile", title: "Profile Board", icon: User, path: "/profile", ariaLabel: "Profile board" },
+    { id: "profile", title: "Edit Profile", icon: User, path: "/profile", ariaLabel: "Edit profile" },
   ];
 
   const isActive = (path: string) => location.pathname === path;

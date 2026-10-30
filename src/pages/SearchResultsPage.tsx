@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import TopBar from "@/components/TopBar";
+import CorePageGrid from "@/components/CorePageGrid";
 import ResponsiveNavigation from "@/components/ResponsiveNavigation";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 
@@ -42,12 +43,8 @@ export default function SearchResultsPage() {
 			<TopBar onLogoClick={() => navigate("/")} />
 			<OfflineIndicator />
 
-			<div className="relative top-12 mx-auto grid h-screen w-full max-w-screen-xl grid-cols-12 px-4 pb-20 md:pb-8">
-				<div className="col-span-3 hidden bg-white md:block">
-					<ResponsiveNavigation loading={loading} />
-				</div>
-
-				<main className="core-vertical-grid col-span-12 min-w-0 md:col-start-4 lg:col-span-9 xl:col-span-7">
+			<CorePageGrid navigation={<ResponsiveNavigation loading={loading} />}>
+				<main className="core-vertical-grid min-w-0">
 					<form
 						onSubmit={submit}
 						className="flex gap-2 pt-4">
@@ -108,7 +105,7 @@ export default function SearchResultsPage() {
 						))}
 					</div>
 				</main>
-			</div>
+			</CorePageGrid>
 		</div>
   )
 }

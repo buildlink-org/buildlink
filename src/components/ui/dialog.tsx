@@ -33,13 +33,14 @@ const DialogContent = React.forwardRef<
     /** Optional accessible description. When omitted, aria-describedby is explicitly set to undefined to silence the Radix warning. */
     description?: React.ReactNode
     showCloseButton?: boolean
+    overlayClassName?: string
   }
->(({ className, children, description, showCloseButton = true, ...props }, ref) => {
+>(({ className, children, description, showCloseButton = true, overlayClassName, ...props }, ref) => {
   const hasDescription = description !== undefined && description !== null
 
   return (
     <DialogPortal>
-      <DialogOverlay />
+      <DialogOverlay className={overlayClassName} />
       <DialogPrimitive.Content
         ref={ref}
         {...(hasDescription ? {} : { "aria-describedby": undefined })}
