@@ -44,7 +44,8 @@ export default function SearchResultsPage() {
 			<OfflineIndicator />
 
 			<CorePageGrid navigation={<ResponsiveNavigation loading={loading} />}>
-				<main className="core-vertical-grid min-w-0">
+				<div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-4">
+				<main className="core-vertical-grid min-w-0 lg:col-span-8">
 					<form
 						onSubmit={submit}
 						className="flex gap-2 pt-4">
@@ -105,6 +106,7 @@ export default function SearchResultsPage() {
 						))}
 					</div>
 				</main>
+				</div>
 			</CorePageGrid>
 		</div>
   )
