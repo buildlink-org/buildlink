@@ -40,6 +40,7 @@ const EducationFormFields = ({
             value={education.degree}
             onChange={(e) => onChange({ ...education, degree: e.target.value })}
             placeholder="e.g., Bachelor of Civil Engineering"
+            maxLength={100}
             disabled={disabled}
           />
         </div>
@@ -50,6 +51,7 @@ const EducationFormFields = ({
             value={education.institution}
             onChange={(e) => onChange({ ...education, institution: e.target.value })}
             placeholder="e.g., University of Nairobi"
+            maxLength={100}
             disabled={disabled}
           />
         </div>
@@ -61,6 +63,7 @@ const EducationFormFields = ({
           value={education.fieldOfStudy || ""}
           onChange={(e) => onChange({ ...education, fieldOfStudy: e.target.value })}
           placeholder="e.g., Structural Engineering, Urban Planning"
+          maxLength={100}
           disabled={disabled}
         />
       </div>
@@ -74,6 +77,7 @@ const EducationFormFields = ({
             onChange={(e) => onChange({ ...education, startDate: e.target.value })}
             placeholder="e.g., 2021"
             inputMode="numeric"
+            maxLength={100}
             disabled={disabled}
           />
         </div>
@@ -84,6 +88,7 @@ const EducationFormFields = ({
             value={education.endDate || ""}
             onChange={(e) => onChange({ ...education, endDate: e.target.value })}
             placeholder="e.g., 2025 or Present"
+            maxLength={100}
             disabled={disabled}
           />
         </div>
@@ -99,6 +104,7 @@ const EducationFormFields = ({
             value={education.year}
             onChange={(e) => onChange({ ...education, year: e.target.value })}
             placeholder="e.g., 2015-2019 or 2020"
+            maxLength={100}
             disabled={disabled}
           />
           <p className="mt-1 text-xs text-muted-foreground">

@@ -101,6 +101,7 @@ const AboutEditDialog = ({ children, currentProfile, onProfileUpdated }: AboutEd
               onChange={(e) => setBio(e.target.value)}
               placeholder="Share a short introduction about your background and goals."
               rows={8}
+              maxLength={maxLength}
               className={`resize-none ${isOverLimit ? 'border-red-500 focus:border-red-500' : ''}`}
             />
             <div className="flex items-center justify-between">
