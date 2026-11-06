@@ -108,7 +108,7 @@ loading={loading}
 {/* Main Content — explicit header offset replaces top-12 positioning */}
 <CorePageGrid navigation={showNavigation ? <ResponsiveNavigation loading={loading} /> : undefined}>
 <div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-4">
-<main className="core-vertical-grid min-w-0 lg:col-span-8">
+<main className={`core-vertical-grid min-w-0 ${hasHomeSuggestions ? "lg:col-span-8" : "lg:col-span-12"}`}>
 {/* Content Filters */}
 {shouldShowFilters && (
 <div>

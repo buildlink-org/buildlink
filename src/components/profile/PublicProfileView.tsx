@@ -53,6 +53,7 @@ const PublicProfileView: React.FC = () => {
 
   const isOwner = user?.id === profileId
   const isCompanyProfile = profile?.user_type === "company"
+  const isStudentProfile = profile?.user_type === "student"
 
   // LOAD PROFILE
   const loadPublicProfile = useCallback(async () => {
@@ -360,7 +361,7 @@ const renderButtons = () => {
       : []
 
   return (
-    <div className="core-vertical-grid mx-auto max-w-7xl px-1 sm:px-0">
+    <div className={`core-vertical-grid mx-auto px-1 sm:px-0 ${isStudentProfile ? "max-w-[800px]" : "max-w-7xl"}`}>
 
       {/* ── PROFILE BANNER ─────────────────────────────────────────────── */}
       <Card className={isCompanyProfile ? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30" : profile.user_type === "professional" ? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30" : "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"}>
@@ -405,7 +406,7 @@ const renderButtons = () => {
           <ExperienceSection profile={profile} />
           <EducationSection profile={profile} />
           <CertificationsSection profile={profile} />
-          <LanguagesSection profile={profile} handleProfileUpdate={() => {}} />
+          {!isStudentProfile && <LanguagesSection profile={profile} handleProfileUpdate={() => {}} />}
         </>
       )}
       <SuggestedConnections profileId={profile.id} myProfessions={professions} showEmpty />

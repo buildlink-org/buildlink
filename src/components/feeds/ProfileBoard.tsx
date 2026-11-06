@@ -304,6 +304,7 @@ const ProfileBoard = () => {
 	}
 
 	const userType = profile.user_type?.toLowerCase() || "student"
+	const isStudent = userType === "student"
 	const isCompany = userType === "company"
 	const portfolio = Array.isArray(profile.portfolio) ? profile.portfolio : []
 	const completion = profile.profile_completion_score || 0
@@ -314,7 +315,7 @@ const ProfileBoard = () => {
 			: { bg: "bg-student-100 dark:bg-student-900/50", text: "text-student-700 dark:text-student-300" }
 
 	return (
-		<div className="core-vertical-grid mx-auto max-w-7xl px-1 sm:px-0">
+		<div className={`core-vertical-grid mx-auto px-1 sm:px-0 ${isStudent ? "max-w-[800px]" : "max-w-7xl"}`}>
 			{/* Identity header */}
 			<ProfileHeader
 				profile={profile}
@@ -361,7 +362,7 @@ const ProfileBoard = () => {
 				</Card>
 			</div>
 
-			<div className="grid min-w-0 gap-4 2xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:items-start">
+			<div className={`grid min-w-0 gap-4 ${isStudent ? "grid-cols-1" : "2xl:grid-cols-[minmax(0,1fr)_18rem] 2xl:items-start"}`}>
 				<div className="min-w-0 space-y-4 sm:space-y-6">
 					<AboutActivitySection
 						profile={profile}
@@ -418,24 +419,27 @@ const ProfileBoard = () => {
 								profile={profile}
 								handleProfileUpdate={handleProfileUpdate}
 							/>
-							{/* Languages — supporting info last */}
-							<LanguagesSection
-								profile={profile}
-								canEdit={true}
-								handleProfileUpdate={handleProfileUpdate}
-							/>
+							{!isStudent && (
+								<LanguagesSection
+									profile={profile}
+									canEdit={true}
+									handleProfileUpdate={handleProfileUpdate}
+								/>
+							)}
 						</>
 					)}
 				</div>
-				<aside className="min-w-0">
-					<ProfileRail
-						profile={profile}
-						connections={connections}
-						connectionsLoading={connectionsLoading}
-						onChangeVisibility={handleChangeVisibility}
-						savingVisibility={savingVisibility}
-					/>
-				</aside>
+				{!isStudent && (
+					<aside className="min-w-0">
+						<ProfileRail
+							profile={profile}
+							connections={connections}
+							connectionsLoading={connectionsLoading}
+							onChangeVisibility={handleChangeVisibility}
+							savingVisibility={savingVisibility}
+						/>
+					</aside>
+				)}
 			</div>
 		</div>
 	)

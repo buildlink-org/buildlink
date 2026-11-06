@@ -45,7 +45,7 @@ export default function SearchResultsPage() {
 
 			<CorePageGrid navigation={<ResponsiveNavigation loading={loading} />}>
 				<div className="lg:grid lg:grid-cols-12 lg:items-start lg:gap-4">
-				<main className="core-vertical-grid min-w-0 lg:col-span-8">
+				<main className="core-vertical-grid min-w-0 lg:col-span-12">
 					<form
 						onSubmit={submit}
 						className="flex gap-2 pt-4">

@@ -47,6 +47,13 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 
 	const canEdit = canEditProp !== undefined ? canEditProp : false
 	const userType = profile.user_type?.toLowerCase() || "student"
+	const portfolioHeading = userType === "student"
+		? canEdit
+			? `Portfolio (${portfolioList.length}/3 items uploaded)`
+			: `Portfolio (${portfolioList.length} items)`
+		: profile.user_type === "company"
+			? "Portfolio / Featured"
+			: "Portfolio"
 	const colorTheme = userType === "company"
 		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
 		: userType === "professional"
@@ -199,10 +206,12 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 				{/* Top Header Row */}
 				<div className="flex items-center justify-between gap-2 flex-wrap pb-1 border-b border-border/40">
 					<div className="flex items-center space-x-2">
-						<h3 className="text-lg font-bold text-foreground">{profile.user_type === "company" ? "Portfolio / Featured" : "Portfolio"}</h3>
-						<span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
-							{portfolioList.length} {portfolioList.length === 1 ? "item" : "items"}
-						</span>
+						<h3 className="text-lg font-bold text-foreground">{portfolioHeading}</h3>
+						{userType !== "student" && (
+							<span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-semibold text-muted-foreground">
+								{portfolioList.length} {portfolioList.length === 1 ? "item" : "items"}
+							</span>
+						)}
 					</div>
 
 					<div className="flex items-center gap-2">
