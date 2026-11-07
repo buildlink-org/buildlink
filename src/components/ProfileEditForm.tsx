@@ -16,14 +16,11 @@ const ProfileEditForm = ({ isOpen, onClose, onSave }: ProfileEditFormProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [profile, setProfile] = useState({
     full_name: '',
     profession: '',
     organization: '',
-    title: '',
     education_level: '',
-    avatar: ''
   });
 
   useEffect(() => {
@@ -43,9 +40,7 @@ const ProfileEditForm = ({ isOpen, onClose, onSave }: ProfileEditFormProps) => {
           full_name: data.full_name || '',
           profession: data.profession || '',
           organization: data.organization || '',
-          title: data.title || '',
           education_level: data.education_level || '',
-          avatar: data.avatar || ''
         });
       }
     } catch (error) {
@@ -85,8 +80,8 @@ const ProfileEditForm = ({ isOpen, onClose, onSave }: ProfileEditFormProps) => {
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
         <DialogContent
-          className="max-w-md"
-          description="Update your profile details including name, profession, organization, and title">
+          className="max-h-[85vh] max-w-md overflow-y-auto"
+          description="Update your name, course or discipline, university or college, and education level">
           <DialogHeader>
             <DialogTitle>Edit Profile</DialogTitle>
           </DialogHeader>

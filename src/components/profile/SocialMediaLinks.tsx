@@ -1,6 +1,14 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { ExternalLink, Globe, Linkedin, Twitter, Github } from 'lucide-react';
+import {
+  ExternalLink,
+  Facebook,
+  Globe,
+  Github,
+  Instagram,
+  Linkedin,
+  Twitter,
+} from 'lucide-react';
 
 interface SocialMediaLinksProps {
   links: Record<string, string>;
@@ -17,8 +25,16 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
     switch (platform.toLowerCase()) {
       case 'linkedin':
         return <Linkedin className="h-4 w-4" />;
+      case 'x':
+        return <span aria-hidden="true" className="text-sm font-semibold">X</span>;
       case 'twitter':
         return <Twitter className="h-4 w-4" />;
+      case 'instagram':
+        return <Instagram className="h-4 w-4" />;
+      case 'tiktok':
+        return <span aria-hidden="true" className="text-base font-semibold">♪</span>;
+      case 'facebook':
+        return <Facebook className="h-4 w-4" />;
       case 'github':
         return <Github className="h-4 w-4" />;
       case 'website':
@@ -29,6 +45,8 @@ const SocialMediaLinks: React.FC<SocialMediaLinksProps> = ({
   };
 
   const formatPlatformName = (platform: string) => {
+    if (platform === 'x' || platform === 'twitter') return 'X';
+    if (platform === 'website') return 'Personal website';
     return platform.charAt(0).toUpperCase() + platform.slice(1);
   };
 
