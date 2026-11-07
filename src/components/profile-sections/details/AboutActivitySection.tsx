@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { UserProfile } from "@/types"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs"
 
-const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicProfile }: { profile: UserProfile; userPosts: any[]; handleProfileUpdate?: () => void; publicProfile?: boolean }) => {
+const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicProfile }: { profile: UserProfile; userPosts: Record<string, unknown>[]; handleProfileUpdate?: () => void; publicProfile?: boolean }) => {
 	const userType = profile?.user_type?.toLowerCase() || "student"
 
 	// Colours mirror ProfileHeader — using semantic Tailwind tokens only
@@ -40,27 +40,27 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 				defaultValue="about"
 				className="w-full rounded-lg">
 				<div className="border-b border-border">
-					<TabsList className="flex h-auto w-full border-0 bg-transparent p-0">
+					<TabsList className="flex h-11 w-full border-0 bg-transparent p-0">
 					<TabsTrigger
 						value="about"
-						className="flex-1 rounded-none bg-muted/50 px-6 py-3.5 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-primary transition-all">
-						About
+						className="h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground">
+						Bio
 					</TabsTrigger>
 					<TabsTrigger
 						value="activity"
-						className="flex-1 rounded-none bg-muted/50 px-6 py-3.5 text-muted-foreground data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:font-semibold data-[state=active]:border-b-2 data-[state=active]:border-primary transition-all">
+						className="h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground">
 						Activity
 					</TabsTrigger>
 					</TabsList>
 				</div>
-				<TabsContent value="about" className="mt-0 p-4 sm:p-5">
+				<TabsContent value="about" className="mt-0 min-h-56 p-4 sm:p-5">
 					<ProfileAbout
 					profile={profile}
 					publicProfile={publicProfile}
 					handleProfileUpdate={handleProfileUpdate}
 					/>
 				</TabsContent>
-				<TabsContent value="activity" className="mt-0 p-4 sm:p-5">
+				<TabsContent value="activity" className="mt-0 min-h-56 p-4 sm:p-5">
 					<ProfileActivity
 					userPosts={userPosts}
 					noCard={true}

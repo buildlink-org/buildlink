@@ -1,29 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { convertAndSanitizeSkills, Skill } from "@/lib/skillUtils"
 import { Badge } from "@/components/ui/badge"
-import { Sparkles } from "lucide-react"
 import SkillsEditDialog from "@/components/profile-sections/SkillsEditDialog"
 import { Button } from "@/components/ui/button"
 import { UserProfile } from "@/types"
-import EmptyState from "@/components/profile/EmptyState"
 import EditIconButton from "@/components/profile/EditIconButton"
 
 interface CompactSkillsSectionProps {
 	profile: UserProfile
 	handleProfileUpdate?: () => void
 	canEdit?: boolean
-}
-
-/** Built-environment tool keywords used to split tools from professional skills. */
-const TOOL_KEYWORDS = [
-	"autocad", "revit", "bim", "cad", "gis", "archicad", "sketchup", "rhino",
-	"civil 3d", "etabs", "sap", "prokon", "ms project", "primavera", "figma",
-	"3d", "photoshop", "illustrator", "excel", "modelling", "modeling", "visualization",
-]
-
-const isTool = (name: string): boolean => {
-	const lower = name.toLowerCase()
-	return TOOL_KEYWORDS.some((kw) => lower.includes(kw))
 }
 
 const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }: CompactSkillsSectionProps) => {
@@ -38,28 +24,19 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 		badgeClasses = "bg-green-100 dark:bg-green-950 text-foreground border border-green-200 dark:border-green-800"
 	}
 
-	// Top skills (first three) get featured treatment; tools are grouped separately
-	const topSkills = skills.slice(0, 3)
-	const remaining = skills.slice(3)
-	const tools = remaining.filter((s) => isTool(s.name))
-	const professionalSkills = remaining.filter((s) => !isTool(s.name))
-
-	const renderChip = (skill: Skill, featured = false) => (
+	const renderChip = (skill: Skill) => (
 		<Badge
 			key={skill.name}
 			variant="outline"
-			className={`${badgeClasses} px-3 py-1.5 text-sm font-medium transition-all hover:scale-105 hover:shadow-sm cursor-default ${
-				featured ? "ring-1 ring-primary/40" : ""
-			}`}>
-			{featured && <Sparkles className="mr-1 inline h-3 w-3" aria-hidden="true" />}
+			className={`${badgeClasses} cursor-default px-2.5 py-1 text-xs font-medium`}>
 			{skill.name}
 		</Badge>
 	)
 
 	return (
 		<Card className="border border-border shadow-sm overflow-hidden transition-all hover:shadow-md">
-			<CardContent className="px-4 py-4">
-				<div className="mb-3 flex items-center justify-between">
+			<CardContent className="px-3 py-3">
+				<div className="mb-2 flex items-center justify-between">
 					<div className="flex items-center gap-2">
 						<h2 className="text-base font-semibold text-foreground">{userType === "company" ? "Expertise" : "Skills"}</h2>
 						{skills.length > 0 && (
@@ -75,32 +52,17 @@ const ProfileSkillsSection = ({ profile, handleProfileUpdate, canEdit = false }:
 					)}
 				</div>
 				{skills.length === 0 ? (
-					<EmptyState
-						icon={<Sparkles className="h-5 w-5" />}
-						title="Add your skills"
-						description="Add the tools and professional skills you use most. Skills help people discover you for relevant projects and opportunities."
-						action={canEdit ? (
+					<div className="flex items-center justify-between gap-3">
+						<p className="text-xs text-muted-foreground">No skills listed yet.</p>
+						{canEdit && (
 							<SkillsEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
-								<Button variant="outline">Add skills</Button>
+								<Button variant="outline" size="sm" className="h-8">Edit skills</Button>
 							</SkillsEditDialog>
-						) : undefined}
-					/>
+						)}
+					</div>
 				) : (
-					<div className="space-y-3">
-						{/* Top skills — featured treatment (report §6.1) */}
-						<div className="flex flex-wrap gap-2">{topSkills.map((s) => renderChip(s, true))}</div>
-						{tools.length > 0 && (
-							<div>
-								<p className="mb-1.5 text-xs font-medium text-muted-foreground">Tools & software</p>
-								<div className="flex flex-wrap gap-2">{tools.map((s) => renderChip(s))}</div>
-							</div>
-						)}
-						{professionalSkills.length > 0 && (
-							<div>
-								<p className="mb-1.5 text-xs font-medium text-muted-foreground">Professional skills</p>
-								<div className="flex flex-wrap gap-2">{professionalSkills.map((s) => renderChip(s))}</div>
-							</div>
-						)}
+					<div className="flex flex-wrap gap-1.5">
+						{skills.map(renderChip)}
 					</div>
 				)}
 			</CardContent>
