@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Briefcase, ChevronDown, ChevronUp, Plus } from "lucide-react"
+import { Briefcase, ChevronDown, ChevronUp } from "lucide-react"
 import ExperienceEditDialog from "@/components/profile-sections/ExperienceEditDialog"
 import { Experiences, UserProfile } from "@/types"
 import EmptyState from "@/components/profile/EmptyState"
@@ -122,13 +121,6 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 							icon={<Briefcase className="h-5 w-5" />}
 							title="Add your experience"
 							description="Add your current role or most relevant experience. Focus on what you contributed and what you learned."
-							action={canEdit ? (
-								<ExperienceEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
-									<Button variant="outline" className="gap-2">
-										<Plus className="h-4 w-4" /> Add experience
-									</Button>
-								</ExperienceEditDialog>
-							) : undefined}
 						/>
 					)}
 				</div>

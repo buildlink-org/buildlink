@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Award, BadgeCheck, ChevronDown, ChevronUp, Plus } from "lucide-react"
+import { Award, BadgeCheck, ChevronDown, ChevronUp } from "lucide-react"
 import CertificationsEditDialog from "@/components/profile-sections/CertificationsEditDialog"
 import { UserProfile } from "@/types"
 import EmptyState from "@/components/profile/EmptyState"
@@ -140,13 +139,6 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 							icon={<Award className="h-5 w-5" />}
 							title="Add your licences & certifications"
 							description="Add professional credentials with the issuing organization, date, and credential ID to build trust."
-							action={canEdit ? (
-								<CertificationsEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
-									<Button variant="outline" className="gap-2">
-										<Plus className="h-4 w-4" /> Add certification
-									</Button>
-								</CertificationsEditDialog>
-							) : undefined}
 						/>
 					)}
 				</div>
