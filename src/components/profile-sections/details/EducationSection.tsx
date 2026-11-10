@@ -1,7 +1,6 @@
 import { useState } from "react"
 import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { GraduationCap, ChevronDown, ChevronUp, Plus } from "lucide-react"
+import { GraduationCap, ChevronDown, ChevronUp } from "lucide-react"
 import EducationEditDialog from "@/components/profile-sections/EducationEditDialog"
 import { Education, UserProfile } from "@/types"
 import EmptyState from "@/components/profile/EmptyState"
@@ -124,13 +123,6 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 							icon={<GraduationCap className="h-5 w-5" />}
 							title="Add your education"
 							description="Add your programme, institution, and study period. Education entries help you build credibility early in your career."
-							action={canEdit ? (
-								<EducationEditDialog currentProfile={profile} onProfileUpdated={handleProfileUpdate}>
-									<Button variant="outline" className="gap-2">
-										<Plus className="h-4 w-4" /> Add education
-									</Button>
-								</EducationEditDialog>
-							) : undefined}
 						/>
 					)}
 				</div>

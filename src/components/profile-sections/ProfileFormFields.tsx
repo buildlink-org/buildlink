@@ -2,17 +2,22 @@
 import React from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export interface ProfileFormFieldsProps {
   profile: {
     full_name: string;
     profession: string;
     organization: string;
-    title: string;
     education_level: string;
   };
-  onChange: (field: string, value: string) => void;
+  onChange: (field: "full_name" | "profession" | "organization" | "education_level", value: string) => void;
 }
 
 const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
@@ -30,40 +35,40 @@ const ProfileFormFields: React.FC<ProfileFormFieldsProps> = ({
       />
     </div>
     <div>
-      <Label htmlFor="profession">Profession</Label>
+      <Label htmlFor="profession">Course / Discipline</Label>
       <Input
         id="profession"
         value={profile.profession}
         onChange={(e) => onChange("profession", e.target.value)}
-        placeholder="e.g., Civil Engineer, Architect"
+        placeholder="e.g., Civil Engineering, Architecture"
       />
     </div>
     <div>
-      <Label htmlFor="title">Job Title</Label>
+      <Label htmlFor="organization">University / College</Label>
       <Input
-        id="title"
-        value={profile.title}
-        onChange={(e) => onChange("title", e.target.value)}
-        placeholder="e.g., Senior Engineer, Project Manager"
-      />
-    </div>
-    <div>
-      <Label htmlFor="organization">Organization</Label>
-      <Input
-        id="organization"
-        value={profile.organization}
-        onChange={(e) => onChange("organization", e.target.value)}
-        placeholder="Company or organization name"
+      id="organization"
+      value={profile.organization}
+      onChange={(e) => onChange("organization", e.target.value)}
+      placeholder="Your university or college"
       />
     </div>
     <div>
       <Label htmlFor="education_level">Education Level</Label>
-      <Input
-        id="education_level"
-        value={profile.education_level}
-        onChange={(e) => onChange("education_level", e.target.value)}
-        placeholder="e.g., Bachelor's, Master's, PhD"
-      />
+      <Select
+      value={profile.education_level}
+      onValueChange={(value) => onChange("education_level", value)}
+      >
+      <SelectTrigger id="education_level">
+        <SelectValue placeholder="Select your education level" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="certificate">Certificate</SelectItem>
+        <SelectItem value="diploma">Diploma</SelectItem>
+        <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
+        <SelectItem value="masters">Master's Degree</SelectItem>
+        <SelectItem value="phd">PhD</SelectItem>
+      </SelectContent>
+      </Select>
     </div>
   </div>
 );

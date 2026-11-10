@@ -17,7 +17,7 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 
 	const renderAboutContent = () => {
 		if (!profile.bio) {
-			return <div className="italic text-muted-foreground">No about information available yet.</div>
+			return <div className="italic text-muted-foreground">No professional bio available yet</div>
 		}
 
 		const characterLimit = 220
@@ -43,7 +43,7 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 	const content = (
 		<div className="flex flex-1 flex-col">
 			<div className="mb-4 flex items-center justify-between">
-				<h2 className="text-lg font-semibold text-foreground">About</h2>
+				<h2 className="text-lg font-semibold text-foreground">Bio</h2>
 				{!publicProfile && (
 					<AboutEditDialog
 						currentProfile={profile}

@@ -269,17 +269,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 							<FolderOpen className="h-7 w-7 text-muted-foreground" />
 						</div>
 						<h4 className="mb-1 text-base font-semibold text-foreground">No projects added yet</h4>
-						<p className="mb-4 text-xs text-muted-foreground">Showcase your work, blueprints, or documents</p>
-						{canEdit && (
-							<Button
-								variant="outline"
-								onClick={() => setEditorOpen(true)}
-								disabled={updating}
-								className="rounded-full px-5 text-xs h-8">
-								<Plus className="mr-1.5 h-3.5 w-3.5" />
-								Add your first project
-							</Button>
-						)}
+						<p className="text-xs text-muted-foreground">Showcase your work, blueprints, or documents</p>
 					</div>
 				) : (
 					<div className="relative group/carousel flex flex-col space-y-3">

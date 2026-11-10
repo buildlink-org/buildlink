@@ -11,7 +11,8 @@ const joinDistinctDetails = (values: (string | null | undefined)[]): string | nu
 
 export const getProfileSubtitle = (profile: UserProfile): string | null => {
 	if (profile.user_type === "student") {
-		return joinDistinctDetails([profile.education_level, profile.organization])
+		const course = Array.isArray(profile.profession) ? profile.profession.join(", ") : profile.profession
+		return joinDistinctDetails([course, profile.education_level, profile.organization])
 	}
 
 	if (profile.user_type === "professional") {

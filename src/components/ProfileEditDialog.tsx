@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -10,22 +10,34 @@ import { useToast } from '@/hooks/use-toast';
 
 interface ProfileEditDialogProps {
   children: React.ReactNode;
-  currentProfile?: any;
+  currentProfile?: {
+    full_name?: string | null;
+    profession?: string | null;
+    organization?: string | null;
+    education_level?: string | null;
+  };
   onProfileUpdated?: () => void;
 }
+
+const getProfileFormData = (profile?: ProfileEditDialogProps['currentProfile']) => ({
+  full_name: profile?.full_name || '',
+  profession: profile?.profession || '',
+  organization: profile?.organization || '',
+  education_level: profile?.education_level || '',
+});
 
 const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: ProfileEditDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: currentProfile?.full_name || '',
-    profession: currentProfile?.profession || '',
-    organization: currentProfile?.organization || '',
-    title: currentProfile?.title || '',
-    education_level: currentProfile?.education_level || '',
-  });
+  const [formData, setFormData] = useState(() => getProfileFormData(currentProfile));
+
+  useEffect(() => {
+    if (open) {
+      setFormData(getProfileFormData(currentProfile));
+    }
+  }, [open, currentProfile]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +81,8 @@ const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: Profi
       </DialogTrigger>
       
       <DialogContent
-        className="sm:max-w-[500px]"
-        description="Update your name, profession, job title, organization, and education level">
+        className="max-h-[85vh] overflow-y-auto sm:max-w-[500px]"
+        description="Update your name, course or discipline, university or college, and education level">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
@@ -89,32 +101,22 @@ const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: Profi
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="profession">Profession</Label>
+            <Label htmlFor="profession">Course / Discipline</Label>
             <Input
               id="profession"
               value={formData.profession}
               onChange={(e) => handleInputChange('profession', e.target.value)}
-              placeholder="e.g., Civil Engineer, Architect"
+              placeholder="e.g., Civil Engineering, Architecture"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title">Job Title</Label>
-            <Input
-              id="title"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              placeholder="e.g., Senior Engineer, Project Manager"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="organization">Organization</Label>
+            <Label htmlFor="organization">University / College</Label>
             <Input
               id="organization"
               value={formData.organization}
               onChange={(e) => handleInputChange('organization', e.target.value)}
-              placeholder="Your company or organization"
+              placeholder="Your university or college"
             />
           </div>
 
