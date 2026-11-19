@@ -38,7 +38,7 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
 		: userType === "professional"
 			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
-			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
+			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-950/30"
 	let iconBg = "bg-yellow-100 dark:bg-yellow-950"
 	let iconText = "text-yellow-700 dark:text-yellow-200"
 	if (userType === "professional") {
@@ -49,7 +49,7 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 		iconText = "text-green-700 dark:text-green-400"
 	}
 
-	if (!canEdit && education.length === 0) return null
+	if (!canEdit && education.length === 0 && profile.user_type !== "student") return null
 	return (
 		<Card className={`rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md ${colorTheme}`}>
 			<CardContent className="px-4 py-4">
@@ -121,8 +121,8 @@ const EducationSection = ({ profile, handleProfileUpdate, maxVisible, canEdit = 
 					) : (
 						<EmptyState
 							icon={<GraduationCap className="h-5 w-5" />}
-							title="Add your education"
-							description="Add your programme, institution, and study period. Education entries help you build credibility early in your career."
+							title={canEdit ? "Add your education" : "No education & training listed yet"}
+							description={canEdit ? "Add your programme, institution, and study period. Education entries help you build credibility early in your career." : "Education and training details have not been added yet."}
 						/>
 					)}
 				</div>

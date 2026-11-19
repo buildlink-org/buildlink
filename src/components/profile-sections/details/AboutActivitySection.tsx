@@ -11,8 +11,8 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
-				bgColor: "bg-[#fffae7] dark:bg-yellow-950/60",
-				borderColor: "border-[#fde68a] dark:border-yellow-800/50",
+				bgColor: "bg-[#fde68a] dark:bg-yellow-950/60",
+				borderColor: "border-yellow-300 dark:border-yellow-800/50",
 			}
 		} else if (userType === "professional") {
 			return {
@@ -43,12 +43,12 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 					<TabsList className="flex h-11 w-full border-0 bg-transparent p-0">
 					<TabsTrigger
 						value="about"
-						className="h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground">
+						className="h-full flex-1 rounded-none border-b-2 border-transparent bg-white px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-[#fde68a] data-[state=active]:font-semibold data-[state=active]:text-foreground dark:bg-yellow-950/80 dark:data-[state=active]:bg-yellow-900">
 						Bio
 					</TabsTrigger>
 					<TabsTrigger
 						value="activity"
-						className="h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground">
+						className="h-full flex-1 rounded-none border-b-2 border-transparent bg-white px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:bg-[#fde68a] data-[state=active]:font-semibold data-[state=active]:text-foreground dark:bg-yellow-950/80 dark:data-[state=active]:bg-yellow-900">
 						Activity
 					</TabsTrigger>
 					</TabsList>

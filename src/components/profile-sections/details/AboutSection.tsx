@@ -17,7 +17,12 @@ const AboutSection = ({ profile, handleProfileUpdate, noCard = false, publicProf
 
 	const renderAboutContent = () => {
 		if (!profile.bio) {
-			return <div className="italic text-muted-foreground">No professional bio available yet</div>
+			return (
+				<div className="space-y-2 text-muted-foreground">
+					<p className="italic">No professional bio available yet.</p>
+					<p>Share your course, your interests, and what you&apos;re working towards.</p>
+				</div>
+			)
 		}
 
 		const characterLimit = 220

@@ -315,7 +315,7 @@ const ProfileBoard = () => {
 			: { bg: "bg-student-100 dark:bg-student-900/50", text: "text-student-700 dark:text-student-300" }
 
 	return (
-		<div className={`core-vertical-grid mx-auto px-1 sm:px-0 ${isStudent ? "max-w-[800px]" : "max-w-7xl"}`}>
+		<div className={`core-vertical-grid mx-auto w-full px-1 sm:px-0 ${isStudent ? "max-w-2xl" : "max-w-7xl"}`}>
 			{/* Identity header */}
 			<ProfileHeader
 				profile={profile}

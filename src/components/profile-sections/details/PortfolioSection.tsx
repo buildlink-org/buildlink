@@ -58,7 +58,7 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
 		: userType === "professional"
 			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
-			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
+			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-950/30"
 
 	const persistPortfolio = async (updated: PortfolioItem[]) => {
 		setUpdating(true)

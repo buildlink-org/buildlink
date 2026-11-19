@@ -40,7 +40,7 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
 		: userType === "professional"
 			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
-			: "border-student-200 bg-student-50 dark:border-student-800 dark:bg-student-950/30"
+			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-950/30"
 	let iconBg = "bg-yellow-100 dark:bg-yellow-950"
 	let iconText = "text-yellow-700 dark:text-yellow-200"
 	if (userType === "professional") {
@@ -51,7 +51,7 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 		iconText = "text-green-700 dark:text-green-400"
 	}
 
-	if (!canEdit && certifications.length === 0) return null
+	if (!canEdit && certifications.length === 0 && profile.user_type !== "student") return null
 	return (
 		<Card className={`rounded-lg border shadow-sm overflow-hidden transition-all hover:shadow-md ${colorTheme}`}>
 			<CardContent className="px-4 py-4">
@@ -137,8 +137,8 @@ const CertificationsSection = ({ profile, handleProfileUpdate, maxVisible, canEd
 					) : (
 						<EmptyState
 							icon={<Award className="h-5 w-5" />}
-							title="Add your licences & certifications"
-							description="Add professional credentials with the issuing organization, date, and credential ID to build trust."
+							title={canEdit ? "Add your licences & certifications" : "No licences or certifications listed yet"}
+							description={canEdit ? "Add professional credentials with the issuing organization, date, and credential ID to build trust." : "Professional credentials have not been added yet."}
 						/>
 					)}
 				</div>
