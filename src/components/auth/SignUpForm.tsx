@@ -33,6 +33,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 		fullName: "",
 		profession: "",
 		educationLevel: "",
+		organization: "",
 		skills: [] as string[],
 		companyName: "",
 		yearsActive: "",
@@ -51,7 +52,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 	useEffect(() => {
 		const storedForm = localStorage.getItem(STORAGE_KEY)
 		if (storedForm) {
-			setForm(JSON.parse(storedForm))
+			setForm((currentForm) => ({ ...currentForm, ...JSON.parse(storedForm) }))
 		}
 	}, [])
 
@@ -140,6 +141,10 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
                             setErrors({ educationLevel: "Please select an education level" })
                             return false
                         }
+						if (!form.organization?.trim()) {
+							setErrors({ organization: "University or school is required" })
+							return false
+						}
                     }
                     break
 
@@ -223,6 +228,7 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 				user_type: validatedData.userType,
 				profession: validatedData.profession,
 				education_level: form.educationLevel || null,
+				organization: validatedData.userType === "company" ? null : form.organization?.trim() || null,
 				years_active: form.yearsActive || null,
 				skills: supabaseSkills,
 			})
@@ -420,25 +426,37 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ showOtpModal }) => {
 			</div>
 		) : (
 			<div key="education">
-				<Label>Education Level</Label>
-				<Select
-					value={form.educationLevel}
-					onValueChange={(v) => {
-						update("educationLevel", v)
-						setStep(7)
-					}}>
-					<SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
-						<SelectValue placeholder="Select level" />
-					</SelectTrigger>
-					<SelectContent>
-						{studentEducationLevel.map((level) => (
-							<SelectItem key={level} value={level}>
-								{level}
-							</SelectItem>
-						))}
-					</SelectContent>
-				</Select>
-				<ErrorMessage field="educationLevel" />
+				<div className="space-y-4">
+					<div>
+						<Label>Education Level</Label>
+						<Select
+							value={form.educationLevel}
+							onValueChange={(v) => update("educationLevel", v)}>
+							<SelectTrigger className={errors.educationLevel ? "border-red-500" : ""}>
+								<SelectValue placeholder="Select level" />
+							</SelectTrigger>
+							<SelectContent>
+								{studentEducationLevel.map((level) => (
+									<SelectItem key={level} value={level}>
+										{level}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<ErrorMessage field="educationLevel" />
+					</div>
+					<div>
+						<Label htmlFor="student-organization">University / School</Label>
+						<Input
+							id="student-organization"
+							value={form.organization || ""}
+							onChange={(event) => update("organization", event.target.value)}
+							placeholder="Enter your university or school"
+							className={errors.organization ? "border-red-500" : ""}
+						/>
+						<ErrorMessage field="organization" />
+					</div>
+				</div>
 			</div>
 		),
 

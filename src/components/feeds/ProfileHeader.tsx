@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Button } from "../ui/button"
-import { Edit, Settings } from "lucide-react"
+import { Edit, Settings, Share2 } from "lucide-react"
 import ProfileEditDialog from "../ProfileEditDialog"
 import AvatarUploader from "../profile-sections/AvatarUploader"
 import AccountTypeBadge from "../AccountTypeBadge"
@@ -10,6 +10,7 @@ import { useState } from "react"
 import { UserProfile } from "@/types"
 import SocialMediaLinks from "../profile/SocialMediaLinks"
 import SocialLinksEditDialog from "../profile/SocialLinksEditDialog"
+import ShareProfileDialog from "../profile/ShareProfileDialog"
 import VerificationBadgeButton from "./VerificationBadges"
 import { getProfileSubtitle } from "@/lib/profileDisplay"
 
@@ -29,10 +30,10 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 
 		if (userType === "student") {
 			return {
-				bgColor: "bg-[#ffb3a7] dark:bg-red-950/60",
-				borderColor: "border-[#ffb3a7] dark:border-red-800/50",
-				titleColor: "text-black dark:text-foreground",
-				descColor: "text-black/80 dark:text-muted-foreground",
+				bgColor: "bg-student-100 dark:bg-student-900/50",
+				borderColor: "border-student-200 dark:border-student-800",
+				titleColor: "text-student-900 dark:text-foreground",
+				descColor: "text-student-900/80 dark:text-muted-foreground",
 				iconEmoji: "",
 				message: "Your journey into the industry starts right here!",
 			}
@@ -116,8 +117,8 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 						</div>
 					</div>
 					{/* Action Buttons */}
-					<div className="flex flex-row items-center gap-4 md:flex-col md:items-end">
-						<div className="flex flex-row justify-end gap-2">
+					<div className="flex w-full flex-row justify-end lg:w-auto">
+						<div className="grid grid-cols-[2.5rem_10rem] items-center gap-x-2 gap-y-2">
 							<ProfileSettingsDialog>
 								<Button
 									variant="outline"
@@ -131,27 +132,33 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 							<ProfileEditDialog
 								currentProfile={profile}
 								onProfileUpdated={handleProfileUpdate}>
-								<Button className="flex-1 bg-red-700 text-white hover:bg-red-800 sm:flex-none">
+								<Button className="w-full bg-red-700 text-white hover:bg-red-800">
 									<Edit className="mr-1 h-4 w-4" />
 									Edit Profile
 								</Button>
 							</ProfileEditDialog>
-						</div>
 
-						{/* Social Links - Below action buttons */}
-						<div className="flex flex-wrap items-center justify-end gap-2">
+							<ShareProfileDialog
+								profileId={profile.id}
+								profileName={displayName}
+								trigger={
+									<Button variant="outline" size="icon" aria-label="Share profile">
+										<Share2 className="h-4 w-4" />
+									</Button>
+								}
+							/>
 							<SocialLinksEditDialog
 								currentLinks={profile.social_links || {}}
 								onLinksUpdated={handleProfileUpdate}
 								trigger={
 									<Button
 										variant="outline"
-										size="sm"
-										className="text-xs border-border text-foreground hover:bg-accent hover:text-accent-foreground dark:border-border dark:text-foreground dark:hover:bg-accent">
+										className="w-full border-border text-foreground hover:bg-accent hover:text-accent-foreground dark:border-border dark:text-foreground dark:hover:bg-accent">
 										Social Links
 									</Button>
 								}
 							/>
+							<span aria-hidden="true" />
 							<SocialMediaLinks
 								links={profile.social_links || {}}
 								editable={false}

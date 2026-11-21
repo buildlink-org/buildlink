@@ -7,31 +7,35 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@radix-ui/react-tabs"
 const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicProfile }: { profile: UserProfile; userPosts: Record<string, unknown>[]; handleProfileUpdate?: () => void; publicProfile?: boolean }) => {
 	const userType = profile?.user_type?.toLowerCase() || "student"
 
-	// Colours mirror ProfileHeader — using semantic Tailwind tokens only
 	const getColorConfig = () => {
 		if (userType === "student") {
 			return {
-				bgColor: "bg-[#fffae7] dark:bg-yellow-950/60",
-				borderColor: "border-[#fde68a] dark:border-yellow-800/50",
+				bgColor: "bg-student-100 dark:bg-student-900/50",
+				borderColor: "border-student-200 dark:border-student-800",
+				activeTabColor: "data-[state=active]:bg-[#fde68a] dark:data-[state=active]:bg-yellow-900",
 			}
 		} else if (userType === "professional") {
 			return {
-				bgColor: "bg-[#fed7aa] dark:bg-orange-950/60",
-				borderColor: "border-[#fed7aa] dark:border-orange-800/50",
+				bgColor: "bg-professional-100 dark:bg-professional-900/50",
+				borderColor: "border-professional-200 dark:border-professional-800",
+				activeTabColor: "data-[state=active]:bg-[#fed7aa] dark:data-[state=active]:bg-orange-900",
 			}
 		} else if (userType === "company") {
 			return {
-				bgColor: "bg-green-100 dark:bg-green-950/60",
-				borderColor: "border-green-200 dark:border-green-800/50",
+				bgColor: "bg-company-100 dark:bg-company-900/50",
+				borderColor: "border-company-200 dark:border-company-800",
+				activeTabColor: "data-[state=active]:bg-green-100 dark:data-[state=active]:bg-green-900",
 			}
 		}
 		return {
 			bgColor: "bg-muted",
 			borderColor: "border-border",
+			activeTabColor: "data-[state=active]:bg-muted",
 		}
 	}
 
 	const colorConfig = getColorConfig()
+	const tabClassName = `h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground ${colorConfig.activeTabColor} bg-white dark:bg-slate-950`
 
 	return (
 		<Card className={`border ${colorConfig.borderColor} ${colorConfig.bgColor} shadow-sm overflow-hidden`}>
@@ -43,12 +47,12 @@ const AboutActivitySection = ({ profile, userPosts, handleProfileUpdate, publicP
 					<TabsList className="flex h-11 w-full border-0 bg-transparent p-0">
 					<TabsTrigger
 						value="about"
-						className="h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground">
+						className={tabClassName}>
 						Bio
 					</TabsTrigger>
 					<TabsTrigger
 						value="activity"
-						className="h-full flex-1 rounded-none border-b-2 border-transparent px-4 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground data-[state=active]:border-primary data-[state=active]:font-semibold data-[state=active]:text-foreground">
+						className={tabClassName}>
 						Activity
 					</TabsTrigger>
 					</TabsList>
