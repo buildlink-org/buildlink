@@ -1,4 +1,5 @@
 import { UserProfile } from "@/types"
+import { companyProfessionOptions, studentProfessionOptions } from "@/lib/signUpData"
 
 const joinDistinctDetails = (values: (string | null | undefined)[]): string | null => {
 	const details = values
@@ -9,21 +10,35 @@ const joinDistinctDetails = (values: (string | null | undefined)[]): string | nu
 	return details.join(" - ") || null
 }
 
+const getProfessionLabel = (profile: UserProfile): string | null => {
+	const professions = Array.isArray(profile.profession) ? profile.profession : [profile.profession]
+	const options = profile.user_type === "company" ? companyProfessionOptions : studentProfessionOptions
+	return professions
+		.map((profession) => profession?.trim())
+		.filter((profession): profession is string => Boolean(profession))
+		.map((profession) => options.find((option) => option.value === profession)?.label || profession)
+		.filter((profession, index, all) => all.findIndex((item) => item.toLowerCase() === profession.toLowerCase()) === index)
+		.join(", ") || null
+}
+
 export const getProfileSubtitle = (profile: UserProfile): string | null => {
 	if (profile.user_type === "student") {
-		const studentDetails = joinDistinctDetails([profile.education_level, profile.organization])
-		const course = Array.isArray(profile.profession) ? profile.profession.join(", ") : profile.profession
-		return studentDetails || joinDistinctDetails([course])
+		const educationLevel = profile.education_level?.trim()
+		const institution = profile.organization?.trim()
+		return joinDistinctDetails([
+			getProfessionLabel(profile),
+			educationLevel || "Education level not added",
+			institution || "Institution not added",
+		])
 	}
 
 	if (profile.user_type === "professional") {
-		return joinDistinctDetails([profile.title || profile.profession, profile.organization])
+		return joinDistinctDetails([
+			profile.title || getProfessionLabel(profile),
+			profile.education_level,
+			profile.organization,
+		])
 	}
 
-	const companyProfessions = Array.isArray(profile.profession) ? profile.profession : [profile.profession]
-	const professions = companyProfessions
-		.map((value) => value.trim())
-		.filter((value, index, all) => Boolean(value) && all.findIndex((item) => item.toLowerCase() === value.toLowerCase()) === index)
-		.join(", ")
-	return joinDistinctDetails([professions, profile.locations?.[0]])
+	return joinDistinctDetails([getProfessionLabel(profile), profile.locations?.[0]])
 }

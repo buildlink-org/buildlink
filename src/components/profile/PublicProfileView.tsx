@@ -361,10 +361,10 @@ const renderButtons = () => {
       : []
 
   return (
-    <div className={`core-vertical-grid mx-auto w-full px-1 sm:px-0 ${isStudentProfile ? "max-w-2xl" : "max-w-7xl"}`}>
+    <div className={`core-vertical-grid mx-auto w-full px-1 sm:px-0 ${isStudentProfile ? "max-w-3xl" : "max-w-7xl"}`}>
 
       {/* ── PROFILE BANNER ─────────────────────────────────────────────── */}
-      <Card className={isCompanyProfile ? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30" : profile.user_type === "professional" ? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30" : "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-950/30"}>
+      <Card className={isCompanyProfile ? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-900/50" : profile.user_type === "professional" ? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-900/50" : "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-900/50"}>
         <CardContent className="py-6">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-start sm:text-left">
@@ -381,13 +381,15 @@ const renderButtons = () => {
             </div>
             <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
               {!isOwner && renderButtons()}
-              <Dialog>
-                <DialogTrigger asChild><Button variant="outline">Social Links</Button></DialogTrigger>
-                <DialogContent className="sm:max-w-md">
-                  <DialogHeader><DialogTitle>Social Links</DialogTitle></DialogHeader>
-                  <SocialMediaLinks links={profile.social_links || {}} />
-                </DialogContent>
-              </Dialog>
+              {Object.values(profile.social_links || {}).some(Boolean) && (
+                <Dialog>
+                  <DialogTrigger asChild><Button variant="outline">Social Links</Button></DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <DialogHeader><DialogTitle>Social Links</DialogTitle></DialogHeader>
+                    <SocialMediaLinks links={profile.social_links || {}} />
+                  </DialogContent>
+                </Dialog>
+              )}
             </div>
           </div>
         </CardContent>

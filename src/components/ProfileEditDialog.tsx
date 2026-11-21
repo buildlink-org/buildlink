@@ -7,21 +7,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useAuth } from '@/contexts/AuthContext';
 import { profileService } from '@/services/profileService';
 import { useToast } from '@/hooks/use-toast';
+import { studentEducationLevel } from '@/lib/signUpData';
 
 interface ProfileEditDialogProps {
   children: React.ReactNode;
   currentProfile?: {
     full_name?: string | null;
-    profession?: string | null;
+    profession?: string | string[] | null;
     organization?: string | null;
     education_level?: string | null;
+    user_type?: string | null;
   };
   onProfileUpdated?: () => void;
 }
 
 const getProfileFormData = (profile?: ProfileEditDialogProps['currentProfile']) => ({
   full_name: profile?.full_name || '',
-  profession: profile?.profession || '',
+  profession: Array.isArray(profile?.profession) ? profile.profession.join(", ") : profile?.profession || '',
   organization: profile?.organization || '',
   education_level: profile?.education_level || '',
 });
@@ -43,9 +45,15 @@ const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: Profi
     e.preventDefault();
     if (!user) return;
 
+    const updates = {
+      ...formData,
+      profession: formData.profession.trim(),
+      organization: formData.organization.trim(),
+    };
+
     setIsLoading(true);
     try {
-      const { error } = await profileService.updateProfile(user.id, formData);
+      const { error } = await profileService.updateProfile(user.id, updates);
 
       if (error) {
         throw error;
@@ -117,6 +125,7 @@ const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: Profi
               value={formData.organization}
               onChange={(e) => handleInputChange('organization', e.target.value)}
               placeholder="Your university or college"
+              required={currentProfile?.user_type !== 'company'}
             />
           </div>
 
@@ -130,11 +139,12 @@ const ProfileEditDialog = ({ children, currentProfile, onProfileUpdated }: Profi
                 <SelectValue placeholder="Select your education level" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="certificate">Certificate</SelectItem>
-                <SelectItem value="diploma">Diploma</SelectItem>
-                <SelectItem value="bachelors">Bachelor's Degree</SelectItem>
-                <SelectItem value="masters">Master's Degree</SelectItem>
-                <SelectItem value="phd">PhD</SelectItem>
+                {(currentProfile?.user_type === 'student'
+                  ? studentEducationLevel
+                  : ['certificate', 'diploma', 'bachelors', 'masters', 'phd']
+                ).map((level) => (
+                  <SelectItem key={level} value={level}>{level}</SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

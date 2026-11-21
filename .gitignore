@@ -45,6 +45,11 @@ Buildlink Full Updated SQL.md
 buildlink-profile-sections-ui-ux-redesign-report.md
 .env
 tests
+!tests/
+tests/*
+!tests/student-signup-profile.test.tsx
+!tests/student-profile-ui.test.tsx
+!tests/student-profile-edit.test.tsx
 .vscode
 
 *.pdf

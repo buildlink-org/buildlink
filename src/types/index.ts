@@ -56,7 +56,7 @@ export type BaseProfile = {
 	created_at: string
 	education?: Education[]
 	updated_at: string
-	profession?: string
+	profession?: string | string[] | null
 	organization?: string
 	education_level?: string
 	skills?: string[]

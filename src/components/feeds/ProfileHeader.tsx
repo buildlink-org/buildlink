@@ -30,10 +30,10 @@ const ProfileHeader = ({ profile, uploading, handleAvatarChange, handleAvatarRem
 
 		if (userType === "student") {
 			return {
-				bgColor: "bg-[#ffb3a7] dark:bg-red-950/60",
-				borderColor: "border-[#ffb3a7] dark:border-red-800/50",
-				titleColor: "text-black dark:text-foreground",
-				descColor: "text-black/80 dark:text-muted-foreground",
+				bgColor: "bg-student-100 dark:bg-student-900/50",
+				borderColor: "border-student-200 dark:border-student-800",
+				titleColor: "text-student-900 dark:text-foreground",
+				descColor: "text-student-900/80 dark:text-muted-foreground",
 				iconEmoji: "",
 				message: "Your journey into the industry starts right here!",
 			}

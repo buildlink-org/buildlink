@@ -55,10 +55,10 @@ const PortfolioSection: React.FC<PortfolioSectionProps> = ({ profile, handleProf
 			? "Portfolio / Featured"
 			: "Portfolio"
 	const colorTheme = userType === "company"
-		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
+		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-900/50"
 		: userType === "professional"
-			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
-			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-950/30"
+			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-900/50"
+			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-900/50"
 
 	const persistPortfolio = async (updated: PortfolioItem[]) => {
 		setUpdating(true)

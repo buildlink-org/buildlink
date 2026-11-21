@@ -35,10 +35,10 @@ const ExperienceSection = ({ profile, handleProfileUpdate, maxVisible, canEdit =
 
 	const userType = profile.user_type?.toLowerCase() || "student"
 	const colorTheme = userType === "company"
-		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-950/30"
+		? "border-company-200 bg-company-50 dark:border-company-800 dark:bg-company-900/50"
 		: userType === "professional"
-			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-950/30"
-			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-950/30"
+			? "border-professional-200 bg-professional-50 dark:border-professional-800 dark:bg-professional-900/50"
+			: "border-student-200 bg-student-100 dark:border-student-800 dark:bg-student-900/50"
 	let iconBg = "bg-student-100 dark:bg-yellow-950"
 	let iconText = "text-student-700 dark:text-yellow-200"
 	if (userType === "professional") {
